@@ -1,0 +1,35 @@
+<resources>
+    <string name="app_name">SProject</string>
+    <string name="toggle_flash">Flash</string>
+    <string name="bScan">Scan!</string>
+    <string name="bOk">OK!</string>
+    <string name="check_server">Check Server</string>
+    <string name="action_settings">Настройки</string>
+    <string name="action_boxes">Коробки</string>
+    <string name="action_orders">Заказы</string>
+    <string name="action_prods">Текущая смена</string>
+    <string name="action_sendboxes">Отправить коробки</string>
+    <string name="action_out_docs">Отправить накладные</string>
+    <string name="action_update_menu_1">Сервис БД</string>
+    <string name="action_receive_orders">Принять заказы</string>
+    <string name="action_get_data">Синхронизировать данные</string>
+    <string name="action_receive_spr">Обновить справочники</string>
+    <string name="action_receive_box">Обновить данные</string>
+    <string name="spDeps_title">Выбор бригады</string>
+    <string name="spUser_title">Выбор пользователя</string>
+    <string name="spOpers_title">Выбор операции</string>
+    <string name="listFirstColumn">Заказ. Клиент.</string>
+    <string name="listSecondColumn">Номенклатура.</string>
+    <string name="title_activity_out_docs">OutDocsActivity</string>
+    <string name="add_record">Добавить запись</string>
+    <string name="delete_record">Удалить запись</string>
+    <string name="title_activity_out_doc">OutDocActivity</string>
+    <string name="action_quik_sync">Синхронизировать накладные</string>
+    <string name="action_update">Синхронизация</string>
+    <string name="title_activity_update">Синхронизация данных.</string>
+    <string name="title_home">Home</string>
+    <string name="title_dashboard">Dashboard</string>
+    <string name="title_notifications">Notifications</string>
+    <string name="run">Запустить...</string>
+    <string name="action_version">О программе...</string>
+</resources>

@@ -1,0 +1,10 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="com.example.yg.wifibcscaner.OutDocsActivity">
+    <item
+        android:id="@+id/action_out_docs"
+        android:orderInCategory="100"
+        android:title="@string/action_out_docs"
+        app:showAsAction="never" />
+</menu>

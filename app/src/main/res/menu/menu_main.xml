@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+xmlns:app="http://schemas.android.com/apk/res-auto"
+xmlns:tools="http://schemas.android.com/tools"
+tools:context=".MainActivity">
+    <group android:id="@+id/setings" >
+    <item
+        android:id="@+id/action_settings"
+        android:orderInCategory="100"
+        android:title="@string/action_settings"
+        app:showAsAction="never"/>
+    <item
+        android:id="@+id/action_login"
+        android:orderInCategory="100"
+        android:title="Вход в систему"
+        app:showAsAction="never"/>
+    </group>
+    <group android:id="@+id/business" >
+    <item
+        android:id="@+id/action_test"
+        android:orderInCategory="100"
+        android:title="Накладные"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_boxes"
+        android:orderInCategory="100"
+        android:title="@string/action_boxes"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_orders"
+        android:orderInCategory="100"
+        android:title="@string/action_orders"
+        app:showAsAction="never"/>
+    <item
+        android:id="@+id/action_prods"
+        android:orderInCategory="100"
+        android:title="@string/action_prods"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_update"
+        android:orderInCategory="100"
+        android:title="@string/action_update"
+        app:showAsAction="never"/>
+    </group>
+</menu>
