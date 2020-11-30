@@ -51,7 +51,7 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
             counter = 0;
             try {
                 ApiUtils.getOrderService(mDBHelper.defs.getUrl()).
-                        addOutDoc(mDBHelper.getOutDocNotSent()).enqueue(new Callback<List<OutDocs>>() {
+                        addOutDoc(mDBHelper.getOutDocNotSent(),mDBHelper.defs.getDeviceId()).enqueue(new Callback<List<OutDocs>>() {
 
                     // TODO Обработать результат. Записать поле sent... если успешно
                     @Override
@@ -192,7 +192,7 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
                         mDBHelper.defs.set_Id_d(iDep);
                         Defs defs = new Defs(iDep, mDBHelper.defs.get_Id_o(), mDBHelper.defs.get_Id_s(),
                                 mDBHelper.defs.get_Host_IP(), mDBHelper.defs.get_Port(),
-                                mDBHelper.defs.getDivision_code(),  mDBHelper.defs.get_idUser());
+                                mDBHelper.defs.getDivision_code(),  mDBHelper.defs.get_idUser(), mDBHelper.defs.getDeviceId());
                         if (mDBHelper.updateDefsTable(defs) != 0) {
                             mDBHelper.selectDefsTable();
                             messageUtils.showMessage(getApplicationContext(),"Сохранено."+mDBHelper.defs.descDep);

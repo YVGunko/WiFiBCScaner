@@ -151,7 +151,7 @@ IntentFilter filterAttached_and_Detached = null;
         }
     }
 
-    public String getDeviceUniqueID(Activity activity){
+    private String getDeviceUniqueID(Activity activity){
         String device_unique_id = Settings.Secure.getString(activity.getContentResolver(),
                 Settings.Secure.ANDROID_ID);
         return device_unique_id;
@@ -217,7 +217,7 @@ IntentFilter filterAttached_and_Detached = null;
                 barcodeReader.addBarcodeListener(MainActivity.this);
             }
         });
-        String IMEI = getDeviceUniqueID(this);
+
     }
     @Override
     public void onStop(){
@@ -546,6 +546,12 @@ private static String filter (String str){
     protected void onStart() {
         // TODO Auto-generated method stub
         super.onStart();
+
+        if (mDBHelper.defs.getDeviceId().isEmpty() || mDBHelper.defs.getDeviceId() == null || mDBHelper.defs.getDeviceId().contentEquals("0")) {
+            String DeviceId = getDeviceUniqueID(this);
+            mDBHelper.defs.setDeviceId(DeviceId);
+        }
+
         if (mDBHelper.checkIfUserTableEmpty()) {
             startActivity(new Intent(this,SettingsActivity.class));
             return;
@@ -554,6 +560,7 @@ private static String filter (String str){
                 startActivity(new Intent(this, LoginActivity.class));
             }
         }
+
     }
 
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {

@@ -213,7 +213,7 @@ public class UpdateActivity extends AppCompatActivity {
                     strUpdateDate = mDBHelper.getMaxOrderDate();
                 }
                 //выбрать максимальную дату загрузки заказа из MasterData. Запросить все заказы старше этой даты но только за месяц.
-                ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getOrdersUser(strUpdateDate, mDBHelper.currentOutDoc.getIdUser()).enqueue(new Callback<List<Orders>>() {
+                ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getOrders(strUpdateDate, mDBHelper.defs.get_idUser(), mDBHelper.defs.getDeviceId()).enqueue(new Callback<List<Orders>>() {
                     // TODO Обработать результат. Записать поле sent... если успешно
                     @Override
                     public void onResponse(Call<List<Orders>> call, Response<List<Orders>> response) {
@@ -261,7 +261,7 @@ public class UpdateActivity extends AppCompatActivity {
                                         } else {
                                             strUpdateDate = mDBHelper.getLongDateTimeString(mDBHelper.getTableUpdateDate("Boxes"));
                                         }
-                                        ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getBoxesByDateUser(strUpdateDate, mDBHelper.currentOutDoc.getIdUser()).enqueue(new Callback<List<Boxes>>() {
+                                        ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getBoxesByDate(strUpdateDate, mDBHelper.defs.get_idUser(), mDBHelper.defs.getDeviceId()).enqueue(new Callback<List<Boxes>>() {
                                             // TODO Обработать результат. Записать поле sent... если успешно
                                             @Override
                                             public void onResponse(Call<List<Boxes>> call, Response<List<Boxes>> response) {
@@ -295,7 +295,7 @@ public class UpdateActivity extends AppCompatActivity {
                                         } else {
                                             strUpdateDate = mDBHelper.getLongDateTimeString(mDBHelper.getTableUpdateDate("BoxMoves"));
                                         }
-                                        ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getBoxMovesByDateUser(strUpdateDate, mDBHelper.currentOutDoc.getIdUser()).enqueue(new Callback<List<BoxMoves>>() {
+                                        ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getBoxMovesByDate(strUpdateDate, mDBHelper.defs.get_idUser(), mDBHelper.defs.getDeviceId()).enqueue(new Callback<List<BoxMoves>>() {
                                             // TODO Обработать результат. Записать поле sent... если успешно
                                             @Override
                                             public void onResponse(Call<List<BoxMoves>> call, Response<List<BoxMoves>> response) {
@@ -327,7 +327,7 @@ public class UpdateActivity extends AppCompatActivity {
                                         } else {
                                             strUpdateDate = mDBHelper.getLongDateTimeString(mDBHelper.getTableUpdateDate("Prods"));
                                         }
-                                        ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getPartBoxByDateUser(strUpdateDate, mDBHelper.currentOutDoc.getIdUser()).enqueue(new Callback<List<Prods>>() {
+                                        ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getPartBoxByDate(strUpdateDate, mDBHelper.defs.get_idUser(), mDBHelper.defs.getDeviceId()).enqueue(new Callback<List<Prods>>() {
                                             // TODO Обработать результат. Записать поле sent... если успешно
                                             @Override
                                             public void onResponse(Call<List<Prods>> call, Response<List<Prods>> response) {

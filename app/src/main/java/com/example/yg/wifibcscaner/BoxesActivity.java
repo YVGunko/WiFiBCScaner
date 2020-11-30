@@ -117,7 +117,7 @@ public class BoxesActivity extends AppCompatActivity {
 //                    ArrayList<OutDocs> odList = mDBHelper.getOutDocNotSent();
 //                    for (int i=0; i < odList.size(); i = i + 1) {
                         ApiUtils.getOrderService(DataBaseHelper.getInstance(this).defs.getUrl()).
-                                addOutDoc(mDBHelper.getOutDocNotSent()).enqueue(new Callback<List<OutDocs>>() {
+                                addOutDoc(mDBHelper.getOutDocNotSent(),mDBHelper.defs.getDeviceId()).enqueue(new Callback<List<OutDocs>>() {
 
                             // TODO Обработать результат. Записать поле sent... если успешно
                             @Override
@@ -149,7 +149,8 @@ public class BoxesActivity extends AppCompatActivity {
                     ArrayList<BoxMoves> boxMovesList = mDBHelper.getBoxMoves();
                     ArrayList<Prods> prodsList = mDBHelper.getProds();
 
-                        ApiUtils.getBoxesService(DataBaseHelper.getInstance(this).defs.getUrl()).addBoxes(new PartBoxRequest(boxesList, boxMovesList, prodsList)).enqueue(new Callback<PartBoxRequest>() {
+                        ApiUtils.getBoxesService(DataBaseHelper.getInstance(this).defs.getUrl()).addBoxes(new PartBoxRequest(boxesList, boxMovesList, prodsList),
+                                mDBHelper.defs.get_idUser(),mDBHelper.defs.getDeviceId()).enqueue(new Callback<PartBoxRequest>() {
                             // TODO Обработать результат. Записать поле sent... если успешно
                             @Override
                             public void onResponse(Call<PartBoxRequest> call, Response<PartBoxRequest> response) {

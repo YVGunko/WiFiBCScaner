@@ -20,7 +20,7 @@ import retrofit2.http.Query;
 public interface PartBoxService {
 
     @POST("/partBox")
-    Call<PartBoxRequest> addBoxes(@Body PartBoxRequest partBoxRequest);
+    Call<PartBoxRequest> addBoxes(@Body PartBoxRequest partBoxRequest, @Query("userId") int userId, @Query("deviceId") String deviceId);
 
     /*@POST("/boxSync")
     Call<PartBoxRequest> boxSync(@Query("date") String date);

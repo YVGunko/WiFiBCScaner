@@ -42,8 +42,8 @@ import static java.lang.String.valueOf;
 
 public class DataBaseHelper extends SQLiteOpenHelper {
     private static String DB_PATH = "";
-    private static final int DB_VERSION = 18; //8
-    public static final String Prg_VERSION = "2.1.1";
+    public static final int DB_VERSION = 19; //8
+    public static final String Prg_VERSION = "3.1.";
     private static String DB_NAME = "SQR.db";
     private static final String TABLE_MD = "MasterData";
     private static final String dtPattern = "dd.MM.yyyy HH:mm:ss";
@@ -55,6 +55,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     public static final String COLUMN_sentToMasterDate = "sentToMasterDate";
     public long serverUpdateTime;
     public String globalUpdateDate = "";
+    //public String DeviceId = "";
     public static final String puDivision = "00-000002";
 
     private SQLiteDatabase mDataBase;
@@ -211,6 +212,9 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             DB_PATH = "/data/data/" + context.getPackageName() + "/databases/";
         this.mContext = context;
 
+        if (!checkDataBase()) {
+            mNeedUpdate = true;
+        }
         try {
             this.updateDataBase();
         } catch (IOException mIOException) {
@@ -226,7 +230,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         selectDefsTable();
         //division = new Division(defs.getDivision_code(),getDivisionsName(defs.getDivision_code()));
         currentOutDoc = new OutDocs(null, 0, 0,null,null,
-                null, defs.getDivision_code(), defs.get_idUser(), defs.getDeviceId());
+                null, defs.getDivision_code(), defs.get_idUser());
 
     }
 
@@ -563,8 +567,8 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                         "idOperFirst INTEGER,"+
                         "idOperLast  INTEGER,"+
                         "division_code VARCHAR (255) REFERENCES Division (code) DEFAULT (0),"+
-                        "DeviceId VARCHAR (20) NOT NULL DEFAULT (0),"+
                         "idUser INTEGER NOT NULL DEFAULT (0),"+
+                        "DeviceId VARCHAR (20) NOT NULL DEFAULT (0),"+
                         "FOREIGN KEY (idOperLast) REFERENCES Opers (_id),"+
                         "FOREIGN KEY (idOperFirst) REFERENCES Opers (_id),"+
                         "FOREIGN KEY (Id_o) REFERENCES Opers (_id),"+
@@ -572,24 +576,9 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                         "FOREIGN KEY (Id_d) REFERENCES Deps (_id),"+
                         "FOREIGN KEY (Id_s) REFERENCES Sotr (_id));");
 
-                db.execSQL("INSERT INTO Defs (_id,Host_IP,Port,Id_d,Id_o,Id_s,idOperFirst,idOperLast,division_code,idUser)"+
+                db.execSQL("INSERT INTO Defs (_id,Host_IP,Port,Id_d,Id_o,Id_s,idOperFirst,idOperLast,division_code,idUser,DeviceId)"+
                         "SELECT _id,Host_IP,Port,Id_d,Id_o,Id_s,idOperFirst,idOperLast,division_code,idUser,'0' FROM sqlitestudio_Defs_temp_table;");
                 db.execSQL("DROP TABLE sqlitestudio_Defs_temp_table; ");
-                //outdoc
-                db.execSQL("CREATE TABLE sqlitestudio_temp_table AS SELECT * FROM outDocs;");
-                db.execSQL("DROP TABLE IF EXISTS outDocs;");
-                db.execSQL("CREATE TABLE outDocs (_id VARCHAR (128) PRIMARY KEY UNIQUE,"+
-                        "number INTEGER,"+
-                        "comment VARCHAR (50)," +
-                        "DT INTEGER," +
-                        "Id_o INTEGER REFERENCES Opers (_id),"+
-                        "sentToMasterDate INTEGER,"+
-                        "division_code VARCHAR (255) REFERENCES Division (code) DEFAULT (0)," +
-                        "idUser INTEGER NOT NULL REFERENCES user (_id) DEFAULT (0)," +
-                        "DeviceId VARCHAR (20) NOT NULL DEFAULT (0));");
-                db.execSQL("INSERT INTO outDocs (_id,number,comment,DT,Id_o,sentToMasterDate,division_code,idUser)"+
-                        "SELECT _id,number,comment,DT,Id_o,sentToMasterDate,division_code,idUser,'0' FROM sqlitestudio_temp_table;");
-                db.execSQL("DROP TABLE sqlitestudio_temp_table;");
 
                 db.setTransactionSuccessful();
             }
@@ -1989,6 +1978,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             values.put(Defs.COLUMN_Host_IP, defs.get_Host_IP());
             values.put(Defs.COLUMN_Port, defs.get_Port());
             values.put(Defs.COLUMN_Division_code, defs.getDivision_code());
+            values.put(Defs.COLUMN_DeviceId, defs.getDeviceId());
             String strFilter = "_id=1" ;
             l = mDataBase.update(Defs.table_Defs, values,strFilter, null);
             mDataBase.close();

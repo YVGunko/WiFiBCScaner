@@ -23,16 +23,7 @@ public class OutDocs {
     public static final String COLUMN_Id_o = "Id_o";
     public static final String COLUMN_idUser = "idUser";
     public static final String COLUMN_Division_code = "division_code";
-    public static final String DeviceId = "DeviceId";
 
-
-    public String getDeviceId() {
-        return DeviceId;
-    }
-
-    public void setDeviceId(String DeviceId) {
-        this.DeviceId = DeviceId;
-    }
 
     public String getDivision_code() {
         return division_code;
@@ -50,7 +41,7 @@ public class OutDocs {
         this.idUser = idUser;
     }
 
-    public OutDocs(String _id, int _Id_o, int _number, String _comment, String _DT, String _sentToMasterDate, String division_code, int idUser, String DeviceId ) {
+    public OutDocs(String _id, int _Id_o, int _number, String _comment, String _DT, String _sentToMasterDate, String division_code, int idUser ) {
         this._id = _id;
         this._number = _number;
         this._comment = _comment;
@@ -59,7 +50,6 @@ public class OutDocs {
         this.idUser = idUser;
         this._sentToMasterDate = _sentToMasterDate;
         this.division_code = division_code;
-        this.DeviceId = DeviceId;
     }
 
     public String get_id() {

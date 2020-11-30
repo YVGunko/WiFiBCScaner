@@ -61,7 +61,15 @@ public class SettingsActivity extends AppCompatActivity implements
         setRequestedOrientation (ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         mDBHelper = DataBaseHelper.getInstance(this);
         host_v=(EditText) findViewById(R.id.host);
-        strTitle = "Настройки"+". Ver. "+mDBHelper.Prg_VERSION;
+
+        String devId = "Unknown";
+        try {
+            devId = ((mDBHelper.defs.getDeviceId().substring(0,6).length()==6) ? mDBHelper.defs.getDeviceId().substring(0,5) : "Unknown");}
+        catch (Exception e) {
+            devId = "unKnown";
+        }
+
+        strTitle = "Настройки"+". v."+mDBHelper.Prg_VERSION+mDBHelper.DB_VERSION+". Id."+ devId;
 
         final Animation animation = new AlphaAnimation(1, 0); // Change alpha from fully visible to invisible
         animation.setDuration(500); // duration - half a second
@@ -482,7 +490,7 @@ public class SettingsActivity extends AppCompatActivity implements
         }
         String ip = host_v.getText().toString();
 
-        Defs defs = new Defs(idd, ido, ids, ip, "4242",division_code);
+        Defs defs = new Defs(idd, ido, ids, ip, "4242",division_code,mDBHelper.defs.getDeviceId());
         if (mDBHelper.updateDefsTable(defs) != 0) {
             messageUtils.showMessage(getApplicationContext(),"Сохранено.");
         } else {

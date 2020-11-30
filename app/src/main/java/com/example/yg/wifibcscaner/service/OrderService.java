@@ -30,13 +30,13 @@ import com.example.yg.wifibcscaner.user;
 public interface OrderService {
 
     @GET("/order")
-    Call<List<Orders>> getOrders(@Query("date") String date);
+    Call<List<Orders>> getOrders(@Query("date") String date, @Query("userId") int userId, @Query("deviceId") String deviceId);
     @GET("/boxesByDate")
-    Call<List<Boxes>> getBoxesByDate(@Query("date") String date);
+    Call<List<Boxes>> getBoxesByDate(@Query("date") String date, @Query("userId") int userId, @Query("deviceId") String deviceId);
     @GET("/bmByDate")
-    Call<List<BoxMoves>> getBoxMovesByDate(@Query("date") String date);
+    Call<List<BoxMoves>> getBoxMovesByDate(@Query("date") String date, @Query("userId") int userId, @Query("deviceId") String deviceId);
     @GET("/pbByDate")
-    Call<List<Prods>> getPartBoxByDate(@Query("date") String date);
+    Call<List<Prods>> getPartBoxByDate(@Query("date") String date, @Query("userId") int userId, @Query("deviceId") String deviceId);
 
     @GET("/orderUser")
     Call<List<Orders>> getOrdersUser(@Query("date") String date, @Query("userId") int userId);
@@ -69,7 +69,7 @@ public interface OrderService {
     Call<List<Operation>> getOperation(@Query("date") String date);
 
     @POST("/outDocSaveOrUpdate")
-    Call<List<OutDocs>> addOutDoc(@Body ArrayList<OutDocs> outDocs);
+    Call<List<OutDocs>> addOutDoc(@Body ArrayList<OutDocs> outDocs, @Query("deviceId") String deviceId);
 
     @POST("/outDocPost")
     Call<List<OutDocs>> getOutDocPost(@Body ArrayList<String> odId);
