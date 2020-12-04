@@ -427,47 +427,54 @@ private static String filter (String str){
             return;
         }
         fo = mDBHelper.searchOrder(currentbarcode);
-        if (fo._id != 0) {                                      //Заказ найден, ищем коробку
-            fb = mDBHelper.searchBox(fo._id, currentbarcode);
-            //---Получаем строку данных о коробке для вывода в tVDBInfo и количество для редактирования
-            tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
-            if (!fb.boxdef.equals(""))
-                fo.orderdef += fb.boxdef+ "\n";
-            if (!fb.depSotr.equals(""))
-                fo.orderdef += fb.depSotr+ "\n";
-            if (!fb.outDocs.equals(""))
-                fo.orderdef += fb.outDocs;
-            tVDBInfo.setText(fo.orderdef);
-            if ((!fb._id.equals("")&&(fb._id != null))) {                                  //Коробка есть
-                if (fb.QB == fb.RQ) {//Коробка заполнена
+        if (!fo.archive) { // архив
+            if (fo._id != 0) {                                      //Заказ найден, ищем коробку
+                fb = mDBHelper.searchBox(fo._id, currentbarcode);
+                //---Получаем строку данных о коробке для вывода в tVDBInfo и количество для редактирования
+                tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
+                if (!fb.boxdef.equals(""))
+                    fo.orderdef += fb.boxdef+ "\n";
+                if (!fb.depSotr.equals(""))
+                    fo.orderdef += fb.depSotr+ "\n";
+                if (!fb.outDocs.equals(""))
+                    fo.orderdef += fb.outDocs;
+                tVDBInfo.setText(fo.orderdef);
+                if (!fb._archive){
+                    if ((!fb._id.equals("")&&(fb._id != null))) {                                  //Коробка есть
+                        if (fb.QB == fb.RQ) {//Коробка заполнена
 
-                    editTextRQ = (EditText) findViewById(R.id.editTextRQ);
-                    editTextRQ.setText(String.valueOf(fb.QB - fb.RQ));
-                    editTextRQ.setEnabled(false);
-                    if (mDBHelper.defs.get_Id_o()==mDBHelper.defs.get_idOperFirst()) showLongMessage("Эта коробка уже принята полной!");
-                    else showLongMessage("Эта коробка уже отгружена!");
-                } else {
-                    Button bScan = (Button) findViewById(R.id.bScan);
-                    bScan.setText("OK!");
-                    editTextRQ = (EditText) findViewById(R.id.editTextRQ);
-                    editTextRQ.setText(String.valueOf(fb.QB - fb.RQ));
-                    editTextRQ.setEnabled(true);
-                    if (fb.RQ != 0) {showMessage("Эта коробка ранее принималась неполной!");}
+                            editTextRQ = (EditText) findViewById(R.id.editTextRQ);
+                            editTextRQ.setText(String.valueOf(fb.QB - fb.RQ));
+                            editTextRQ.setEnabled(false);
+                            if (mDBHelper.defs.get_Id_o()==mDBHelper.defs.get_idOperFirst()) showLongMessage("Эта коробка уже принята полной!");
+                            else showLongMessage("Эта коробка уже отгружена!");
+                        } else {
+                            Button bScan = (Button) findViewById(R.id.bScan);
+                            bScan.setText("OK!");
+                            editTextRQ = (EditText) findViewById(R.id.editTextRQ);
+                            editTextRQ.setText(String.valueOf(fb.QB - fb.RQ));
+                            editTextRQ.setEnabled(true);
+                            if (fb.RQ != 0) {showMessage("Эта коробка ранее принималась неполной!");}
+                        }
+                    } else {                                                //Коробки нет , подставить колво в поле редактирования колва и дожаться ОК.
+                        if (mDBHelper.defs.get_Id_o()==mDBHelper.defs.get_idOperFirst()){ //Добавить коробку если это операция приемки baseOper = 1
+                            Button bScan = (Button) findViewById(R.id.bScan);
+                            bScan.setText("OK!");
+                            editTextRQ = (EditText) findViewById(R.id.editTextRQ);
+                            editTextRQ.setText(String.valueOf(fb.QB - fb.RQ));
+                            editTextRQ.setEnabled(true);
+                        }else{
+                            showLongMessage("Эта коробка не принималась на производстве!");
+                        }
+                    }
+                }else {
+                    showLongMessage("Эта коробка уже в архиве! Никакие операции невозможны!");
                 }
-            } else {                                                //Коробки нет , подставить колво в поле редактирования колва и дожаться ОК.
-                if (mDBHelper.defs.get_Id_o()==mDBHelper.defs.get_idOperFirst()){ //Добавить коробку если это операция приемки baseOper = 1
-                    Button bScan = (Button) findViewById(R.id.bScan);
-                    bScan.setText("OK!");
-                    editTextRQ = (EditText) findViewById(R.id.editTextRQ);
-                    editTextRQ.setText(String.valueOf(fb.QB - fb.RQ));
-                    editTextRQ.setEnabled(true);
-                }else{
-                    showLongMessage("Эта коробка не принималась на производстве!");
-                }
+            } else {
+                showLongMessage("Заказ для этой коробки не загружен! Нужно синхронизировать данные.");
             }
-            //Вывели данные из нового ШК. Ждать подтверждения ocl_bOk.
         } else {
-            showLongMessage("Заказ для этой коробки не загружен! Нужно синхронизировать данные.");
+            showLongMessage("Этот заказ уже в архиве! Никакие операции невозможны!");
         }
     }
 

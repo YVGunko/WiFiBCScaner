@@ -88,6 +88,9 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     public static String getStartOfYearString(Long lDate) {
         return org.apache.commons.lang3.time.DateFormatUtils.format(lDate, y0Pattern);
     }
+    public static long getLongStartOfDayLong(Long lDate) {
+        return org.apache.commons.lang3.time.DateUtils.truncate(lDate, Calendar.DATE).getTime();
+    }
     public static Date getStartOfYear(){
         Calendar cal = Calendar.getInstance();
         cal.set(Calendar.DAY_OF_YEAR, 1);
@@ -140,6 +143,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         String _id;
         String outDocs;
         String depSotr;
+        boolean _archive;
     }
 
     public class foundorder {
@@ -156,6 +160,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         int NB; //Количество коробок
         String DT;
         String division_code;
+        boolean archive;
     }
 
     public static synchronized DataBaseHelper getInstance(Context context) {
@@ -1086,7 +1091,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         boolean b = (Order_Id != "");
         if (b) {
             SQLiteDatabase db = getReadableDatabase();
-            String query = "SELECT _id,Ord_id,Ord,Cust,Nomen,Attrib,Q_ord,Q_box,N_box,DT FROM " + TABLE_MD + " WHERE Ord_id = '" + Order_Id + "'";
+            String query = "SELECT _id,Ord_id,Ord,Cust,Nomen,Attrib,Q_ord,Q_box,N_box,DT,archive FROM " + TABLE_MD + " WHERE Ord_id = '" + Order_Id + "'";
             Cursor c = db.rawQuery(query, null);
             try {
                 c.moveToFirst();
@@ -1097,6 +1102,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 fo.DT = lDateToString(c.getLong(9));
                 fo.orderdef = makeOrderdef(c);
                 fo.barcode = storedbarcode;
+                fo.archive = (c.getInt(c.getColumnIndex("archive")) != 0);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -1120,6 +1126,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         fb._id = "";
         fb.outDocs = "";
         fb.depSotr = "";
+        fb._archive = false;
 
         spBarcode spb = new spBarcode(storedbarcode);
         fb.QB = Integer.valueOf(spb.getQ_box());
@@ -1127,48 +1134,52 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         fb.boxdef = "№ кор: " + spb.getN_box()+". ";
         try {
             mDataBase = this.getReadableDatabase();
-            String query = "SELECT Boxes._id FROM Boxes Where Boxes.Id_m=" + String.valueOf(Order_id) + " and Boxes.N_box=" + spb.getN_box();
+            String query = "SELECT Boxes._id, archive FROM Boxes Where Boxes.Id_m=" + String.valueOf(Order_id) + " and Boxes.N_box=" + spb.getN_box();
             c = mDataBase.rawQuery(query, null);
             if ((c != null) & (c.getCount() != 0)) {
                 c.moveToFirst(); //есть boxes & prods
                 fb._id = c.getString(0);
                 Log.d(LOG_TAG, "searchBox Record count = " + c.getCount() + ", _id =" + c.getString((int) 0));
 
-                if ((!fb._id.equals("")&&(fb._id != null))) {
-                    if (defs.get_Id_o()!=defs.get_idOperFirst()){//нет записи в BoxMoves и Prods. Другая операция. Определить принятое колво
+                if (!fb._archive) {
+                    if ((!fb._id.equals("") && (fb._id != null))) {
+                        if (defs.get_Id_o() != defs.get_idOperFirst()) {//нет записи в BoxMoves и Prods. Другая операция. Определить принятое колво
+                            tryCloseCursor(c);
+                            query = "SELECT sum(Prods.RQ_box) as RQ_box FROM BoxMoves bm, Prods " + "" +
+                                    "Where bm.Id_b='" + fb._id + "' and bm.Id_o=" + valueOf(defs.get_idOperFirst()) +
+                                    " and bm._id=Prods.Id_bm Group by Prods.Id_bm";
+                            c = mDataBase.rawQuery(query, null);
+                            if ((c != null) & (c.getCount() != 0)) { //есть записи в BoxMoves и Prods для базовой операции
+                                c.moveToFirst(); //есть boxes & prods
+                                Log.d(LOG_TAG, "searchBox's baseOper RQ select record count = " + c.getCount() + ", _id =" + c.getString((int) 0));
+                                fb.QB = c.getInt(0);
+                            } else {
+                                fb.QB = 0;
+                            }                          //коробка есть, по базовой операции принято 0. Ошибочная ситуация.
+                            fb.boxdef += defs.descOper + ": " + fb.QB + ". ";
+                        }
                         tryCloseCursor(c);
-                        query = "SELECT sum(Prods.RQ_box) as RQ_box FROM BoxMoves bm, Prods " + "" +
-                                "Where bm.Id_b='" + fb._id + "' and bm.Id_o=" + valueOf(defs.get_idOperFirst()) +
-                                " and bm._id=Prods.Id_bm Group by Prods.Id_bm";
+                        query = "SELECT sum(Prods.RQ_box) as RQ_box FROM Prods, BoxMoves bm " + "" +
+                                "Where bm.Id_b='" + fb._id + "' and bm.Id_o=" + valueOf(defs.get_Id_o()) +
+                                " and Prods.Id_bm=bm._id Group by Prods.Id_bm";
                         c = mDataBase.rawQuery(query, null);
-                        if ((c != null) & (c.getCount() != 0)) { //есть записи в BoxMoves и Prods для базовой операции
+                        if ((c != null) & (c.getCount() != 0)) {            //есть записи в BoxMoves и Prods
                             c.moveToFirst(); //есть boxes & prods
-                            Log.d(LOG_TAG, "searchBox's baseOper RQ select record count = " + c.getCount() + ", _id =" + c.getString((int) 0));
-                            fb.QB = c.getInt(0);
-                        }else {fb.QB = 0;}                          //коробка есть, по базовой операции принято 0. Ошибочная ситуация.
-                        fb.boxdef += defs.descOper+": " + fb.QB+". ";
-                    }
-                    tryCloseCursor(c);
-                    query = "SELECT sum(Prods.RQ_box) as RQ_box FROM Prods, BoxMoves bm " + "" +
-                            "Where bm.Id_b='" + fb._id + "' and bm.Id_o=" + valueOf(defs.get_Id_o()) +
-                            " and Prods.Id_bm=bm._id Group by Prods.Id_bm";
-                    c = mDataBase.rawQuery(query, null);
-                    if ((c != null) & (c.getCount() != 0)) {            //есть записи в BoxMoves и Prods
-                        c.moveToFirst(); //есть boxes & prods
-                        Log.d(LOG_TAG, "searchBox's RQ select record count = " + c.getCount() + ", _id =" + c.getString((int) 0));
-                        fb.RQ = c.getInt(0);
-                    }
-                    tryCloseCursor(c);
-                    query = "SELECT o.number,  strftime('%d-%m-%Y %H:%M:%S', o.DT/1000, 'unixepoch', 'localtime') as DT, Deps.Name_Deps, s.Sotr "+
-                            " FROM Prods, BoxMoves bm, outDocs o, Deps, Sotr s " +
-                            " Where bm.Id_b='" + fb._id + "' and bm.Id_o=" + valueOf(defs.get_Id_o()) +
-                            " and Prods.Id_bm=bm._id  and Prods.idOutDocs=o._id and Prods.Id_d=Deps._id and Prods.Id_s=s._id order by o._id desc";
-                    c = mDataBase.rawQuery(query, null);
-                    if ((c != null) & (c.getCount() != 0)) {            //есть записи в BoxMoves и Prods
-                        c.moveToFirst(); //есть boxes & prods
-                        Log.d(LOG_TAG, "Looking for outdocs record count = " + c.getCount() + ", _id =" + c.getString((int) 0));
-                        fb.outDocs = "Накл "+ c.getString(0)+" от " + c.getString(1);
-                        fb.depSotr = c.getString(2)+", " + c.getString(3);
+                            Log.d(LOG_TAG, "searchBox's RQ select record count = " + c.getCount() + ", _id =" + c.getString((int) 0));
+                            fb.RQ = c.getInt(0);
+                        }
+                        tryCloseCursor(c);
+                        query = "SELECT o.number,  strftime('%d-%m-%Y %H:%M:%S', o.DT/1000, 'unixepoch', 'localtime') as DT, Deps.Name_Deps, s.Sotr " +
+                                " FROM Prods, BoxMoves bm, outDocs o, Deps, Sotr s " +
+                                " Where bm.Id_b='" + fb._id + "' and bm.Id_o=" + valueOf(defs.get_Id_o()) +
+                                " and Prods.Id_bm=bm._id  and Prods.idOutDocs=o._id and Prods.Id_d=Deps._id and Prods.Id_s=s._id order by o._id desc";
+                        c = mDataBase.rawQuery(query, null);
+                        if ((c != null) & (c.getCount() != 0)) {            //есть записи в BoxMoves и Prods
+                            c.moveToFirst(); //есть boxes & prods
+                            Log.d(LOG_TAG, "Looking for outdocs record count = " + c.getCount() + ", _id =" + c.getString((int) 0));
+                            fb.outDocs = "Накл " + c.getString(0) + " от " + c.getString(1);
+                            fb.depSotr = c.getString(2) + ", " + c.getString(3);
+                        }
                     }
                 }
             }
@@ -1203,7 +1214,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             return b;
         }
     }
-    private long sDateToLong (String sDate){
+    public long sDateToLong (String sDate){
         try {
             SimpleDateFormat sdf = new SimpleDateFormat(dayPattern);
             Date date = sdf.parse(sDate);
@@ -1213,7 +1224,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             return 0;
         }
     }
-    private long sDateTimeToLong (String sDate){
+    public long sDateTimeToLong (String sDate){
         try {
             SimpleDateFormat sdf = new SimpleDateFormat(dtPattern);
             Date date = sdf.parse(sDate);
@@ -1369,7 +1380,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
     public long addOrders(foundorder fo) {
         try {
-            Orders orders = new Orders(fo._id, fo.Ord_Id, fo.Ord, fo.Cust, fo.Nomen, fo.Attrib, fo.QO, fo.QB, fo.NB, fo.DT, fo.division_code);
+            Orders orders = new Orders(fo._id, fo.Ord_Id, fo.Ord, fo.Cust, fo.Nomen, fo.Attrib, fo.QO, fo.QB, fo.NB, fo.DT, fo.division_code, fo.archive);
             return insertOrders(orders);
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -2191,24 +2202,6 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             return nm;
         }
     }
-    public String getMaxBoxDate(){
-        String nm = dtMin;
-        if (!globalUpdateDate.equals("")) {nm = globalUpdateDate; return nm;}
-
-        Cursor cursor = null;
-        try {
-            mDataBase = this.getReadableDatabase();
-            cursor = mDataBase.rawQuery("SELECT updateStart, updateEnd, updateSuccess FROM lastUpdate WHERE tableName=?", new String [] {Boxes.TABLE_boxes});
-            if ((cursor != null) & (cursor.getCount() != 0)) {
-                cursor.moveToFirst();
-                if(!cursor.isNull(0)) nm = getStartOfDayString(cursor.getLong(0));
-            }
-        } finally {
-            tryCloseCursor(cursor);
-            mDataBase.close();
-            return nm;
-        }
-    }
     public String getMaxUserDate(){
         String nm = dtMin;
         if (!globalUpdateDate.equals("")) {nm = globalUpdateDate;
@@ -2391,6 +2384,23 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             return nm;
         }
     }
+    public Long getProdsMinDateLong(){
+        Long nm = ldtMin;
+
+        Cursor cursor = null;
+        try {
+            mDataBase = this.getReadableDatabase();
+            cursor = mDataBase.rawQuery("SELECT min(P_date) FROM Prods", null);
+            if ((cursor != null) & (cursor.getCount() != 0)) {
+                cursor.moveToFirst();
+                nm = getLongStartOfDayLong(cursor.getLong(0));
+            }
+        } finally {
+            tryCloseCursor(cursor);
+            mDataBase.close();
+            return nm;
+        }
+    }
     public String getTableMinDate(String tableName){
         String nm = dtMin;
 
@@ -2401,6 +2411,23 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             if ((cursor != null) & (cursor.getCount() != 0)) {
                 cursor.moveToFirst();
                 nm = lDateToString(cursor.getLong(0));
+            }
+        } finally {
+            tryCloseCursor(cursor);
+            mDataBase.close();
+            return nm;
+        }
+    }
+    public Long getTableMinDateLong(String tableName){
+        Long nm = ldtMin;
+
+        Cursor cursor = null;
+        try {
+            mDataBase = this.getReadableDatabase();
+            cursor = mDataBase.rawQuery("SELECT min(DT) FROM "+tableName, null);
+            if ((cursor != null) & (cursor.getCount() != 0)) {
+                cursor.moveToFirst();
+                nm = getLongStartOfDayLong(cursor.getLong(0));
             }
         } finally {
             tryCloseCursor(cursor);

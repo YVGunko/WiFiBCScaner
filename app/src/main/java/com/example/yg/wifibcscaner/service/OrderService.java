@@ -5,6 +5,8 @@ package com.example.yg.wifibcscaner.service;
  */
 
 
+import android.arch.paging.PagedList;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -33,10 +35,19 @@ public interface OrderService {
     Call<List<Orders>> getOrders(@Query("date") String date, @Query("userId") int userId, @Query("deviceId") String deviceId);
     @GET("/boxesByDate")
     Call<List<Boxes>> getBoxesByDate(@Query("date") String date, @Query("userId") int userId, @Query("deviceId") String deviceId);
-    @GET("/bmByDate")
+    @GET("/bmByDateAndArchive")
     Call<List<BoxMoves>> getBoxMovesByDate(@Query("date") String date, @Query("userId") int userId, @Query("deviceId") String deviceId);
-    @GET("/pbByDate")
+    @GET("/pbByDateAndArchive")
     Call<List<Prods>> getPartBoxByDate(@Query("date") String date, @Query("userId") int userId, @Query("deviceId") String deviceId);
+
+    @GET("/bmByDatePageble")
+    Call<List<BoxMoves>> getBoxMovesByDatePageble(@Query("date") String date, @Query("userId") int userId, @Query("deviceId") String deviceId, @Query("page") int page);
+    @GET("/bmByDatePagebleCount")
+    Call<Integer> getBoxMovesByDatePagebleCount(@Query("date") String date);
+    @GET("/pbByDatePageble")
+    Call<List<Prods>> getPartBoxByDatePageble(@Query("date") String date, @Query("userId") int userId, @Query("deviceId") String deviceId, @Query("page") int page);
+    @GET("/pbByDatePagebleCount")
+    Call<Integer> getPartBoxByDatePagebleCount(@Query("date") String date);
 
     @GET("/orderUser")
     Call<List<Orders>> getOrdersUser(@Query("date") String date, @Query("userId") int userId);
