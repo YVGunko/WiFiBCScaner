@@ -106,15 +106,15 @@ public class SettingsActivity extends AppCompatActivity implements
 
 
         // Loading spinner data from database
-        loadOpers_spinnerData();
         loadSpinnerDivisionData();
+        loadOpers_spinnerData();
         loadSpinnerData();
         loadSpinnerSotrData();
 
-        opers_select_label = (TextView) findViewById(R.id.opers_select_label);
-        opers_select_label.setText(mDBHelper.getOpers_Name_by_id(mDBHelper.defs.get_Id_o()));
         labelDivision2 = (TextView) findViewById(R.id.labelDivision2);
         labelDivision2.setText(mDBHelper.getDivisionsName(mDBHelper.defs.getDivision_code()));
+        opers_select_label = (TextView) findViewById(R.id.opers_select_label);
+        opers_select_label.setText(mDBHelper.getOpers_Name_by_id(mDBHelper.defs.get_Id_o()));
         select_label = (TextView) findViewById(R.id.select_label);
         select_label.setText(mDBHelper.getDeps_Name_by_id(mDBHelper.defs.get_Id_d()));
         labelSotr = (TextView) findViewById(R.id.labelSotr);
@@ -134,7 +134,7 @@ public class SettingsActivity extends AppCompatActivity implements
         switch (id) {
             case R.id.action_receive_spr:
                 try {
-                    ArrayList<user> userList = null;
+
                     ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getUser("01.01.2018 00:00:00").enqueue(new Callback<List<user>>() {
                         // TODO Обработать результат. Записать поле sent... если успешно
                         @Override
@@ -153,7 +153,33 @@ public class SettingsActivity extends AppCompatActivity implements
                             Log.d("UpdateActivity", "Ответ сервера на запрос новых users: " + t.getMessage());
                         }
                     });
-                    ArrayList<Sotr> sotrList = null;
+
+                    ApiUtils.getOrderService(DataBaseHelper.getInstance(this).defs.getUrl()).getOperation("01.01.2018 00:00:00").enqueue(new Callback<List<Operation>>() {
+                        // TODO Обработать результат. Записать поле sent... если успешно
+                        @Override
+                        public void onResponse(Call<List<Operation>> call, Response<List<Operation>> response) {
+                            MessageUtils messageUtils = new MessageUtils();
+                            //Log.d("1","Ответ сервера на запрос новых операций: " + response.body());
+                            if(response.isSuccessful()) {
+                                for(Operation operation : response.body())
+                                    mDBHelper.insertOpers(operation);
+                                messageUtils.showMessage(getApplicationContext(), "Ок! Новые операции приняты!");
+                                loadOpers_spinnerData();
+                                opers_select_label = (TextView) findViewById(R.id.opers_select_label);
+                                opers_select_label.setText(mDBHelper.getOpers_Name_by_id(mDBHelper.defs.get_Id_o()));
+                            }else {
+                                messageUtils.showLongMessage(getApplicationContext(), "Ошибка при приеме операций!");
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Call<List<Operation>> call, Throwable t) {
+                            MessageUtils messageUtils = new MessageUtils();
+                            messageUtils.showLongMessage(getApplicationContext(), t.getMessage()+". Ошибка при приеме операций!");
+                            Log.d("UpdateActivity","Ответ сервера на запрос новых операций: " + t.getMessage());
+                        }
+                    });
+
                     ApiUtils.getOrderService(DataBaseHelper.getInstance(this).defs.getUrl()).getSotr("01.01.2018 00:00:00").enqueue(new Callback<List<Sotr>>() {
                         // TODO Обработать результат. Записать поле sent... если успешно
                         @Override
@@ -180,7 +206,7 @@ public class SettingsActivity extends AppCompatActivity implements
                         }
                     });
 
-                    ArrayList<Deps> depsList = null;
+
                     ApiUtils.getOrderService(DataBaseHelper.getInstance(this).defs.getUrl()).getDeps("01.01.2018 00:00:00").enqueue(new Callback<List<Deps>>() {
                         // TODO Обработать результат. Записать поле sent... если успешно
                         @Override
@@ -204,33 +230,6 @@ public class SettingsActivity extends AppCompatActivity implements
                             MessageUtils messageUtils = new MessageUtils();
                             messageUtils.showLongMessage(getApplicationContext(), t.getMessage()+". Ошибка при приеме бригад!");
                             Log.d("UpdateActivity","Ответ сервера на запрос новых бригад: " + t.getMessage());
-                        }
-                    });
-
-                    ArrayList<Operation> opersList = null;
-                    ApiUtils.getOrderService(DataBaseHelper.getInstance(this).defs.getUrl()).getOperation("01.01.2018 00:00:00").enqueue(new Callback<List<Operation>>() {
-                        // TODO Обработать результат. Записать поле sent... если успешно
-                        @Override
-                        public void onResponse(Call<List<Operation>> call, Response<List<Operation>> response) {
-                            MessageUtils messageUtils = new MessageUtils();
-                            //Log.d("1","Ответ сервера на запрос новых операций: " + response.body());
-                            if(response.isSuccessful()) {
-                                for(Operation deps : response.body())
-                                    mDBHelper.insertOpers(deps);
-                                messageUtils.showMessage(getApplicationContext(), "Ок! Новые операции приняты!");
-                                loadOpers_spinnerData();
-                                opers_select_label = (TextView) findViewById(R.id.opers_select_label);
-                                opers_select_label.setText(mDBHelper.getOpers_Name_by_id(mDBHelper.defs.get_Id_o()));
-                            }else {
-                                messageUtils.showLongMessage(getApplicationContext(), "Ошибка при приеме операций!");
-                            }
-                        }
-
-                        @Override
-                        public void onFailure(Call<List<Operation>> call, Throwable t) {
-                            MessageUtils messageUtils = new MessageUtils();
-                            messageUtils.showLongMessage(getApplicationContext(), t.getMessage()+". Ошибка при приеме операций!");
-                            Log.d("UpdateActivity","Ответ сервера на запрос новых операций: " + t.getMessage());
                         }
                     });
 
@@ -291,9 +290,9 @@ public class SettingsActivity extends AppCompatActivity implements
     }
     private void loadOpers_spinnerData() {
         // database handler
-
+        if (division_code==null) division_code=mDBHelper.defs.getDivision_code();
         // Spinner Drop down elements
-        List<String> lables = mDBHelper.getAllnameOpers();
+        List<String> lables = mDBHelper.getAllnameOpers(division_code);
 
         // Creating adapter for spinner
         ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
@@ -323,22 +322,17 @@ public class SettingsActivity extends AppCompatActivity implements
         // attaching data adapter to spinner
         spinnerDivision.setAdapter(dataAdapter);
     }
-    private void loadSpinnerData() {
-        // database handler
-
-        // Spinner Drop down elements
+    private void loadSpinnerData() { //Departments Deps Бригады
         if (division_code==null) division_code=mDBHelper.defs.getDivision_code();
-        List<String> lables = mDBHelper.getAllnameDeps(division_code);
+        if (ido==0) ido=mDBHelper.defs.get_Id_o();
+        List<String> lables = mDBHelper.getAllnameDeps(division_code, ido);
 
-        // Creating adapter for spinner
         ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
                 android.R.layout.simple_spinner_item, lables);
-
-        // Drop down layout style - list view with radio button
         dataAdapter
                 .setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         dataAdapter.notifyDataSetChanged();
-        // attaching data adapter to spinner
+
         spinner.setAdapter(dataAdapter);
     }
     private void loadSpinnerSotrData() {
@@ -367,6 +361,39 @@ public class SettingsActivity extends AppCompatActivity implements
 // On selecting a spinner item
         MessageUtils messageUtils = new MessageUtils();
         Spinner sp = (Spinner) parent;
+        if(sp.getId() == R.id.spinnerDivision) {
+            if (position != 0) {
+                String label = parent.getItemAtPosition(position).toString();
+//Выбрать _id Division и записать в Defs;
+                division_code = mDBHelper.getDivisionsCodeByName(label);
+                ido=idd=ids=-1;
+                labelDivision2 = (TextView) findViewById(R.id.labelDivision2);
+                labelDivision2.setText(label);
+                try {
+                    loadOpers_spinnerData();
+                    opers_select_label = (TextView) findViewById(R.id.select_label);
+                    opers_select_label.setText(spinner.getItemAtPosition(0).toString());}
+                catch (Exception e){
+                    Log.d(mDBHelper.LOG_TAG, "Error : " + e.getMessage());
+                }
+                try {
+                    loadSpinnerData();
+                    select_label = (TextView) findViewById(R.id.select_label);
+                    select_label.setText(spinner.getItemAtPosition(0).toString());}
+                catch (Exception e){
+                    Log.d(mDBHelper.LOG_TAG, "Error : " + e.getMessage());
+                }
+                try {
+                    loadSpinnerSotrData();
+                    labelSotr = (TextView) findViewById(R.id.labelSotr);
+                    labelSotr.setText(spinnerSotr.getItemAtPosition(0).toString());}
+                catch (Exception e){
+                    Log.d(mDBHelper.LOG_TAG, "Error : " + e.getMessage());
+                }
+                messageUtils.showMessage(getApplicationContext(),"Вы выбрали: " + label);
+            }
+        }
+
         if(sp.getId() == R.id.opers_spinner) {
             if (position != 0) {
                 String label = parent.getItemAtPosition(position).toString();
@@ -392,31 +419,7 @@ public class SettingsActivity extends AppCompatActivity implements
                 }
             }
         }
-        if(sp.getId() == R.id.spinnerDivision) {
-            if (position != 0) {
-                String label = parent.getItemAtPosition(position).toString();
-//Выбрать _id Division и записать в Defs;
-                division_code = mDBHelper.getDivisionsCodeByName(label);
-                idd=ids=-1;
-                labelDivision2 = (TextView) findViewById(R.id.labelDivision2);
-                labelDivision2.setText(label);
-                try {
-                    loadSpinnerData();
-                    select_label = (TextView) findViewById(R.id.select_label);
-                    select_label.setText(spinner.getItemAtPosition(0).toString());}
-                    catch (Exception e){
-                    Log.d(mDBHelper.LOG_TAG, "Error : " + e.getMessage());
-                }
-                try {
-                    loadSpinnerSotrData();
-                    labelSotr = (TextView) findViewById(R.id.labelSotr);
-                    labelSotr.setText(spinnerSotr.getItemAtPosition(0).toString());}
-                catch (Exception e){
-                    Log.d(mDBHelper.LOG_TAG, "Error : " + e.getMessage());
-                }
-                messageUtils.showMessage(getApplicationContext(),"Вы выбрали: " + label);
-            }
-        }
+
         if(sp.getId() == R.id.spinner) {
             if (position != 0) {
                String mlabel = parent.getItemAtPosition(position).toString();
@@ -476,13 +479,14 @@ public class SettingsActivity extends AppCompatActivity implements
             }
         }
         MessageUtils messageUtils = new MessageUtils();
-        if (ido==0) {ido = mDBHelper.defs.get_Id_o();}
 
         if ((division_code == null)||(new String("0").equals(division_code))) {
             //division_code=mDBHelper.defs.getDivision_code();
             division_code="0";
-            idd = 0; ids = 0;
+            idd = 0; ids = 0; ido = 0;
         }else{
+            if (ido==0) ido = mDBHelper.defs.get_Id_o();
+            if (ido==-1) idd = 0;
             if (idd==0) idd = mDBHelper.defs.get_Id_d();
             if (idd==-1) idd = 0;
             if (ids==0) ids = mDBHelper.defs.get_Id_s();
@@ -509,24 +513,25 @@ public class SettingsActivity extends AppCompatActivity implements
         protected String doInBackground(String... urls) {
             counter = 0;
             try {
-                ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getSotr("01.01.2018 00:00:00").enqueue(new Callback<List<Sotr>>() {
+
+                ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getOperation("01.01.2018 00:00:00").enqueue(new Callback<List<Operation>>() {
                     // TODO Обработать результат. Записать поле sent... если успешно
                     @Override
-                    public void onResponse(Call<List<Sotr>> call, Response<List<Sotr>> response) {
-                        //Log.d("1", "Ответ сервера на запрос новых сотрудников: " + response.body());
+                    public void onResponse(Call<List<Operation>> call, Response<List<Operation>> response) {
+
                         if (response.isSuccessful()) {
-                            for (Sotr sotr : response.body())
-                                mDBHelper.insertSotr(sotr);
-                            if (response.body().size() != 0) {
-                            }
+                            for (Operation deps : response.body())
+                                mDBHelper.insertOpers(deps);
+                            if (response.body().size() != 0)
+                                Log.d("UpdateActivity", "Ок! Новые операции приняты!");
                         }
                         counter = counter + 5;
-                        publishProgress(1);
+                        publishProgress(3);
                     }
 
                     @Override
-                    public void onFailure(Call<List<Sotr>> call, Throwable t) {
-                        Log.d("UpdateActivity", "Ответ сервера на запрос новых сотрудников: " + t.getMessage());
+                    public void onFailure(Call<List<Operation>> call, Throwable t) {
+                        Log.d("UpdateActivity", "Ответ сервера на запрос новых операций: " + t.getMessage());
                     }
                 });
 
@@ -551,25 +556,24 @@ public class SettingsActivity extends AppCompatActivity implements
                     }
                 });
 
-                ArrayList<Operation> opersList = null;
-                ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getOperation("01.01.2018 00:00:00").enqueue(new Callback<List<Operation>>() {
+                ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getSotr("01.01.2018 00:00:00").enqueue(new Callback<List<Sotr>>() {
                     // TODO Обработать результат. Записать поле sent... если успешно
                     @Override
-                    public void onResponse(Call<List<Operation>> call, Response<List<Operation>> response) {
-
+                    public void onResponse(Call<List<Sotr>> call, Response<List<Sotr>> response) {
+                        //Log.d("1", "Ответ сервера на запрос новых сотрудников: " + response.body());
                         if (response.isSuccessful()) {
-                            for (Operation deps : response.body())
-                                mDBHelper.insertOpers(deps);
-                            if (response.body().size() != 0)
-                                Log.d("UpdateActivity", "Ок! Новые операции приняты!");
+                            for (Sotr sotr : response.body())
+                                mDBHelper.insertSotr(sotr);
+                            if (response.body().size() != 0) {
+                            }
                         }
                         counter = counter + 5;
-                        publishProgress(3);
+                        publishProgress(1);
                     }
 
                     @Override
-                    public void onFailure(Call<List<Operation>> call, Throwable t) {
-                        Log.d("UpdateActivity", "Ответ сервера на запрос новых операций: " + t.getMessage());
+                    public void onFailure(Call<List<Sotr>> call, Throwable t) {
+                        Log.d("UpdateActivity", "Ответ сервера на запрос новых сотрудников: " + t.getMessage());
                     }
                 });
 

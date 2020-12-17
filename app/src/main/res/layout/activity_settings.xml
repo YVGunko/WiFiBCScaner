@@ -14,8 +14,9 @@
         android:layout_marginTop="4dp"
         android:padding="8dip"
         android:text="Выбор подразделения. Сейчас выбрано:"
-        app:layout_constraintTop_toBottomOf="@+id/opers_spinner"
-        tools:layout_editor_absoluteX="0dp" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/check" />
 
     <TextView
         android:id="@+id/labelDivision2"
@@ -26,16 +27,18 @@
         android:textAppearance="@style/TextAppearance.AppCompat.Medium"
         android:textColor="@color/colorPrimary"
         android:textStyle="bold|italic"
-        app:layout_constraintTop_toBottomOf="@+id/labelDivision"
-        tools:layout_editor_absoluteX="0dp" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/labelDivision" />
 
     <Spinner
         android:id="@+id/spinnerDivision"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:prompt="@string/spDeps_title"
-        app:layout_constraintTop_toBottomOf="@+id/labelDivision2"
-        tools:layout_editor_absoluteX="0dp" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/labelDivision2" />
 
     <TextView
         android:id="@+id/labelSotrCh"
@@ -44,8 +47,9 @@
         android:layout_marginTop="4dp"
         android:padding="8dip"
         android:text="Выбор сотрудника. Сейчас выбран:"
-        app:layout_constraintTop_toBottomOf="@+id/spinner"
-        tools:layout_editor_absoluteX="0dp" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/spinner" />
 
     <TextView
         android:id="@+id/labelSotr"
@@ -56,16 +60,18 @@
         android:textAppearance="@style/TextAppearance.AppCompat.Medium"
         android:textColor="@color/colorPrimary"
         android:textStyle="bold|italic"
-        app:layout_constraintTop_toBottomOf="@+id/labelSotrCh"
-        tools:layout_editor_absoluteX="0dp" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/labelSotrCh" />
 
     <Spinner
         android:id="@+id/spinnerSotr"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:prompt="@string/spDeps_title"
-        app:layout_constraintTop_toBottomOf="@+id/labelSotr"
-        tools:layout_editor_absoluteX="0dp" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/labelSotr" />
 
     <TextView
         android:id="@+id/deps_label"
@@ -74,7 +80,9 @@
         android:layout_marginTop="4dp"
         android:padding="8dip"
         android:text="Выбор бригады. Сейчас выбрана:"
-        app:layout_constraintTop_toBottomOf="@+id/spinnerDivision" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/opers_spinner" />
 
     <TextView
         android:id="@+id/select_label"
@@ -85,6 +93,8 @@
         android:textAppearance="@style/TextAppearance.AppCompat.Medium"
         android:textColor="@color/colorPrimary"
         android:textStyle="bold|italic"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/deps_label" />
 
     <Spinner
@@ -92,8 +102,9 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:prompt="@string/spDeps_title"
-        app:layout_constraintTop_toBottomOf="@+id/select_label"
-        tools:layout_editor_absoluteX="8dp" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/select_label" />
 
     <TextView
         android:id="@+id/opers_label"
@@ -102,7 +113,9 @@
         android:layout_marginTop="4dp"
         android:padding="8dip"
         android:text="Выбор операции. Сейчас выбрана:"
-        app:layout_constraintTop_toBottomOf="@+id/check" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/spinnerDivision" />
 
     <TextView
         android:id="@+id/opers_select_label"
@@ -113,6 +126,8 @@
         android:textAppearance="@style/TextAppearance.AppCompat.Medium"
         android:textColor="@color/colorPrimary"
         android:textStyle="bold|italic"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/opers_label" />
 
     <Spinner
@@ -120,8 +135,9 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:prompt="@string/spDeps_title"
-        app:layout_constraintTop_toBottomOf="@+id/opers_select_label"
-        tools:layout_editor_absoluteX="8dp" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/opers_select_label" />
 
     <Button
         android:id="@+id/check"

@@ -42,8 +42,8 @@ import static java.lang.String.valueOf;
 
 public class DataBaseHelper extends SQLiteOpenHelper {
     private static String DB_PATH = "";
-    public static final int DB_VERSION = 19; //8
-    public static final String Prg_VERSION = "3.1.";
+    public static final int DB_VERSION = 20; //8
+    public static final String Prg_VERSION = "3.2.";
     private static String DB_NAME = "SQR.db";
     private static final String TABLE_MD = "MasterData";
     private static final String dtPattern = "dd.MM.yyyy HH:mm:ss";
@@ -585,6 +585,48 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                         "SELECT _id,Host_IP,Port,Id_d,Id_o,Id_s,idOperFirst,idOperLast,division_code,idUser,'0' FROM sqlitestudio_Defs_temp_table;");
                 db.execSQL("DROP TABLE sqlitestudio_Defs_temp_table; ");
 
+                db.setTransactionSuccessful();
+            }
+            finally {
+                db.endTransaction();
+                db.execSQL("PRAGMA foreign_keys = 1;");
+            }
+        if ((newVersion>oldVersion)&(newVersion == 20))
+            try {
+                db.execSQL("PRAGMA foreign_keys = 0;");
+                db.beginTransaction();
+                //Opers
+                db.execSQL("CREATE TABLE sqlitestudio_Opers_temp_table AS SELECT * FROM Opers;");
+                db.execSQL("DROP TABLE Opers;");
+                db.execSQL("CREATE TABLE Opers (" +
+                        "_id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                        "Opers TEXT," +
+                        "DT    INTEGER," +
+                        "division_code VARCHAR (255) REFERENCES Division (code) DEFAULT (0)" +
+                        ");");
+
+                db.execSQL("INSERT INTO Opers (_id,Opers,DT,division_code)"+
+                        "SELECT _id,Opers,DT,'0' FROM sqlitestudio_Opers_temp_table;");
+                db.execSQL("DROP TABLE sqlitestudio_Opers_temp_table; ");
+
+                db.execSQL("Update Opers set division_code='00-000025' where _id =3;");
+                db.execSQL("Update Opers set division_code='00-000002' where _id =2;");
+
+                //Deps
+                db.execSQL("CREATE TABLE sqlitestudio_temp_table AS SELECT * FROM Deps;");
+                db.execSQL("DROP TABLE Deps;");
+                db.execSQL("CREATE TABLE Deps (" +
+                        "_id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                        "Id_deps TEXT," +
+                        "Name_Deps TEXT," +
+                        "DT    INTEGER," +
+                        "division_code VARCHAR (255) REFERENCES Division (code) DEFAULT (0)," +
+                        "Id_o INTEGER NOT NULL DEFAULT (0) REFERENCES Opers (_id)" +
+                        ");");
+
+                db.execSQL("INSERT INTO Deps (_id,Id_deps,Name_Deps,DT,division_code,Id_o)"+
+                        "SELECT _id,Id_deps,Name_Deps,DT,'0',0 FROM sqlitestudio_temp_table;");
+                db.execSQL("DROP TABLE sqlitestudio_temp_table; ");
                 db.setTransactionSuccessful();
             }
             finally {
@@ -1295,7 +1337,8 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 values.put(Deps.COLUMN_Name_Deps, deps.get_Name_Deps());
                 values.put(Deps.COLUMN_DT, sDateTimeToLong(deps.get_DT()));
                 values.put(Deps.COLUMN_Division_code, deps.getDivision_code());
-                //l = mDataBase.insertOrThrow(deps.TABLE, null, values);
+                values.put(Deps.COLUMN_Id_o, deps.get_Id_o());
+
                 l = mDataBase.insertWithOnConflict(deps.TABLE, null, values, 5);
                 return l;
             } catch (SQLException e) {
@@ -1316,7 +1359,8 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 values.put(Operation.COLUMN_id, opers.get_id());
                 values.put(Operation.COLUMN_Opers, opers.get_Opers());
                 values.put(Operation.COLUMN_DT, sDateTimeToLong(opers.get_dt()));
-                //l = mDataBase.insertOrThrow(opers.TABLE, null, values);
+                values.put(Operation.COLUMN_Division, opers.getDivision_code());
+
                 l = mDataBase.insertWithOnConflict(opers.TABLE, null, values, 5);
                 return l;
             } catch (SQLException e) {
@@ -1884,12 +1928,13 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         mDataBase.close();
         return code;
     }
-    public List<String> getAllnameDeps(String code) {
+    public List<String> getAllnameDeps(String code, int iD) {
         ArrayList<String> nameDeps = new ArrayList<String>();
         mDataBase = this.getReadableDatabase();
 
-        Cursor cursor = mDataBase.rawQuery("SELECT _id,Id_deps,Name_Deps FROM Deps " +
-                "where (division_code=?)or(_id=0) Order by _id", new String [] {String.valueOf(code)});
+        Cursor cursor = mDataBase.rawQuery("SELECT _id,Id_deps,Name_Deps,division_code,Id_o FROM Deps " +
+                "where (((division_code=?)or(division_code=0)) AND ((Id_o=?)or(Id_o=0))) Order by _id", new String [] {String.valueOf(code), String.valueOf(iD)});
+        //TODO SQL
         if ((cursor != null) & (cursor.getCount() != 0)) {
             cursor.moveToFirst();
             //Закидываем в список строку с позицией 0
@@ -1899,6 +1944,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 readDep = new String(cursor.getString(2));
                 //Закидываем в список
                 nameDeps.add(readDep);
+                Log.d(LOG_TAG, "getAllnameDeps Name_Deps="+cursor.getString(2)+"division_code= " + cursor.getString(3)+", Id_o ="+ cursor.getString(4) );
                 //Переходим к следующеq
                 cursor.moveToNext();
             }
@@ -1931,10 +1977,12 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         mDataBase.close();
         return num;
     }
-    public List<String> getAllnameOpers() {
+    public List<String> getAllnameOpers(String division_code) {
         ArrayList<String> nameDeps = new ArrayList<String>();
         mDataBase = this.getReadableDatabase();
-        Cursor cursor = mDataBase.rawQuery("SELECT _id,Opers FROM Opers Order by _id", null);
+        Cursor cursor = mDataBase.rawQuery("SELECT _id,Opers FROM Opers"+
+                " Where (division_code=?)or(division_code=0) Order by _id", new String [] {String.valueOf(division_code)});
+
         if ((cursor != null) & (cursor.getCount() != 0)) {
             cursor.moveToFirst();
             //Закидываем в список строку с позицией 0
