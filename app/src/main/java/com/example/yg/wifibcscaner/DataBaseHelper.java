@@ -609,8 +609,11 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                         "SELECT _id,Opers,DT,'0' FROM sqlitestudio_Opers_temp_table;");
                 db.execSQL("DROP TABLE sqlitestudio_Opers_temp_table; ");
 
+                db.execSQL("Update Opers set division_code='0' where _id =1;");
+                db.execSQL("Update Opers set division_code='0' where _id =9999;");
                 db.execSQL("Update Opers set division_code='00-000025' where _id =3;");
                 db.execSQL("Update Opers set division_code='00-000002' where _id =2;");
+                db.execSQL("Update Opers set division_code='00-000002' where _id >3 and _id<9999;");
 
                 //Deps
                 db.execSQL("CREATE TABLE sqlitestudio_temp_table AS SELECT * FROM Deps;");

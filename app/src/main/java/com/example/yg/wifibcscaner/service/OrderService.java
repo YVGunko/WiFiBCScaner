@@ -5,8 +5,6 @@ package com.example.yg.wifibcscaner.service;
  */
 
 
-import android.arch.paging.PagedList;
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
