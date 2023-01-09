@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="options_db_need_replace">
+        <item>Вы уверены</item>
+        <item>на все 100%</item>
+        <item>бесповоротно</item>
+    </string-array>
+</resources>

@@ -32,4 +32,6 @@
     <string name="title_notifications">Notifications</string>
     <string name="run">Запустить...</string>
     <string name="action_version">О программе...</string>
+    <string name="action_db_need_replace">Очистить БД</string>
+    <string name="dialog_db_need_replace">Очистить базу данных? Восстановление невозможно!</string>
 </resources>

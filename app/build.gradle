@@ -2,13 +2,14 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 26
+    project.archivesBaseName = "SProject"
     defaultConfig {
         applicationId "com.example.yg.wifibcscaner"
         //noinspection ExpiredTargetSdkVersion
         minSdkVersion 17
         targetSdkVersion 26
-        versionCode 2
-        versionName '1.1'
+        versionCode 21
+        versionName '3.4'
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
     }

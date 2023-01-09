@@ -6,6 +6,7 @@ package com.example.yg.wifibcscaner;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.CursorIndexOutOfBoundsException;
 import android.database.SQLException;
@@ -33,6 +34,7 @@ import java.util.UUID;
 
 import android.os.Environment;
 import android.util.Log;
+import android.content.SharedPreferences;
 
 import java.time.LocalDate;
 import static java.time.temporal.TemporalAdjusters.firstDayOfYear;
@@ -42,8 +44,8 @@ import static java.lang.String.valueOf;
 
 public class DataBaseHelper extends SQLiteOpenHelper {
     private static String DB_PATH = "";
-    public static final int DB_VERSION = 20; //8
-    public static final String Prg_VERSION = "3.2.";
+    //public static final int DB_VERSION = 21; //8
+    //public static final String Prg_VERSION = "3.3.";
     private static String DB_NAME = "SQR.db";
     private static final String TABLE_MD = "MasterData";
     private static final String dtPattern = "dd.MM.yyyy HH:mm:ss";
@@ -60,9 +62,8 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
     private SQLiteDatabase mDataBase;
     private final Context mContext;
-    private boolean mNeedUpdate = false;
+    //private boolean mNeedUpdate = false;
     private static DataBaseHelper sInstance;
-    public String titleMain;
 
     public static long getDayTimeLong(Date date) {
         return org.apache.commons.lang3.time.DateUtils.truncate(date, Calendar.LONG_FORMAT).getTime();
@@ -169,11 +170,20 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         // don't accidentally leak an Activity's context.
         // See this article for more information: http://bit.ly/6LRzfx
         if (sInstance == null) {
-            sInstance = new DataBaseHelper(context.getApplicationContext());
+            sInstance = new DataBaseHelper(context.getApplicationContext(), BuildConfig.VERSION_CODE, false);
         }
         return sInstance;
     }
+    public static synchronized DataBaseHelper getInstance(Context context, final int DB_VERSION, final boolean dbNeedReplace) {
 
+        // Use the application context, which will ensure that you
+        // don't accidentally leak an Activity's context.
+        // See this article for more information: http://bit.ly/6LRzfx
+        if (sInstance == null) {
+            sInstance = new DataBaseHelper(context.getApplicationContext(), DB_VERSION, dbNeedReplace);
+        }
+        return sInstance;
+    }
     private static void tryCloseCursor(Cursor c) {
         if (c != null && !c.isClosed()) {
             c.close();
@@ -207,8 +217,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
         }
     }
-
-    private DataBaseHelper(Context context) {
+    private DataBaseHelper(Context context, final int DB_VERSION, boolean mNeedUpdate) {
         super(context, DB_NAME, null, DB_VERSION);
 
         if (android.os.Build.VERSION.SDK_INT >= 17)
@@ -221,7 +230,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             mNeedUpdate = true;
         }
         try {
-            this.updateDataBase();
+            this.updateDataBase(mNeedUpdate);
         } catch (IOException mIOException) {
             throw new Error("UnableToUpdateDatabase");
         }
@@ -239,7 +248,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
     }
 
-    public void updateDataBase() throws IOException {
+    public void updateDataBase(boolean mNeedUpdate) throws IOException {
         if (mNeedUpdate) {
             File dbFile = new File(DB_PATH + DB_NAME);
             if (dbFile.exists())
@@ -247,7 +256,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
             copyDataBase();
 
-            mNeedUpdate = false;
+            //mNeedUpdate = false;
         }
     }
 
@@ -280,11 +289,6 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         mOutput.close();
         mInput.close();
     }
-
-    /*public boolean openDataBase() throws SQLException {
-        mDataBase = SQLiteDatabase.openDatabase(DB_PATH + DB_NAME, null, SQLiteDatabase.CREATE_IF_NECESSARY);
-        return mDataBase != null;
-    }*/
 
     @Override
     public synchronized void close() {
@@ -2112,6 +2116,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         ArrayList<String> nameDeps = new ArrayList<String>();
         mDataBase = this.getReadableDatabase();
         Cursor cursor = mDataBase.rawQuery("SELECT _id,tn_Sotr,Sotr FROM Sotr " +
+                //"Where ((division_code=?) and (Id_o=?) and (Id_d=?)) Order by _id",
                 "Where ((division_code=?) and (Id_o=?) and (Id_d=?))or(_id=0) Order by _id",
                 new String [] {String.valueOf(code), String.valueOf(operation_id), String.valueOf(department_id)});
         if ((cursor != null) & (cursor.getCount() != 0)) {

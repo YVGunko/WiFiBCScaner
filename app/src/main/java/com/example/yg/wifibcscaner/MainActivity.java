@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.hardware.usb.UsbDevice;
@@ -57,6 +58,8 @@ import static com.google.zxing.integration.android.IntentIntegrator.REQUEST_CODE
 
 public class MainActivity extends AppCompatActivity implements BarcodeReader.BarcodeListener {
 private static BarcodeReader barcodeReader;
+//private static final int DB_VERSION = 21; //8
+private static boolean dbNeedReplace = false; //8
 //SqlScoutServer sqlScoutServer;
 private AidcManager manager;
 private Button btnAutomaticBarcode;
@@ -160,14 +163,10 @@ IntentFilter filterAttached_and_Detached = null;
     public void onCreate(Bundle state) {
         super.onCreate(state);
 
+        if (!checkFirstRun()) mDBHelper = DataBaseHelper.getInstance(this);
+
         setContentView(R.layout.activity_main);
-
-        //android.support.v7.app.ActionBar actionBar = getSupportActionBar();
-        //actionBar.setTitle("ActionBar Title");
-        //actionBar.setSubtitle(Html.fromHtml("<font color='#FFBF00'>Here ActionBar Subtitle</font>"));
-
         setRequestedOrientation (ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-        mDBHelper = DataBaseHelper.getInstance(this);
         tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
         currentDocDetails  = (TextView) findViewById(R.id.currentDocDetails);
         currentUser  = (TextView) findViewById(R.id.currentUser);
@@ -196,18 +195,6 @@ IntentFilter filterAttached_and_Detached = null;
                         Log.d("honeywellscanner: ", "barcodereader not claimed in OnCreate()");
                         barcodeReader.claim();
                     }
-                    // apply settings
-                    /*
-                    barcodeReader.setProperty(BarcodeReader.PROPERTY_CODE_39_ENABLED, false);
-                    barcodeReader.setProperty(BarcodeReader.PROPERTY_DATAMATRIX_ENABLED, true);
-
-                    // set the trigger mode to automatic control
-                    barcodeReader.setProperty(BarcodeReader.PROPERTY_TRIGGER_CONTROL_MODE,
-                            BarcodeReader.TRIGGER_CONTROL_MODE_AUTO_CONTROL);
-                } catch (UnsupportedPropertyException e) {
-                    Toast.makeText(MainActivity.this, "Failed to apply properties",
-                            Toast.LENGTH_SHORT).show();
-                    */
                 }
                 catch (ScannerUnavailableException e) {
                     showMessage("Невозможно включить встроенный сканер.");
@@ -219,6 +206,29 @@ IntentFilter filterAttached_and_Detached = null;
         });
 
     }
+
+    private boolean checkFirstRun() {
+        // Get current version code
+        int currentVersionCode = BuildConfig.VERSION_CODE;
+
+        // Get saved version code
+        SharedPreferences prefs = getSharedPreferences(SharedPrefs.PREFS_NAME, MODE_PRIVATE);
+        int savedVersionCode = prefs.getInt(SharedPrefs.PREF_VERSION_CODE_KEY, SharedPrefs.DOESNT_EXIST);
+        boolean savedDbNeedReplace = prefs.getBoolean(SharedPrefs.PREF_DB_NEED_REPLACE, SharedPrefs.DOESNT_EXIST==-1);
+
+        // Check for first run or upgrade
+        if (!savedDbNeedReplace & currentVersionCode == savedVersionCode) {
+            // This is just a normal run
+            return false;
+
+        } else {
+            mDBHelper = DataBaseHelper.getInstance(this, currentVersionCode, true);
+            prefs.edit().putInt(SharedPrefs.PREF_VERSION_CODE_KEY, currentVersionCode).apply();
+            prefs.edit().putBoolean(SharedPrefs.PREF_DB_NEED_REPLACE, !savedDbNeedReplace).apply();
+            return true;
+        }
+    }
+
     @Override
     public void onStop(){
         super.onStop();
@@ -385,11 +395,38 @@ IntentFilter filterAttached_and_Detached = null;
             case R.id.action_update:
                 startActivity(new Intent(this,UpdateActivity.class));
                 return true;
+            case R.id.action_db_need_replace:
+                try {
+                    openDbReplaceDialog();
+                } catch (Exception e) {
+                    Log.d(mDBHelper.LOG_TAG, "Запрос на очистку БД: " + e.getMessage());
+                }
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
+    private void openDbReplaceDialog() {
+        AlertDialog.Builder quitDialog = new AlertDialog.Builder(
+                MainActivity.this);
+        final boolean curState = SharedPrefs.getDefaults(SharedPrefs.PREF_DB_NEED_REPLACE, MainActivity.this);
+        quitDialog.setTitle("Очистить базу данных: Вы уверены? CurState ".concat(String.valueOf(curState)));
 
+        quitDialog.setPositiveButton("Да!", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                SharedPrefs.setDefaults(SharedPrefs.PREF_DB_NEED_REPLACE, true, MainActivity.this);
+            }
+        });
+
+        quitDialog.setNegativeButton("Нет.", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                // TODO Auto-generated method stub
+            }
+        });
+        quitDialog.show();
+    }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);

@@ -1,8 +1,19 @@
 package com.example.yg.wifibcscaner;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
 import android.os.AsyncTask;
+import android.support.v4.content.IntentCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -23,6 +34,7 @@ import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.service.PartBoxService;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import retrofit2.Call;
@@ -35,7 +47,6 @@ public class SettingsActivity extends AppCompatActivity implements
     private PartBoxService boxesService;
     EditText host_v;
     TextView select_label, opers_select_label, labelSotr, labelDivision2;
-    //Button bCopyBD;
     private DataBaseHelper mDBHelper;
     private int idd,ido,ids, idUser;
     private String division_code ;
@@ -69,14 +80,13 @@ public class SettingsActivity extends AppCompatActivity implements
             devId = "unKnown";
         }
 
-        strTitle = "Настройки"+". v."+mDBHelper.Prg_VERSION+mDBHelper.DB_VERSION+". Id."+ devId;
+        strTitle = "Настройки"+". v."+BuildConfig.VERSION_NAME+"."+BuildConfig.VERSION_CODE+". Id."+ devId;
 
         final Animation animation = new AlphaAnimation(1, 0); // Change alpha from fully visible to invisible
         animation.setDuration(500); // duration - half a second
         animation.setInterpolator(new LinearInterpolator()); // do not alter animation rate
         animation.setRepeatCount(Animation.INFINITE); // Repeat animation infinitely
         animation.setRepeatMode(Animation.REVERSE); // Reverse animation at the end so the button will fade back in
-        //bCopyBD = (Button) findViewById(R.id.bCopyBD);
 
         // Spinner element
         opers_spinner = (Spinner) findViewById(R.id.opers_spinner);
@@ -95,9 +105,9 @@ public class SettingsActivity extends AppCompatActivity implements
 
         mDBHelper.selectDefsTable();
         try {
-            String url = DataBaseHelper.getInstance(this).defs.getUrl();
+            String url = mDBHelper.defs.getUrl();
             boxesService = ApiUtils.getBoxesService(url);
-            host_v.setText(DataBaseHelper.getInstance(this).defs.get_Host_IP());
+            host_v.setText(mDBHelper.defs.get_Host_IP());
             ocl_check(findViewById(R.id.check));
         }
         catch(Exception e){
@@ -154,7 +164,7 @@ public class SettingsActivity extends AppCompatActivity implements
                         }
                     });
 
-                    ApiUtils.getOrderService(DataBaseHelper.getInstance(this).defs.getUrl()).getOperation("01.01.2018 00:00:00").enqueue(new Callback<List<Operation>>() {
+                    ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getOperation("01.01.2018 00:00:00").enqueue(new Callback<List<Operation>>() {
                         // TODO Обработать результат. Записать поле sent... если успешно
                         @Override
                         public void onResponse(Call<List<Operation>> call, Response<List<Operation>> response) {
@@ -180,7 +190,7 @@ public class SettingsActivity extends AppCompatActivity implements
                         }
                     });
 
-                    ApiUtils.getOrderService(DataBaseHelper.getInstance(this).defs.getUrl()).getSotr("01.01.2018 00:00:00").enqueue(new Callback<List<Sotr>>() {
+                    ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getSotr("01.01.2018 00:00:00").enqueue(new Callback<List<Sotr>>() {
                         // TODO Обработать результат. Записать поле sent... если успешно
                         @Override
                         public void onResponse(Call<List<Sotr>> call, Response<List<Sotr>> response) {
@@ -207,7 +217,7 @@ public class SettingsActivity extends AppCompatActivity implements
                     });
 
 
-                    ApiUtils.getOrderService(DataBaseHelper.getInstance(this).defs.getUrl()).getDeps("01.01.2018 00:00:00").enqueue(new Callback<List<Deps>>() {
+                    ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getDeps("01.01.2018 00:00:00").enqueue(new Callback<List<Deps>>() {
                         // TODO Обработать результат. Записать поле sent... если успешно
                         @Override
                         public void onResponse(Call<List<Deps>> call, Response<List<Deps>> response) {
@@ -253,12 +263,78 @@ public class SettingsActivity extends AppCompatActivity implements
                 }
                 return true;
 
+            case R.id.action_db_need_replace:
+                try {
+                    openDbReplaceDialog();
+                } catch (Exception e) {
+
+                    Log.d(mDBHelper.LOG_TAG, "Запрос на очистку БД: " + e.getMessage());
+                }
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
 
     }
+    private void resetApplication() {
+        Intent i = getBaseContext().getPackageManager().getLaunchIntentForPackage(
+                getBaseContext().getPackageName() );
+        i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        startActivity(i);
+        finish();
+    }
+    private static void triggerRebirth(Context context) {
+        PackageManager packageManager = context.getPackageManager();
+        Intent intent = packageManager.getLaunchIntentForPackage(context.getPackageName());
+        ComponentName componentName = intent.getComponent();
+        Intent mainIntent = Intent.makeRestartActivityTask(componentName);
+        context.startActivity(mainIntent);
+        Runtime.getRuntime().exit(0);
+    }
+    private void openDbReplaceDialog() {
+        List<Integer> selectedItems = new ArrayList();
+        AlertDialog.Builder quitDialog = new AlertDialog.Builder(
+                SettingsActivity.this);
+        quitDialog.setTitle(R.string.dialog_db_need_replace)
+            .setMultiChoiceItems(R.array.options_db_need_replace,null,
+                    new DialogInterface.OnMultiChoiceClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which,
+                                            boolean isChecked) {
+                            if (isChecked) {
+                                // If the user checked the item, add it to the selected items
+                                selectedItems.add(which);
+                            } else if (selectedItems.contains(which)) {
+                                // Else, if the item is already in the array, remove it
+                                selectedItems.remove(which);
+                            }
+                        }
+                    });
 
+        quitDialog.setPositiveButton("Да!", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                int length =getResources().getStringArray(R.array.options_db_need_replace).length;
+                if (selectedItems.size() == length) {
+                    SharedPreferences prefs = getSharedPreferences(SharedPrefs.PREFS_NAME, MODE_PRIVATE);
+                    prefs.edit().putBoolean(SharedPrefs.PREF_DB_NEED_REPLACE, true).apply();
+                    triggerRebirth(SettingsActivity.this);
+                } else
+                {
+                    MessageUtils messageUtils = new MessageUtils();
+                    messageUtils.showLongMessage(getApplicationContext(),"Операция не выполнена!");
+                }
+            }
+        });
+
+        quitDialog.setNegativeButton("Нет.", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+        quitDialog.show();
+    }
     public void ocl_check(View v) { //Вызов активности проверки подключения к серверу
         MessageUtils messageUtils = new MessageUtils();
         messageUtils.showLongMessage(getApplicationContext(),"Connecting please wait....");
@@ -266,7 +342,7 @@ public class SettingsActivity extends AppCompatActivity implements
     }
 
     public void checkConnection() {
-            String url = DataBaseHelper.getInstance(this).defs.getUrl();
+            String url = mDBHelper.defs.getUrl();
             boxesService = ApiUtils.getBoxesService(url);
             boxesService.checkConnection().enqueue(new Callback<Object>() {
 
@@ -452,6 +528,27 @@ public class SettingsActivity extends AppCompatActivity implements
                     //mDBHelper.defs.descSotr = slabel;
                 }else{
                     messageUtils.showMessage(getApplicationContext(),"Ошибка при поиске ID выбранного сотрудника!");
+                }
+            } else {
+                if (idd != 0) {
+                    position = 1;
+                    try {
+                        String slabel = parent.getItemAtPosition(position).toString();
+                        //Выбрать _id Sotr и записать в Defs;
+                        ids = mDBHelper.getSotr_id_by_Name(slabel);
+                        if (ids != 0) {
+                            labelSotr = (TextView) findViewById(R.id.labelSotr);
+                            labelSotr.setText(slabel);
+                            // Showing selected spinner item
+                            messageUtils.showMessage(getApplicationContext(),"Вы выбрали: " + slabel);
+                            //mDBHelper.defs.descSotr = slabel;
+                        }else{
+                            messageUtils.showMessage(getApplicationContext(),"Ошибка при поиске ID выбранного сотрудника!");
+                        }
+                    }
+                    catch (Exception e){
+                        Log.d(mDBHelper.LOG_TAG, "Error : " + e.getMessage());
+                    }
                 }
             }
         }
