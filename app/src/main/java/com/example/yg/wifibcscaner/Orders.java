@@ -19,6 +19,9 @@ public class Orders {
     private String _DT;
     private Boolean archive;
 
+    public Orders() {
+    }
+
     public String getDivision_code() {
         return division_code;
     }

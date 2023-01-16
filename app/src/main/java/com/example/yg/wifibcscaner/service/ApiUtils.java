@@ -13,12 +13,5 @@ public class ApiUtils {
         return RetrofitClient.getClient(baseUrl).create(OrderService.class);
     }
 
-    public static OutDocService getOutDocService(String baseUrl) {
-        return RetrofitClient.getClient(baseUrl).create(OutDocService.class);
-    }
-
-    public static OrderService getBoxService(String baseUrl) {
-        return RetrofitClient.getClient(baseUrl).create(OrderService.class);
-    }
 }
 

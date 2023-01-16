@@ -640,6 +640,23 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 db.endTransaction();
                 db.execSQL("PRAGMA foreign_keys = 1;");
             }
+        if ((newVersion>oldVersion)&(newVersion == 22))
+            try {
+                db.execSQL("PRAGMA foreign_keys = 0;");
+                db.beginTransaction();
+
+                //orderNotFound
+                db.execSQL("DROP TABLE IF EXISTS orderNotFound;");
+                db.execSQL("CREATE TABLE orderNotFound (" +
+                        "orderId TEXT PRIMARY KEY" +
+                        ");");
+
+                db.setTransactionSuccessful();
+            }
+            finally {
+                db.endTransaction();
+                db.execSQL("PRAGMA foreign_keys = 1;");
+            }
     }
 
     //list all boxes
@@ -1133,12 +1150,22 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         SimpleDateFormat sdf = new SimpleDateFormat(dtPattern);
         return sdf.format(d);
     }
+    // version 3.5
+    public foundorder loadOrder(String storedbarcode) {
+        //TODO load
+        foundorder fo = new foundorder();
+        return fo;
+    }
+    // version 3.5.22
+    public void saveOrderNotFound(String storedbarcode) {
+    //TODO save
+    }
+
     public foundorder searchOrder(String storedbarcode) {
         foundorder fo = new foundorder();
         fo._id = 0;
         String Order_Id = getOrder_id(storedbarcode);  // по dot
-        boolean b = (Order_Id != "");
-        if (b) {
+        if (!Order_Id.equals("")) {
             SQLiteDatabase db = getReadableDatabase();
             String query = "SELECT _id,Ord_id,Ord,Cust,Nomen,Attrib,Q_ord,Q_box,N_box,DT,archive FROM " + TABLE_MD + " WHERE Ord_id = '" + Order_Id + "'";
             Cursor c = db.rawQuery(query, null);
@@ -1162,7 +1189,6 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         }
         return fo;
     }
-
     public foundbox searchBox(int Order_id, String storedbarcode) {
         long Id_b = -1;
         Cursor c = null;

@@ -13,6 +13,7 @@ import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
+import retrofit2.http.Path;
 import retrofit2.http.Query;
 import rx.Observable;
 
@@ -28,6 +29,9 @@ import com.example.yg.wifibcscaner.Sotr;
 import com.example.yg.wifibcscaner.user;
 
 public interface OrderService {
+
+    @GET("/order/{id}")
+    Call<OrderWithOutDocWithBoxWithMovesWithPartsResponce> getOrder(@Path("id") String orderId);
 
     @GET("/order")
     Call<List<Orders>> getOrders(@Query("date") String date, @Query("userId") int userId, @Query("deviceId") String deviceId);

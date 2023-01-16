@@ -14,6 +14,7 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -35,6 +36,9 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.yg.wifibcscaner.service.ApiUtils;
+import com.example.yg.wifibcscaner.service.MessageUtils;
+import com.example.yg.wifibcscaner.service.OrderWithOutDocWithBoxWithMovesWithPartsResponce;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 import com.honeywell.aidc.AidcManager;
@@ -49,8 +53,12 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
 import me.drakeet.support.toast.ToastCompat;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 import static android.text.TextUtils.substring;
 import static com.google.zxing.integration.android.IntentIntegrator.REQUEST_CODE;
@@ -508,7 +516,21 @@ private static String filter (String str){
                     showLongMessage("Эта коробка уже в архиве! Никакие операции невозможны!");
                 }
             } else {
-                showLongMessage("Заказ для этой коробки не загружен! Нужно синхронизировать данные.");
+                showLongMessage("Заказ для этой коробки не загружен! Будет загружен автоматически при подключении к WiFi.");
+                //TODO 1. make request to server to load the order if not save the order and load it later
+                saveOrderNotFoundAsync save = new saveOrderNotFoundAsync();
+                String response = null;
+                try {
+                    response = save.execute(new String[]{currentbarcode}).get();
+                    Toast.makeText(getApplicationContext(), "response = " + response, Toast.LENGTH_LONG).show();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                }
+
+                loadOrderAsync task = new loadOrderAsync();
+                task.execute(new String[]{currentbarcode});
             }
         } else {
             showLongMessage("Этот заказ уже в архиве! Никакие операции невозможны!");
@@ -588,7 +610,6 @@ private static String filter (String str){
 
     @Override
     protected void onStart() {
-        // TODO Auto-generated method stub
         super.onStart();
 
         if (mDBHelper.defs.getDeviceId().isEmpty() || mDBHelper.defs.getDeviceId() == null || mDBHelper.defs.getDeviceId().contentEquals("0")) {
@@ -627,7 +648,6 @@ private static String filter (String str){
         } catch (ScannerUnavailableException e) {
             e.printStackTrace();
         }
-        // TODO Auto-generated method stub
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -644,7 +664,6 @@ private static String filter (String str){
 
     @Override
     public void onFailureEvent(BarcodeFailureEvent arg0) {
-        // TODO Auto-generated method stub
         try {
             barcodeReader.softwareTrigger(false);
         } catch (ScannerNotClaimedException e) {
@@ -656,7 +675,6 @@ private static String filter (String str){
 
     @Override
     protected void onDestroy() {
-        // TODO Auto-generated method stub
         super.onDestroy();
         unregisterReceiver(barcodeDataReceiver);
 
@@ -717,7 +735,6 @@ private static String filter (String str){
         quitDialog.setPositiveButton("Да!", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                // TODO Auto-generated method stub
                 finish();
             }
         });
@@ -738,7 +755,6 @@ private static String filter (String str){
         quitDialog.setPositiveButton("Да!", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                // TODO Auto-generated method stub
                 Button bScan = (Button) findViewById(R.id.bScan);
                 bScan.setText("Scan!");
                 editTextRQ = (EditText) findViewById(R.id.editTextRQ);
@@ -749,10 +765,67 @@ private static String filter (String str){
         quitDialog.setNegativeButton("Нет.", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                // TODO Auto-generated method stub
                 editTextRQ.requestFocus();
             }
         });
         quitDialog.show();
+    }
+    // version 3.5.22
+    private class loadOrderAsync extends AsyncTask<String, Integer, String> {
+
+        @Override
+        protected String doInBackground(String... strings) {
+            try {
+                //Запросить с сервера время
+                ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getOrder(strings[0]).enqueue(new Callback<OrderWithOutDocWithBoxWithMovesWithPartsResponce>() {
+                    // TODO Обработать результат. Записать поле sent... если успешно
+                    @Override
+                    public void onResponse(Call<OrderWithOutDocWithBoxWithMovesWithPartsResponce> call,
+                                           Response<OrderWithOutDocWithBoxWithMovesWithPartsResponce> response) {
+                        Log.d("serverUpdateTime", "serverUpdateTime: " + response.body());
+                        if (response.isSuccessful()) {
+                            //save order, boxes, boxMoves, partBox
+                            //delete from orderNotFound
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<OrderWithOutDocWithBoxWithMovesWithPartsResponce> call, Throwable t) {
+                        Log.d("serverUpdateTime", "Ошибка при запросе времени обновления с сервера: " + t.getMessage());
+                    }
+                });
+            } catch (Exception e) {
+                Log.d("serverUpdateTime", "Ошибка при запросе времени обновления с сервера : " + e.getMessage());
+                return null;
+            }
+            return null;
+        }
+        @Override
+        protected void onProgressUpdate(Integer... values) {
+            super.onProgressUpdate(values);
+            MessageUtils messageUtils = new MessageUtils();
+            messageUtils.showMessage(getApplicationContext(), "Заказ загружен "+values[0]);
+        }
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+            MessageUtils messageUtils = new MessageUtils();
+            messageUtils.showMessage(getApplicationContext(), "Заказ загружен "+result);
+        }
+    }
+    // version 3.5.22
+    private class saveOrderNotFoundAsync extends AsyncTask<String, Integer, String> {
+
+        @Override
+        protected String doInBackground(String... strings) {
+            try {
+                mDBHelper.saveOrderNotFound(strings[0]);
+            } catch (Exception e) {
+                Log.d("saveOrderNotFoundAsync", "save exception : " + e.getMessage());
+                return "Ошибка при записи";
+            }
+
+            return "Записано успешно";
+        }
     }
 }
