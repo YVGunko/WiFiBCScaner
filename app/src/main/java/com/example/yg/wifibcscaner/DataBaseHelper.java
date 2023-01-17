@@ -1158,7 +1158,22 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     }
     // version 3.5.22
     public void saveOrderNotFound(String storedbarcode) {
-    //TODO save
+        try {
+            try {
+                mDataBase = this.getWritableDatabase();
+                ContentValues values = new ContentValues();
+                values.clear();
+                values.put("orderId", storedbarcode);
+
+                long l = mDataBase.insertWithOnConflict(OrderNotFound.TABLE, null, values, 5);
+                Log.i(LOG_TAG, "saveOrderNotFound. New record added: "+String.valueOf(l));
+            } catch (SQLException e) {
+                // TODO: handle exception
+                Log.e(LOG_TAG, "saveOrderNotFound. save record error: ", e);
+            }
+        }finally {
+            mDataBase.close();
+        }
     }
 
     public foundorder searchOrder(String storedbarcode) {
@@ -1557,6 +1572,21 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             try {
                 mDataBase = this.getWritableDatabase();
                 b = (mDataBase.delete(TABLE, COLUMN+"='"+Value+"' and sentToMasterDate is null",null) > 0) ;
+            } catch (SQLiteException e) {
+                // TODO: handle exception
+                return false;
+            }
+        }finally {
+            mDataBase.close();
+            return b;
+        }
+    }
+    public boolean deleteFromTable(final String TABLE, final String COLUMN, String[] Value){
+        boolean b = false;
+        try {
+            try {
+                mDataBase = this.getWritableDatabase();
+                b = (mDataBase.delete(TABLE, COLUMN, Value) > 0) ;
             } catch (SQLiteException e) {
                 // TODO: handle exception
                 return false;

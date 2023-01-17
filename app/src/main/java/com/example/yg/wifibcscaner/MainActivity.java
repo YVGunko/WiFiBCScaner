@@ -782,20 +782,31 @@ private static String filter (String str){
                     @Override
                     public void onResponse(Call<OrderWithOutDocWithBoxWithMovesWithPartsResponce> call,
                                            Response<OrderWithOutDocWithBoxWithMovesWithPartsResponce> response) {
-                        Log.d("serverUpdateTime", "serverUpdateTime: " + response.body());
+                        Log.d("loadOrderAsync", "onResponce: " + response.body());
                         if (response.isSuccessful()) {
                             //save order, boxes, boxMoves, partBox
+                            if (response.body().getOrder() != null)
+                                mDBHelper.insertOrders(response.body().getOrder());
+                            for (OutDocs od : response.body().getOutDocsList())
+                                mDBHelper.insertOrUpdateOutDocs(od);
+                            for (Boxes boxes : response.body().getBoxReqList())
+                                mDBHelper.insertBoxes(boxes);
+                            for (BoxMoves bm : response.body().getMovesReqList())
+                                mDBHelper.insertBoxMoves(bm);
+                            for (Prods pb : response.body().getPartBoxReqList())
+                                mDBHelper.insertProds(pb);
                             //delete from orderNotFound
+                            mDBHelper.deleteFromTable(OrderNotFound.TABLE,"orderId", strings);
                         }
                     }
 
                     @Override
                     public void onFailure(Call<OrderWithOutDocWithBoxWithMovesWithPartsResponce> call, Throwable t) {
-                        Log.d("serverUpdateTime", "Ошибка при запросе времени обновления с сервера: " + t.getMessage());
+                        Log.w("loadOrderAsync", "Request failed: " + t.getMessage());
                     }
                 });
             } catch (Exception e) {
-                Log.d("serverUpdateTime", "Ошибка при запросе времени обновления с сервера : " + e.getMessage());
+                Log.e("loadOrderAsync", "Exception : " + e.getMessage());
                 return null;
             }
             return null;

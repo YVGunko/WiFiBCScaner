@@ -11,10 +11,10 @@ import java.util.List;
 
 public class OrderWithOutDocWithBoxWithMovesWithPartsResponce {
     private Orders order = new Orders();
-    public List<OutDocs> outDocsList = new ArrayList<>();
-    public List<Boxes> boxReqList = new ArrayList<>();
-    public List<BoxMoves> movesReqList = new ArrayList<>();
-    public List<Prods> partBoxReqList = new ArrayList<>();
+    private List<OutDocs> outDocsList = new ArrayList<>();
+    private List<Boxes> boxReqList = new ArrayList<>();
+    private List<BoxMoves> movesReqList = new ArrayList<>();
+    private List<Prods> partBoxReqList = new ArrayList<>();
 
     public OrderWithOutDocWithBoxWithMovesWithPartsResponce(Orders order,
                                                             List<OutDocs> outDocsList,
@@ -26,5 +26,25 @@ public class OrderWithOutDocWithBoxWithMovesWithPartsResponce {
         this.boxReqList = boxReqList;
         this.movesReqList = movesReqList;
         this.partBoxReqList = partBoxReqList;
+    }
+
+    public Orders getOrder() {
+        return order;
+    }
+
+    public List<OutDocs> getOutDocsList() {
+        return outDocsList;
+    }
+
+    public List<Boxes> getBoxReqList() {
+        return boxReqList;
+    }
+
+    public List<BoxMoves> getMovesReqList() {
+        return movesReqList;
+    }
+
+    public List<Prods> getPartBoxReqList() {
+        return partBoxReqList;
     }
 }
