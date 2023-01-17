@@ -521,7 +521,7 @@ private static String filter (String str){
                 saveOrderNotFoundAsync save = new saveOrderNotFoundAsync();
                 String response = null;
                 try {
-                    response = save.execute(new String[]{currentbarcode}).get();
+                    response = save.execute(new String[]{mDBHelper.getOrder_id(currentbarcode)}).get();
                     Toast.makeText(getApplicationContext(), "response = " + response, Toast.LENGTH_LONG).show();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -530,7 +530,7 @@ private static String filter (String str){
                 }
 
                 loadOrderAsync task = new loadOrderAsync();
-                task.execute(new String[]{currentbarcode});
+                task.execute(new String[]{mDBHelper.getOrder_id(currentbarcode)});
             }
         } else {
             showLongMessage("Этот заказ уже в архиве! Никакие операции невозможны!");
@@ -785,18 +785,21 @@ private static String filter (String str){
                         Log.d("loadOrderAsync", "onResponce: " + response.body());
                         if (response.isSuccessful()) {
                             //save order, boxes, boxMoves, partBox
-                            if (response.body().getOrder() != null)
+                            if (response.body().getOrder() != null) {
                                 mDBHelper.insertOrders(response.body().getOrder());
-                            for (OutDocs od : response.body().getOutDocsList())
-                                mDBHelper.insertOrUpdateOutDocs(od);
-                            for (Boxes boxes : response.body().getBoxReqList())
-                                mDBHelper.insertBoxes(boxes);
-                            for (BoxMoves bm : response.body().getMovesReqList())
-                                mDBHelper.insertBoxMoves(bm);
-                            for (Prods pb : response.body().getPartBoxReqList())
-                                mDBHelper.insertProds(pb);
-                            //delete from orderNotFound
-                            mDBHelper.deleteFromTable(OrderNotFound.TABLE,"orderId", strings);
+                                for (OutDocs od : response.body().getOutDocReqList())
+                                    mDBHelper.insertOrUpdateOutDocs(od);
+                                for (Boxes boxes : response.body().getBoxReqList())
+                                    mDBHelper.insertBoxes(boxes);
+                                for (BoxMoves bm : response.body().getMovesReqList())
+                                    mDBHelper.insertBoxMoves(bm);
+                                for (Prods pb : response.body().getPartBoxReqList())
+                                    mDBHelper.insertProds(pb);
+                                Log.i("loadOrderAsync", "save ");
+                                //delete from orderNotFound
+                                if (mDBHelper.deleteFromOrderNotFound(strings[0]))
+                                    Log.i("loadOrderAsync", "deleted: "+strings[0]);
+                            }
                         }
                     }
 

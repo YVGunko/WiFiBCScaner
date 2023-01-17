@@ -1611,6 +1611,21 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             return b;
         }
     }
+    public boolean deleteFromOrderNotFound(String orderId){
+        boolean b = false;
+        try {
+            try {
+                mDataBase = this.getWritableDatabase();
+                b = (mDataBase.delete(OrderNotFound.TABLE, "orderId='"+orderId+"'",null) > 0) ;
+            } catch (SQLiteException e) {
+                // TODO: handle exception
+                return false;
+            }
+        }finally {
+            mDataBase.close();
+            return b;
+        }
+    }
     public boolean updateBoxesSetArchiveTrue(String bId) {
         boolean b = false;
         try {

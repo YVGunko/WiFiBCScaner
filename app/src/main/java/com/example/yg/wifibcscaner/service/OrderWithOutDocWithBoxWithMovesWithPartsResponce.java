@@ -10,30 +10,30 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class OrderWithOutDocWithBoxWithMovesWithPartsResponce {
-    private Orders order = new Orders();
-    private List<OutDocs> outDocsList = new ArrayList<>();
+    private Orders orderReq = new Orders();
+    private List<OutDocs> outDocReqList = new ArrayList<>();
     private List<Boxes> boxReqList = new ArrayList<>();
     private List<BoxMoves> movesReqList = new ArrayList<>();
     private List<Prods> partBoxReqList = new ArrayList<>();
 
-    public OrderWithOutDocWithBoxWithMovesWithPartsResponce(Orders order,
-                                                            List<OutDocs> outDocsList,
+    public OrderWithOutDocWithBoxWithMovesWithPartsResponce(Orders orderReq,
+                                                            List<OutDocs> outDocReqList,
                                                             List<Boxes> boxReqList,
                                                             List<BoxMoves> movesReqList,
                                                             List<Prods> partBoxReqList) {
-        this.order = order;
-        this.outDocsList = outDocsList;
+        this.orderReq = orderReq;
+        this.outDocReqList = outDocReqList;
         this.boxReqList = boxReqList;
         this.movesReqList = movesReqList;
         this.partBoxReqList = partBoxReqList;
     }
 
     public Orders getOrder() {
-        return order;
+        return orderReq;
     }
 
-    public List<OutDocs> getOutDocsList() {
-        return outDocsList;
+    public List<OutDocs> getOutDocReqList() {
+        return outDocReqList;
     }
 
     public List<Boxes> getBoxReqList() {
