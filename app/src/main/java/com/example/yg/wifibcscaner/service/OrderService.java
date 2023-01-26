@@ -32,6 +32,10 @@ public interface OrderService {
 
     @GET("/order/{id}")
     Call<OrderWithOutDocWithBoxWithMovesWithPartsResponce> getOrder(@Path("id") String orderId);
+    @GET("/order/v35")
+    Call<List<Orders>> getOrdersByDivision(@Query("date") String date, @Query("division_code") String division_code);
+    @GET("/order/v36")
+    Call<List<String>> getOrdersId(@Query("date") String date, @Query("division_code") String division_code);
 
     @GET("/order")
     Call<List<Orders>> getOrders(@Query("date") String date, @Query("userId") int userId, @Query("deviceId") String deviceId);

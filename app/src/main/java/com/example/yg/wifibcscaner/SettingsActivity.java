@@ -604,78 +604,39 @@ public class SettingsActivity extends AppCompatActivity implements
     }
 
     private class SyncIncoData extends AsyncTask<String, Integer, String> {
-        Integer counter;
-
         @Override
         protected String doInBackground(String... urls) {
-            counter = 0;
             try {
-
-                ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getOperation("01.01.2018 00:00:00").enqueue(new Callback<List<Operation>>() {
+                ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getOrdersId(null, mDBHelper.defs.getDivision_code()).enqueue(new Callback<List<String>>() {
                     // TODO Обработать результат. Записать поле sent... если успешно
                     @Override
-                    public void onResponse(Call<List<Operation>> call, Response<List<Operation>> response) {
+                    public void onResponse(Call<List<String>> call, Response<List<String>> response) {
 
                         if (response.isSuccessful()) {
-                            for (Operation deps : response.body())
-                                mDBHelper.insertOpers(deps);
+                            assert response.body() != null;
+                            publishProgress(response.body().size());
+                            int totalChunks = (int)Math.ceil((double)response.body().size()/10);
+                            int index = 0;
+                            for (String o : response.body()) {
+
+                                mDBHelper.saveOrderNotFound(o);
+                                index +=1;
+
+                                if ((index % totalChunks) == 0) publishProgress(index * 10 / totalChunks );
+                            }
                             if (response.body().size() != 0)
-                                Log.d("UpdateActivity", "Ок! Новые операции приняты!");
+                                Log.d("UpdateActivity", "Ок! Список заказов принят!");
                         }
-                        counter = counter + 5;
-                        publishProgress(3);
+
                     }
 
                     @Override
-                    public void onFailure(Call<List<Operation>> call, Throwable t) {
+                    public void onFailure(Call<List<String>> call, Throwable t) {
                         Log.d("UpdateActivity", "Ответ сервера на запрос новых операций: " + t.getMessage());
                     }
                 });
-
-                ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getDeps("01.01.2018 00:00:00").enqueue(new Callback<List<Deps>>() {
-                    // TODO Обработать результат. Записать поле sent... если успешно
-                    @Override
-                    public void onResponse(Call<List<Deps>> call, Response<List<Deps>> response) {
-                        if (response.isSuccessful()) {
-                            for (Deps deps : response.body())
-                                mDBHelper.insertDeps(deps);
-                            if (response.body().size() != 0)
-                                Log.d("UpdateActivity", "Ок, новые бригады приняты");
-
-                        }
-                        counter = counter + 5;
-                        publishProgress(2);
-                    }
-
-                    @Override
-                    public void onFailure(Call<List<Deps>> call, Throwable t) {
-                        Log.d("UpdateActivity", "Ответ сервера на запрос новых бригад: " + t.getMessage());
-                    }
-                });
-
-                ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getSotr("01.01.2018 00:00:00").enqueue(new Callback<List<Sotr>>() {
-                    // TODO Обработать результат. Записать поле sent... если успешно
-                    @Override
-                    public void onResponse(Call<List<Sotr>> call, Response<List<Sotr>> response) {
-                        //Log.d("1", "Ответ сервера на запрос новых сотрудников: " + response.body());
-                        if (response.isSuccessful()) {
-                            for (Sotr sotr : response.body())
-                                mDBHelper.insertSotr(sotr);
-                            if (response.body().size() != 0) {
-                            }
-                        }
-                        counter = counter + 5;
-                        publishProgress(1);
-                    }
-
-                    @Override
-                    public void onFailure(Call<List<Sotr>> call, Throwable t) {
-                        Log.d("UpdateActivity", "Ответ сервера на запрос новых сотрудников: " + t.getMessage());
-                    }
-                });
-
             } catch (Exception e) {
-                Log.d("1", "Error : " + e.getMessage());
+                Log.e("UpdateActivity", "Error : " + e.getMessage());
             }
             return null;
         }
@@ -694,7 +655,7 @@ public class SettingsActivity extends AppCompatActivity implements
         protected void onProgressUpdate(Integer... values) {
             super.onProgressUpdate(values);
             MessageUtils messageUtils = new MessageUtils();
-            messageUtils.showLongMessage(getApplicationContext(), "Обновление продолжается... Подождите...");
+            messageUtils.showLongMessage(getApplicationContext(), "Обновление продолжается... Выполнено "+values[0]+"%");
         }
     }
 }

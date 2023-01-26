@@ -17,6 +17,8 @@ import android.hardware.usb.UsbManager;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AlertDialog;
@@ -50,6 +52,7 @@ import com.honeywell.aidc.ScannerUnavailableException;
 
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.UUID;
@@ -66,16 +69,14 @@ import static com.google.zxing.integration.android.IntentIntegrator.REQUEST_CODE
 
 public class MainActivity extends AppCompatActivity implements BarcodeReader.BarcodeListener {
 private static BarcodeReader barcodeReader;
-//private static final int DB_VERSION = 21; //8
-private static boolean dbNeedReplace = false; //8
-//SqlScoutServer sqlScoutServer;
+
 private AidcManager manager;
-private Button btnAutomaticBarcode;
-boolean useTrigger=true;
-boolean btnPressed = false;
+boolean bCancelFlag;
 UsbManager mUsbManager = null;
 UsbDevice mdevice;
 IntentFilter filterAttached_and_Detached = null;
+public static final long LOAD_TIMEOUT = 20000; // 1 min = 1 * 60 * 1000 ms
+
 
     //
     private static final String ACTION_USB_PERMISSION = "com.example.yg.wifibcscaner.USB_PERMISSION";
@@ -88,6 +89,39 @@ IntentFilter filterAttached_and_Detached = null;
     Button bScan;
     DataBaseHelper.foundbox fb;
     DataBaseHelper.foundorder fo;
+
+    private Handler loadDataHandler = new Handler(new Handler.Callback() {
+        @Override
+        public boolean handleMessage(Message msg) {
+            // todo
+            showMessage("loadDataHandler");
+            return true;
+        }
+    });
+
+    private Runnable loadDataCallback = new Runnable() {
+        @Override
+        public void run() {
+            showMessage("loadDataCallback’s started to run.");
+
+            loadOrderAsync task = new loadOrderAsync();
+            task.execute();
+        }
+    };
+    public void resetLoadDataTimer(){
+        bCancelFlag = true;
+        loadDataHandler.removeCallbacks(loadDataCallback);
+        loadDataHandler.postDelayed(loadDataCallback, LOAD_TIMEOUT);
+    }
+    public void stopLoadDataTimer(){
+        loadDataHandler.removeCallbacks(loadDataCallback);
+    }
+    @Override
+    public void onUserInteraction(){
+        resetLoadDataTimer();
+        Log.d("1","onUserInteraction ");
+        showMessage("onUserInteraction !");
+    }
 
     //
     private final BroadcastReceiver barcodeDataReceiver = new BroadcastReceiver() {
@@ -240,6 +274,9 @@ IntentFilter filterAttached_and_Detached = null;
     @Override
     public void onStop(){
         super.onStop();
+
+        stopLoadDataTimer();
+
         if(barcodeReader!=null)
             barcodeReader.release();
     }
@@ -247,6 +284,8 @@ IntentFilter filterAttached_and_Detached = null;
     @Override
     protected void onResume() {
         super.onResume();
+
+        resetLoadDataTimer();
 
         String snum = "Накл.???";
         if (mDBHelper.currentOutDoc.get_number() != 0) snum = "Накл.№"+mDBHelper.currentOutDoc.get_number();
@@ -776,39 +815,54 @@ private static String filter (String str){
         @Override
         protected String doInBackground(String... strings) {
             try {
-                //Запросить с сервера время
-                ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getOrder(strings[0]).enqueue(new Callback<OrderWithOutDocWithBoxWithMovesWithPartsResponce>() {
-                    // TODO Обработать результат. Записать поле sent... если успешно
-                    @Override
-                    public void onResponse(Call<OrderWithOutDocWithBoxWithMovesWithPartsResponce> call,
-                                           Response<OrderWithOutDocWithBoxWithMovesWithPartsResponce> response) {
-                        Log.d("loadOrderAsync", "onResponce: " + response.body());
-                        if (response.isSuccessful()) {
-                            //save order, boxes, boxMoves, partBox
-                            if (response.body().getOrder() != null) {
-                                mDBHelper.insertOrders(response.body().getOrder());
-                                for (OutDocs od : response.body().getOutDocReqList())
-                                    mDBHelper.insertOrUpdateOutDocs(od);
-                                for (Boxes boxes : response.body().getBoxReqList())
-                                    mDBHelper.insertBoxes(boxes);
-                                for (BoxMoves bm : response.body().getMovesReqList())
-                                    mDBHelper.insertBoxMoves(bm);
-                                for (Prods pb : response.body().getPartBoxReqList())
-                                    mDBHelper.insertProds(pb);
-                                Log.i("loadOrderAsync", "save ");
-                                //delete from orderNotFound
-                                if (mDBHelper.deleteFromOrderNotFound(strings[0]))
-                                    Log.i("loadOrderAsync", "deleted: "+strings[0]);
-                            }
-                        }
+                ArrayList<String> OrdersId = new ArrayList<String>();
+                bCancelFlag = false;
+                Log.i("loadOrderAsync", " bCancelFlag was set to: "+bCancelFlag);
+                if (strings !=null && strings.length != 0)
+                    OrdersId.add(strings[0]);
+                else
+                    OrdersId.addAll(mDBHelper.getOrdersNotFound());
+                for (String s : OrdersId) {
+                    if (isCancelled() || bCancelFlag) {
+                        Log.i("loadOrderAsync", "Breaked. isCanceled="+isCancelled()+" bCancelFlag"+bCancelFlag);
+                        break;
                     }
+                    ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getOrder(s)
+                            .enqueue(new Callback<OrderWithOutDocWithBoxWithMovesWithPartsResponce>() {
+                                @Override
+                                public void onResponse(Call<OrderWithOutDocWithBoxWithMovesWithPartsResponce> call,
+                                                       Response<OrderWithOutDocWithBoxWithMovesWithPartsResponce> response) {
+                                    if (response.isSuccessful()) {
+                                        //save order, boxes, boxMoves, partBox
+                                        if (response.body().getOrder() != null) {
+                                            mDBHelper.insertOrders(response.body().getOrder());
+                                            for (OutDocs od : response.body().getOutDocReqList())
+                                                mDBHelper.insertOrUpdateOutDocs(od);
+                                            for (Boxes boxes : response.body().getBoxReqList())
+                                                mDBHelper.insertBoxes(boxes);
+                                            for (BoxMoves bm : response.body().getMovesReqList())
+                                                mDBHelper.insertBoxMoves(bm);
+                                            for (Prods pb : response.body().getPartBoxReqList())
+                                                mDBHelper.insertProds(pb);
+                                            Log.d("loadOrderAsync", "Order and stuff have already been saved.");
+                                            //delete from orderNotFound
+                                            if (mDBHelper.deleteFromOrderNotFound(s))
+                                                Log.d("loadOrderAsync", "OrderNotFound Record deleted: " + s);
+                                        }
+                                    }
+                                }
 
-                    @Override
-                    public void onFailure(Call<OrderWithOutDocWithBoxWithMovesWithPartsResponce> call, Throwable t) {
-                        Log.w("loadOrderAsync", "Request failed: " + t.getMessage());
-                    }
-                });
+                                @Override
+                                public void onFailure(Call<OrderWithOutDocWithBoxWithMovesWithPartsResponce> call, Throwable t) {
+                                    cancel(true);
+                                    resetLoadDataTimer();
+                                    Log.w("loadOrderAsync", "Request failed: " + t.getMessage());
+                                }
+                            });
+                }
             } catch (Exception e) {
+                cancel(true);
+                resetLoadDataTimer();
                 Log.e("loadOrderAsync", "Exception : " + e.getMessage());
                 return null;
             }
@@ -818,13 +872,13 @@ private static String filter (String str){
         protected void onProgressUpdate(Integer... values) {
             super.onProgressUpdate(values);
             MessageUtils messageUtils = new MessageUtils();
-            messageUtils.showMessage(getApplicationContext(), "Заказ загружен "+values[0]);
+            messageUtils.showMessage(getApplicationContext(), "onProgressUpdate. "+values[0]);
         }
         @Override
         protected void onPostExecute(String result) {
             super.onPostExecute(result);
             MessageUtils messageUtils = new MessageUtils();
-            messageUtils.showMessage(getApplicationContext(), "Заказ загружен "+result);
+            messageUtils.showMessage(getApplicationContext(), "onPostExecute.  "+result);
         }
     }
     // version 3.5.22

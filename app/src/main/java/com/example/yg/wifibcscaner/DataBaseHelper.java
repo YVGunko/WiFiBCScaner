@@ -1166,7 +1166,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 values.put("orderId", storedbarcode);
 
                 long l = mDataBase.insertWithOnConflict(OrderNotFound.TABLE, null, values, 5);
-                Log.i(LOG_TAG, "saveOrderNotFound. New record added: "+String.valueOf(l));
+                Log.d(LOG_TAG, "saveOrderNotFound. New record added: "+String.valueOf(l));
             } catch (SQLException e) {
                 // TODO: handle exception
                 Log.e(LOG_TAG, "saveOrderNotFound. save record error: ", e);
@@ -2402,6 +2402,21 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             mDataBase.close();
             return nm;
         }
+    }
+    public ArrayList<String> getOrdersNotFound(){
+        ArrayList<String> OrdersId = new ArrayList<String>();
+        mDataBase = this.getReadableDatabase();
+        Cursor cursor = mDataBase.rawQuery("SELECT orderId FROM orderNotFound", null);
+        if ((cursor != null) & (cursor.getCount() != 0)) {
+            cursor.moveToFirst();
+            while (!cursor.isAfterLast()) {
+                OrdersId.add(cursor.getString(0));
+                cursor.moveToNext();
+            }
+        }
+        tryCloseCursor(cursor);
+        mDataBase.close();
+        return OrdersId;
     }
     public ArrayList<String> getFoundOrdersId(){
         ArrayList<String> OrdersId = new ArrayList<String>();
