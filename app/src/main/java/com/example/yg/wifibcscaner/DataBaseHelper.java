@@ -44,8 +44,6 @@ import static java.lang.String.valueOf;
 
 public class DataBaseHelper extends SQLiteOpenHelper {
     private static String DB_PATH = "";
-    //public static final int DB_VERSION = 21; //8
-    //public static final String Prg_VERSION = "3.3.";
     private static String DB_NAME = "SQR.db";
     private static final String TABLE_MD = "MasterData";
     private static final String dtPattern = "dd.MM.yyyy HH:mm:ss";
@@ -1437,6 +1435,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 values.put(Orders.COLUMN_N_box, orders.get_N_box());
                 values.put(Orders.COLUMN_DT, sDateTimeToLong(orders.get_DT()));
                 values.put(Orders.COLUMN_Division_code, orders.getDivision_code());
+                values.put(Orders.COLUMN_Archive, orders.getArchive());
                 l = mDataBase.insertWithOnConflict(orders.TABLE_orders, null, values, 5);
             } catch (SQLException e) {
                 // TODO: handle exception
@@ -1680,6 +1679,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 values.put(Boxes.COLUMN_Q_box, boxes.get_Q_box());
                 values.put(Boxes.COLUMN_N_box, boxes.get_N_box());
                 values.put(Boxes.COLUMN_DT, sDateTimeToLong(boxes.get_DT()));
+                values.put(Boxes.COLUMN_archive, boxes.isArchive());
                 if (boxes.get_sentToMasterDate() != null) values.put(Boxes.COLUMN_sentToMasterDate, sDateTimeToLong(boxes.get_sentToMasterDate()));
                 b = (mDataBase.insertWithOnConflict(Boxes.TABLE_boxes, null, values, 5) > 0);
             } catch (SQLiteConstraintException e) {
@@ -1728,6 +1728,29 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         }
     }
 
+    public boolean insertBoxMovesNoSelect(BoxMoves bm) {
+        Cursor cursor = null;
+        boolean b = false;
+        try {
+            try {
+                mDataBase = this.getWritableDatabase();
+                    ContentValues values = new ContentValues();
+                    values.clear();
+                    values.put(BoxMoves.COLUMN_ID, bm.get_id());
+                    values.put(BoxMoves.COLUMN_Id_b, bm.get_Id_b());
+                    values.put(BoxMoves.COLUMN_Id_o, bm.get_Id_o());
+                    values.put(BoxMoves.COLUMN_DT, sDateTimeToLong(bm.get_DT()));
+                    if (bm.get_sentToMasterDate() != null) values.put(BoxMoves.COLUMN_sentToMasterDate, sDateTimeToLong(bm.get_sentToMasterDate()));
+                    b = (mDataBase.insertWithOnConflict(BoxMoves.TABLE_bm, null, values, 5) > 0);
+            } catch (SQLException mSQLException) {
+                throw mSQLException;
+            }
+        } finally {
+            tryCloseCursor(cursor);
+            mDataBase.close();
+            return b;
+        }
+    }
     public boolean insertBoxMoves(BoxMoves bm) {
         Cursor cursor = null;
         boolean b = false;

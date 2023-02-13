@@ -29,7 +29,8 @@ import com.example.yg.wifibcscaner.Sotr;
 import com.example.yg.wifibcscaner.user;
 
 public interface OrderService {
-
+    @GET("/orders/v35")
+    Call<OrderOutDocBoxMovePart> getOrderV35(@Query("division_code") String division_code, @Query("date") String date);
     @GET("/order/{id}")
     Call<OrderWithOutDocWithBoxWithMovesWithPartsResponce> getOrder(@Path("id") String orderId);
     @GET("/order/v35")

@@ -14,12 +14,15 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.provider.Settings;
+import android.support.annotation.RequiresApi;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.telephony.TelephonyManager;
@@ -39,6 +42,7 @@ import android.widget.Toast;
 
 import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
+import com.example.yg.wifibcscaner.service.OrderOutDocBoxMovePart;
 import com.example.yg.wifibcscaner.service.OrderWithOutDocWithBoxWithMovesWithPartsResponce;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
@@ -74,7 +78,7 @@ boolean bCancelFlag;
 UsbManager mUsbManager = null;
 UsbDevice mdevice;
 IntentFilter filterAttached_and_Detached = null;
-public static final long LOAD_TIMEOUT = 20000; // 1 min = 1 * 60 * 1000 ms
+public static final long LOAD_TIMEOUT = 60000; // 1 min = 1 * 60 * 1000 ms
 
 
     //
@@ -88,39 +92,6 @@ public static final long LOAD_TIMEOUT = 20000; // 1 min = 1 * 60 * 1000 ms
     Button bScan;
     DataBaseHelper.foundbox fb;
     DataBaseHelper.foundorder fo;
-
-    private Handler loadDataHandler = new Handler(new Handler.Callback() {
-        @Override
-        public boolean handleMessage(Message msg) {
-            // todo
-            showMessage("loadDataHandler");
-            return true;
-        }
-    });
-
-    private Runnable loadDataCallback = new Runnable() {
-        @Override
-        public void run() {
-            showMessage("loadDataCallback’s started to run.");
-
-            loadOrderAsync task = new loadOrderAsync();
-            task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-        }
-    };
-    public void resetLoadDataTimer(){
-        bCancelFlag = true;
-        loadDataHandler.removeCallbacks(loadDataCallback);
-        loadDataHandler.postDelayed(loadDataCallback, LOAD_TIMEOUT);
-    }
-    public void stopLoadDataTimer(){
-        loadDataHandler.removeCallbacks(loadDataCallback);
-    }
-    @Override
-    public void onUserInteraction(){
-        resetLoadDataTimer();
-        Log.d("1","onUserInteraction ");
-        showMessage("onUserInteraction !");
-    }
 
     //
     private final BroadcastReceiver barcodeDataReceiver = new BroadcastReceiver() {
@@ -897,4 +868,135 @@ private static String filter (String str){
             return "Записано успешно";
         }
     }
+    /*@Override
+    protected void onPause() {
+        super.onPause();
+        Thread myThread = new Thread(new DownloadDataThread());
+        myThread.start();
+    }*/
+    public void downloadData(View view) {
+        Thread myThread = new Thread(new DownloadDataThread());
+        myThread.start();
+    }
+    private class DownloadDataThread implements Runnable {
+
+        @Override
+        public void run() {
+
+            if (isNetworkAvailable()) {
+
+                if (mDBHelper.defs.getUrl() != null) {
+                    MainActivity.this.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            showLongMessage("Пытаюсь обновиться...");
+                        }
+                    });
+                    downloadDataUsingThread();
+                }
+            }
+        }
+    }
+    public boolean downloadDataUsingThread() {
+
+        boolean isSuccessful = false;
+        try {
+            //TODO
+            ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getOrderV35(mDBHelper.defs.getDivision_code(),null)
+                    .enqueue(new Callback<OrderOutDocBoxMovePart>() {
+                        @RequiresApi(api = Build.VERSION_CODES.N)
+                        @Override
+                        public void onResponse(Call<OrderOutDocBoxMovePart> call,
+                                               Response<OrderOutDocBoxMovePart> response) {
+                            if (response.isSuccessful()) {
+                                if (response.code()!=200) return ;
+                                //save order, boxes, boxMoves, partBox
+                                if (response.body() != null &&
+                                        response.body().orderReqList != null &&
+                                        !response.body().orderReqList.isEmpty()) {
+                                    response.body().orderReqList.stream().forEach(item -> mDBHelper.insertOrders(item));
+
+                                    if (response.body().outDocReqList != null &&
+                                            !response.body().outDocReqList.isEmpty())
+                                        response.body().outDocReqList.stream().forEach(item -> mDBHelper.insertOrUpdateOutDocs(item));
+
+                                    if (response.body().boxReqList != null &&
+                                            !response.body().boxReqList.isEmpty())
+                                        response.body().boxReqList.stream().forEach(item -> mDBHelper.insertBoxes(item));
+
+                                    if (response.body().movesReqList != null &&
+                                            !response.body().movesReqList.isEmpty())
+                                        response.body().movesReqList.stream().forEach(item -> mDBHelper.insertBoxMovesNoSelect(item));
+
+                                    if (response.body().partBoxReqList != null &&
+                                            !response.body().partBoxReqList.isEmpty())
+                                        response.body().partBoxReqList.stream().forEach(item -> mDBHelper.insertProds(item));
+                                }
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Call<OrderOutDocBoxMovePart> call, Throwable t) {
+                            Log.w("loadOrderAsync", "Request failed: " + t.getMessage());
+                        }
+
+                    });
+
+            isSuccessful = true;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            this.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    showLongMessage("Вроде обновились...");
+                }
+            });
+        }
+
+        return isSuccessful;
+    }
+    private boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager
+                = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
+    }
+    private Handler loadDataHandler = new Handler(new Handler.Callback() {
+        @Override
+        public boolean handleMessage(Message msg) {
+            // todo
+            showMessage("loadDataHandler");
+            return true;
+        }
+    });
+
+    private Runnable loadDataCallback = new Runnable() {
+        @Override
+        public void run() {
+            showMessage("loadDataCallback’s started to run.");
+
+            Thread myThread = new Thread(new DownloadDataThread());
+            myThread.start();
+
+            /*loadOrderAsync task = new loadOrderAsync();
+            task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);*/
+        }
+    };
+    public void resetLoadDataTimer(){
+        bCancelFlag = true;
+        loadDataHandler.removeCallbacks(loadDataCallback);
+        loadDataHandler.postDelayed(loadDataCallback, LOAD_TIMEOUT);
+    }
+    public void stopLoadDataTimer(){
+        loadDataHandler.removeCallbacks(loadDataCallback);
+    }
+    @Override
+    public void onUserInteraction(){
+        resetLoadDataTimer();
+        Log.d("1","onUserInteraction ");
+        showMessage("onUserInteraction !");
+    }
+
 }
