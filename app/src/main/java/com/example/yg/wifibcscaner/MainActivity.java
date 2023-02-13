@@ -20,7 +20,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.provider.Settings;
-import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.telephony.TelephonyManager;
@@ -105,7 +104,7 @@ public static final long LOAD_TIMEOUT = 20000; // 1 min = 1 * 60 * 1000 ms
             showMessage("loadDataCallback’s started to run.");
 
             loadOrderAsync task = new loadOrderAsync();
-            task.execute();
+            task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
         }
     };
     public void resetLoadDataTimer(){
@@ -560,7 +559,8 @@ private static String filter (String str){
                 saveOrderNotFoundAsync save = new saveOrderNotFoundAsync();
                 String response = null;
                 try {
-                    response = save.execute(new String[]{mDBHelper.getOrder_id(currentbarcode)}).get();
+                    response = save.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR,
+                            mDBHelper.getOrder_id(currentbarcode)).get();
                     Toast.makeText(getApplicationContext(), "response = " + response, Toast.LENGTH_LONG).show();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -569,7 +569,8 @@ private static String filter (String str){
                 }
 
                 loadOrderAsync task = new loadOrderAsync();
-                task.execute(new String[]{mDBHelper.getOrder_id(currentbarcode)});
+                task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR,
+                        mDBHelper.getOrder_id(currentbarcode));
             }
         } else {
             showLongMessage("Этот заказ уже в архиве! Никакие операции невозможны!");
