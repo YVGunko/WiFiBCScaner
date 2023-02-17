@@ -909,7 +909,7 @@ private static String filter (String str){
                         public void onResponse(Call<OrderOutDocBoxMovePart> call,
                                                Response<OrderOutDocBoxMovePart> response) {
                             if (response.isSuccessful()) {
-                                if (response.code()!=200) return ;
+                                if (response.code() != 200) return ;
                                 //save order, boxes, boxMoves, partBox
                                 if (response.body() != null &&
                                         response.body().orderReqList != null &&
@@ -995,8 +995,6 @@ private static String filter (String str){
     @Override
     public void onUserInteraction(){
         resetLoadDataTimer();
-        Log.d("1","onUserInteraction ");
-        showMessage("onUserInteraction !");
     }
 
 }
