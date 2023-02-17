@@ -1,7 +1,6 @@
 package com.example.yg.wifibcscaner;
 
 
-import android.Manifest;
 import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
@@ -12,7 +11,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
-import android.content.pm.PackageManager;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
 import android.net.ConnectivityManager;
@@ -27,8 +25,6 @@ import android.provider.Settings;
 import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
 import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
-import android.telephony.TelephonyManager;
 import android.text.Editable;
 import android.text.Html;
 import android.text.TextUtils;
@@ -45,11 +41,12 @@ import android.widget.Toast;
 
 import com.example.yg.wifibcscaner.activity.BaseActivity;
 import com.example.yg.wifibcscaner.controller.AppController;
+import com.example.yg.wifibcscaner.data.repository.Boxes;
 import com.example.yg.wifibcscaner.receiver.Config;
 import com.example.yg.wifibcscaner.receiver.SyncDataBroadcastReceiver;
 import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
-import com.example.yg.wifibcscaner.service.OrderOutDocBoxMovePart;
+import com.example.yg.wifibcscaner.data.dto.OrderOutDocBoxMovePart;
 import com.example.yg.wifibcscaner.service.OrderWithOutDocWithBoxWithMovesWithPartsResponce;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
@@ -65,7 +62,6 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 import me.drakeet.support.toast.ToastCompat;
@@ -74,7 +70,6 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 import static android.text.TextUtils.substring;
-import static com.google.zxing.integration.android.IntentIntegrator.REQUEST_CODE;
 
 
 public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeListener {
@@ -259,7 +254,7 @@ public static final long LOAD_TIMEOUT = 60000; // 1 min = 1 * 60 * 1000 ms
     public void onStop(){
         super.onStop();
 
-        stopLoadDataTimer();
+        //stopLoadDataTimer();
 
         if(barcodeReader!=null)
             barcodeReader.release();
@@ -269,7 +264,7 @@ public static final long LOAD_TIMEOUT = 60000; // 1 min = 1 * 60 * 1000 ms
     protected void onResume() {
         super.onResume();
 
-        resetLoadDataTimer();
+        //resetLoadDataTimer();
 
         String snum = "Накл.???";
         if (mDBHelper.currentOutDoc.get_number() != 0) snum = "Накл.№"+mDBHelper.currentOutDoc.get_number();
@@ -841,14 +836,14 @@ private static String filter (String str){
                                 @Override
                                 public void onFailure(Call<OrderWithOutDocWithBoxWithMovesWithPartsResponce> call, Throwable t) {
                                     cancel(true);
-                                    resetLoadDataTimer();
+                                    //resetLoadDataTimer();
                                     Log.w("loadOrderAsync", "Request failed: " + t.getMessage());
                                 }
                             });
                 }
             } catch (Exception e) {
                 cancel(true);
-                resetLoadDataTimer();
+                //resetLoadDataTimer();
                 Log.e("loadOrderAsync", "Exception : " + e.getMessage());
                 return null;
             }
@@ -887,7 +882,7 @@ private static String filter (String str){
         super.onPause();
         Thread myThread = new Thread(new DownloadDataThread());
         myThread.start();
-    }*/
+    }
     public void downloadData(View view) {
         Thread myThread = new Thread(new DownloadDataThread());
         myThread.start();
@@ -994,8 +989,6 @@ private static String filter (String str){
             Thread myThread = new Thread(new DownloadDataThread());
             myThread.start();
 
-            /*loadOrderAsync task = new loadOrderAsync();
-            task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);*/
         }
     };
     public void resetLoadDataTimer(){
@@ -1015,7 +1008,7 @@ private static String filter (String str){
         super.onPostCreate(savedInstanceState);
         setSyncRepeatingAlarm();
     }
-
+*/
     /**
      * sets repeating alarm for syncing
      */

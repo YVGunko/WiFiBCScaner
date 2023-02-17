@@ -6,7 +6,6 @@ package com.example.yg.wifibcscaner;
 
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.CursorIndexOutOfBoundsException;
 import android.database.SQLException;
@@ -24,7 +23,6 @@ import java.io.OutputStream;
 import java.nio.channels.FileChannel;
 import java.util.Calendar;
 import java.util.Date;
-import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -34,11 +32,9 @@ import java.util.UUID;
 
 import android.os.Environment;
 import android.util.Log;
-import android.content.SharedPreferences;
 
-import java.time.LocalDate;
-import static java.time.temporal.TemporalAdjusters.firstDayOfYear;
-import static java.time.temporal.TemporalAdjusters.lastDayOfYear;
+import com.example.yg.wifibcscaner.data.repository.Boxes;
+
 import static android.text.TextUtils.substring;
 import static java.lang.String.valueOf;
 

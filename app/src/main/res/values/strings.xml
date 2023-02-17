@@ -34,4 +34,6 @@
     <string name="action_version">О программе...</string>
     <string name="action_db_need_replace">Очистить БД</string>
     <string name="dialog_db_need_replace">Очистить базу данных? Восстановление невозможно!</string>
+    <string name="error_connection">server connection error</string>
+    <string name="error_something_went_wrong">Something went wrong</string>
 </resources>

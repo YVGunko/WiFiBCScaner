@@ -6,7 +6,6 @@ package com.example.yg.wifibcscaner.service;
 
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import retrofit2.Call;
@@ -15,10 +14,9 @@ import retrofit2.http.GET;
 import retrofit2.http.POST;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
-import rx.Observable;
 
 import com.example.yg.wifibcscaner.BoxMoves;
-import com.example.yg.wifibcscaner.Boxes;
+import com.example.yg.wifibcscaner.data.repository.Boxes;
 import com.example.yg.wifibcscaner.Deps;
 import com.example.yg.wifibcscaner.Division;
 import com.example.yg.wifibcscaner.Operation;
@@ -26,10 +24,11 @@ import com.example.yg.wifibcscaner.Orders;
 import com.example.yg.wifibcscaner.OutDocs;
 import com.example.yg.wifibcscaner.Prods;
 import com.example.yg.wifibcscaner.Sotr;
+import com.example.yg.wifibcscaner.data.dto.OrderOutDocBoxMovePart;
 import com.example.yg.wifibcscaner.user;
 
 public interface OrderService {
-    @GET("/orders/v35")
+    @GET("/dataPageable/v1")
     Call<OrderOutDocBoxMovePart> getOrderV35(@Query("division_code") String division_code, @Query("date") String date);
     @GET("/order/{id}")
     Call<OrderWithOutDocWithBoxWithMovesWithPartsResponce> getOrder(@Path("id") String orderId);

@@ -3,12 +3,6 @@ package com.example.yg.wifibcscaner.service;
 /**
  * Created by yg on 15.12.2017.
  */
-import com.example.yg.wifibcscaner.Boxes;
-import com.example.yg.wifibcscaner.Orders;
-import com.example.yg.wifibcscaner.OutDocs;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.http.Body;

@@ -1,7 +1,7 @@
 package com.example.yg.wifibcscaner.service;
 
 import com.example.yg.wifibcscaner.BoxMoves;
-import com.example.yg.wifibcscaner.Boxes;
+import com.example.yg.wifibcscaner.data.repository.Boxes;
 import com.example.yg.wifibcscaner.Prods;
 
 import java.util.ArrayList;

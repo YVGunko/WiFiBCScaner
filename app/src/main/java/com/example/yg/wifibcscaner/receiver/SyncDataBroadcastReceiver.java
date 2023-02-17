@@ -5,6 +5,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
+import com.example.yg.wifibcscaner.DataBaseHelper;
+import com.example.yg.wifibcscaner.data.repository.OrderOutDocBoxMovePartRepository;
+
 
 /**
  * Created by Shahbaz Hashmi on 2020-03-22.
@@ -17,6 +20,6 @@ public class SyncDataBroadcastReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         Log.d(TAG, "called");
-        new ArticleRepository().fetchAndSaveArticles(false);
+        new OrderOutDocBoxMovePartRepository().fetchAndSaveData(DataBaseHelper.getInstance(context));
     }
 }
