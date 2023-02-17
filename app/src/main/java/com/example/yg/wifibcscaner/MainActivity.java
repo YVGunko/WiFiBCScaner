@@ -3,6 +3,7 @@ package com.example.yg.wifibcscaner;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -21,7 +22,9 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.SystemClock;
 import android.provider.Settings;
+import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -40,6 +43,10 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.yg.wifibcscaner.activity.BaseActivity;
+import com.example.yg.wifibcscaner.controller.AppController;
+import com.example.yg.wifibcscaner.receiver.Config;
+import com.example.yg.wifibcscaner.receiver.SyncDataBroadcastReceiver;
 import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.service.OrderOutDocBoxMovePart;
@@ -70,7 +77,7 @@ import static android.text.TextUtils.substring;
 import static com.google.zxing.integration.android.IntentIntegrator.REQUEST_CODE;
 
 
-public class MainActivity extends AppCompatActivity implements BarcodeReader.BarcodeListener {
+public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeListener {
 private static BarcodeReader barcodeReader;
 
 private AidcManager manager;
@@ -78,6 +85,7 @@ boolean bCancelFlag;
 UsbManager mUsbManager = null;
 UsbDevice mdevice;
 IntentFilter filterAttached_and_Detached = null;
+
 public static final long LOAD_TIMEOUT = 60000; // 1 min = 1 * 60 * 1000 ms
 
 
@@ -171,6 +179,12 @@ public static final long LOAD_TIMEOUT = 60000; // 1 min = 1 * 60 * 1000 ms
                 Settings.Secure.ANDROID_ID);
         return device_unique_id;
     }
+
+    @Override
+    protected void onNetworkChange(boolean isConnected) {
+
+    }
+
     @Override
     public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -996,5 +1010,22 @@ private static String filter (String str){
     public void onUserInteraction(){
         resetLoadDataTimer();
     }
+    @Override
+    protected void onPostCreate(@Nullable Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
+        setSyncRepeatingAlarm();
+    }
 
+    /**
+     * sets repeating alarm for syncing
+     */
+    public void setSyncRepeatingAlarm() {
+        Intent intent = new Intent(this, SyncDataBroadcastReceiver.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this,
+                Config.SYNC_ALARM_REQUEST_CODE, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        AppController.getInstance().getAlarmManager().setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP,
+                SystemClock.elapsedRealtime() + BuildConfig.CACHE_TIMEOUT,
+                BuildConfig.CACHE_TIMEOUT,
+                pendingIntent);
+    }
 }
