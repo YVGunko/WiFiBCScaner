@@ -1,7 +1,6 @@
 package com.example.yg.wifibcscaner;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.ComponentName;
@@ -12,7 +11,8 @@ import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.os.AsyncTask;
-import android.support.v4.content.IntentCompat;
+import android.os.SystemClock;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -29,12 +29,19 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Spinner;
 
-import com.example.yg.wifibcscaner.service.ApiUtils;
-import com.example.yg.wifibcscaner.service.MessageUtils;
+import com.example.yg.wifibcscaner.controller.AppController;
+import com.example.yg.wifibcscaner.data.model.Defs;
+import com.example.yg.wifibcscaner.data.model.Deps;
+import com.example.yg.wifibcscaner.data.model.Operation;
+import com.example.yg.wifibcscaner.data.model.OutDocs;
+import com.example.yg.wifibcscaner.data.model.Sotr;
+import com.example.yg.wifibcscaner.data.model.user;
+import com.example.yg.wifibcscaner.receiver.Config;
+import com.example.yg.wifibcscaner.utils.ApiUtils;
+import com.example.yg.wifibcscaner.utils.MessageUtils;
 import com.example.yg.wifibcscaner.service.PartBoxService;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import retrofit2.Call;

@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context="com.example.yg.wifibcscaner.OutDocsActivity">
+    tools:context="com.example.yg.wifibcscaner.activity.OutDocsActivity">
 
 
     <Button

@@ -1,4 +1,4 @@
-package com.example.yg.wifibcscaner;
+package com.example.yg.wifibcscaner.data.model;
 
 public class OrderNotFound {
     public static final String TABLE = "orderNotFound";

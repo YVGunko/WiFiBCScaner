@@ -1,4 +1,4 @@
-package com.example.yg.wifibcscaner;
+package com.example.yg.wifibcscaner.activity;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
@@ -13,10 +13,15 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
 
-import com.example.yg.wifibcscaner.data.repository.Boxes;
-import com.example.yg.wifibcscaner.service.ApiUtils;
-import com.example.yg.wifibcscaner.service.MessageUtils;
-import com.example.yg.wifibcscaner.service.PartBoxRequest;
+import com.example.yg.wifibcscaner.DataBaseHelper;
+import com.example.yg.wifibcscaner.data.model.OutDocs;
+import com.example.yg.wifibcscaner.data.model.Prods;
+import com.example.yg.wifibcscaner.R;
+import com.example.yg.wifibcscaner.data.model.BoxMoves;
+import com.example.yg.wifibcscaner.data.model.Boxes;
+import com.example.yg.wifibcscaner.utils.ApiUtils;
+import com.example.yg.wifibcscaner.utils.MessageUtils;
+import com.example.yg.wifibcscaner.data.dto.PartBoxRequest;
 
 import java.util.ArrayList;
 import java.util.Date;

@@ -33,7 +33,18 @@ import java.util.UUID;
 import android.os.Environment;
 import android.util.Log;
 
-import com.example.yg.wifibcscaner.data.repository.Boxes;
+import com.example.yg.wifibcscaner.data.model.BoxMoves;
+import com.example.yg.wifibcscaner.data.model.Boxes;
+import com.example.yg.wifibcscaner.data.model.Defs;
+import com.example.yg.wifibcscaner.data.model.Deps;
+import com.example.yg.wifibcscaner.data.model.Operation;
+import com.example.yg.wifibcscaner.data.model.OrderNotFound;
+import com.example.yg.wifibcscaner.data.model.Orders;
+import com.example.yg.wifibcscaner.data.model.OutDocs;
+import com.example.yg.wifibcscaner.data.model.Prods;
+import com.example.yg.wifibcscaner.data.model.Sotr;
+import com.example.yg.wifibcscaner.data.model.lastUpdate;
+import com.example.yg.wifibcscaner.data.model.user;
 
 import static android.text.TextUtils.substring;
 import static java.lang.String.valueOf;

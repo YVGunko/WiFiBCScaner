@@ -1,4 +1,4 @@
-package com.example.yg.wifibcscaner.service;
+package com.example.yg.wifibcscaner.utils;
 
 import android.content.Context;
 import android.util.Log;

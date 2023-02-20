@@ -6,6 +6,8 @@ package com.example.yg.wifibcscaner.receiver;
 public class Config {
 
     public static final int SYNC_ALARM_REQUEST_CODE = 101;
+    public static final String ACTION_USB_PERMISSION = "com.example.yg.wifibcscaner.USB_PERMISSION";
+
 
     //public static final String NEWS_FEED_URL = BuildConfig.BASE_URL+"/staticResponse.json";
 

@@ -1,4 +1,8 @@
-package com.example.yg.wifibcscaner.service;
+package com.example.yg.wifibcscaner.utils;
+
+import com.example.yg.wifibcscaner.service.OrderService;
+import com.example.yg.wifibcscaner.service.PartBoxService;
+import com.example.yg.wifibcscaner.service.RetrofitClient;
 
 /**
  * Created by yg on 15.12.2017.

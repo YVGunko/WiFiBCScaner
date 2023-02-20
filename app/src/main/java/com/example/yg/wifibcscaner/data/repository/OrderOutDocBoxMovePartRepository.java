@@ -1,27 +1,19 @@
 package com.example.yg.wifibcscaner.data.repository;
 
-import android.content.ContentValues;
-import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
-import android.text.TextUtils;
 import android.util.Log;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import java.util.ArrayList;
-import java.util.List;
+
+import java.util.Date;
 
 import com.example.yg.wifibcscaner.DataBaseHelper;
 import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.dto.OrderOutDocBoxMovePart;
 import com.example.yg.wifibcscaner.interfaces.FetchListDataListener;
-import com.example.yg.wifibcscaner.receiver.Config;
-import com.example.yg.wifibcscaner.service.ApiUtils;
-import com.example.yg.wifibcscaner.utils.AppUtils;
-import com.example.yg.wifibcscaner.utils.HttpUtility;
+import com.example.yg.wifibcscaner.utils.ApiUtils;
 import com.example.yg.wifibcscaner.utils.SharedPreferenceManager;
 import com.example.yg.wifibcscaner.utils.executors.DefaultExecutorSupplier;
 
@@ -95,7 +87,9 @@ public class OrderOutDocBoxMovePartRepository {
         DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
 
             try {
-                ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getOrderV35(mDBHelper.defs.getDivision_code(),null)
+                ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getDataPageableV1(
+                        mDBHelper.getDayTimeString( mDBHelper.addDays(new Date(), - 10)),
+                        mDBHelper.defs.getDivision_code(),0)
                         .enqueue(new Callback<OrderOutDocBoxMovePart>() {
                             @RequiresApi(api = Build.VERSION_CODES.N)
                             @Override

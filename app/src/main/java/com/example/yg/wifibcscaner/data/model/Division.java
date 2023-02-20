@@ -1,5 +1,7 @@
-package com.example.yg.wifibcscaner;
+package com.example.yg.wifibcscaner.data.model;
 
+
+import com.example.yg.wifibcscaner.DataBaseHelper;
 
 public class Division {
     public static final String TABLE = "Division";

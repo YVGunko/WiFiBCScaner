@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.yg.wifibcscaner">
-
-    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <application
+        android:name=".controller.AppController"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -11,6 +10,9 @@
         android:screenOrientation="portrait"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+        <receiver
+            android:name=".receiver.SyncDataBroadcastReceiver"
+            android:exported="true"></receiver>
         <activity
             android:name=".MainActivity"
             android:screenOrientation="portrait">
@@ -20,20 +22,21 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".LoginActivity" />
-        <activity android:name=".dbService" />
-        <activity android:name=".BoxesActivity" />
+        <activity android:name=".activity.LoginActivity" />
+        <activity android:name=".activity.dbService" />
+        <activity android:name=".activity.BoxesActivity" />
         <activity android:name=".SettingsActivity" />
-        <activity android:name=".OrdersActivity" />
-        <activity android:name=".ProdsActivity" />
-        <activity android:name=".OutDocsActivity" />
-        <activity android:name=".UpdateActivity" />
-        <activity android:name=".lastUpdateActivity" />
+        <activity android:name=".data.model.OrdersActivity" />
+        <activity android:name=".activity.ProdsActivity" />
+        <activity android:name=".activity.OutDocsActivity" />
+        <activity android:name=".activity.UpdateActivity" />
+        <activity android:name=".activity.lastUpdateActivity" />
     </application>
     <uses-permission android:name="com.honeywell.decode.permission.DECODE" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
 </manifest>

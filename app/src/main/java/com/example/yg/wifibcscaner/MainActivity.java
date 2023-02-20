@@ -13,17 +13,12 @@ import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
 import android.os.SystemClock;
 import android.provider.Settings;
 import android.support.annotation.Nullable;
-import android.support.annotation.RequiresApi;
 import android.support.v7.app.AlertDialog;
 import android.text.Editable;
 import android.text.Html;
@@ -40,14 +35,22 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.yg.wifibcscaner.activity.BaseActivity;
+import com.example.yg.wifibcscaner.activity.BoxesActivity;
+import com.example.yg.wifibcscaner.activity.LoginActivity;
+import com.example.yg.wifibcscaner.activity.OutDocsActivity;
+import com.example.yg.wifibcscaner.activity.ProdsActivity;
+import com.example.yg.wifibcscaner.activity.UpdateActivity;
 import com.example.yg.wifibcscaner.controller.AppController;
-import com.example.yg.wifibcscaner.data.repository.Boxes;
+import com.example.yg.wifibcscaner.data.model.BoxMoves;
+import com.example.yg.wifibcscaner.data.model.Boxes;
+import com.example.yg.wifibcscaner.data.model.OrdersActivity;
+import com.example.yg.wifibcscaner.data.model.OutDocs;
+import com.example.yg.wifibcscaner.data.model.Prods;
 import com.example.yg.wifibcscaner.receiver.Config;
 import com.example.yg.wifibcscaner.receiver.SyncDataBroadcastReceiver;
-import com.example.yg.wifibcscaner.service.ApiUtils;
-import com.example.yg.wifibcscaner.service.MessageUtils;
-import com.example.yg.wifibcscaner.data.dto.OrderOutDocBoxMovePart;
-import com.example.yg.wifibcscaner.service.OrderWithOutDocWithBoxWithMovesWithPartsResponce;
+import com.example.yg.wifibcscaner.utils.ApiUtils;
+import com.example.yg.wifibcscaner.utils.MessageUtils;
+import com.example.yg.wifibcscaner.data.dto.OrderWithOutDocWithBoxWithMovesWithPartsResponce;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 import com.honeywell.aidc.AidcManager;
@@ -73,19 +76,20 @@ import static android.text.TextUtils.substring;
 
 
 public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeListener {
-private static BarcodeReader barcodeReader;
+    private static final String TAG = "MainActivity";
 
-private AidcManager manager;
-boolean bCancelFlag;
-UsbManager mUsbManager = null;
-UsbDevice mdevice;
-IntentFilter filterAttached_and_Detached = null;
+    private static BarcodeReader barcodeReader; //honeywell
+    private AidcManager manager;
+    boolean bCancelFlag;
+    UsbManager mUsbManager = null;
+    UsbDevice mdevice;
+    IntentFilter filterAttached_and_Detached = null;
 
-public static final long LOAD_TIMEOUT = 60000; // 1 min = 1 * 60 * 1000 ms
+    public static final long LOAD_TIMEOUT = 60000; // 1 min = 1 * 60 * 1000 ms
 
 
     //
-    private static final String ACTION_USB_PERMISSION = "com.example.yg.wifibcscaner.USB_PERMISSION";
+
     private int sId_o = 1;
     private int sId_d = 1;
     private DataBaseHelper mDBHelper;
@@ -154,7 +158,7 @@ public static final long LOAD_TIMEOUT = 60000; // 1 min = 1 * 60 * 1000 ms
     };
     private boolean extScanerDetect(){
         HashMap<String, UsbDevice> deviceList = mUsbManager.getDeviceList();
-        Log.d("1", deviceList.size()+" USB device(s) found.");
+        Log.d(TAG, deviceList.size()+" USB device(s) found.");
         if (deviceList.size()==0) {
             showMessage("USB устройство не подключено.");
             return false;
@@ -297,7 +301,7 @@ public static final long LOAD_TIMEOUT = 60000; // 1 min = 1 * 60 * 1000 ms
     public void ocl_scan(View v) { //Вызов активности Сканирования
         if (mDBHelper.defs.get_idUser()==0){
             showLongMessage("Нужно войти в систему...");
-            startActivity(new Intent(this,LoginActivity.class));
+            startActivity(new Intent(this, LoginActivity.class));
             //if not a superuser check for current user today's outdoc and add new one if not exist.
             return;
         }
@@ -312,7 +316,7 @@ public static final long LOAD_TIMEOUT = 60000; // 1 min = 1 * 60 * 1000 ms
                         (mDBHelper.currentOutDoc.get_number()==0)))
         {
             //Отгрузка, накладная не выбрана
-            startActivity(new Intent(this,OutDocsActivity.class));
+            startActivity(new Intent(this, OutDocsActivity.class));
             return;
         }
         if ((mDBHelper.defs.get_Id_o()!=mDBHelper.defs.get_idOperLast())&(
@@ -407,19 +411,19 @@ public static final long LOAD_TIMEOUT = 60000; // 1 min = 1 * 60 * 1000 ms
                 startActivity(new Intent(this,LoginActivity.class));  //Вызов активности
                 return true;
             case R.id.action_boxes:
-                startActivity(new Intent(this,BoxesActivity.class)); //Вызов активности Коробки
+                startActivity(new Intent(this, BoxesActivity.class)); //Вызов активности Коробки
                 return true;
             case R.id.action_orders:
-                startActivity(new Intent(this,OrdersActivity.class));
+                startActivity(new Intent(this, OrdersActivity.class));
                 return true;
             case R.id.action_prods:
-                startActivity(new Intent(this,ProdsActivity.class));
+                startActivity(new Intent(this, ProdsActivity.class));
                 return true;
             case R.id.action_test:
                 startActivity(new Intent(this,OutDocsActivity.class));
                 return true;
             case R.id.action_update:
-                startActivity(new Intent(this,UpdateActivity.class));
+                startActivity(new Intent(this, UpdateActivity.class));
                 return true;
             case R.id.action_db_need_replace:
                 try {
@@ -1003,12 +1007,13 @@ private static String filter (String str){
     public void onUserInteraction(){
         resetLoadDataTimer();
     }
+    */
     @Override
     protected void onPostCreate(@Nullable Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
         setSyncRepeatingAlarm();
     }
-*/
+
     /**
      * sets repeating alarm for syncing
      */

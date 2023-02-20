@@ -1,4 +1,4 @@
-package com.example.yg.wifibcscaner;
+package com.example.yg.wifibcscaner.data.model;
 
 public class lastUpdate {
     public static final String TABLE = "lastUpdate";

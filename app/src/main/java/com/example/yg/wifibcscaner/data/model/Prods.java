@@ -1,4 +1,4 @@
-package com.example.yg.wifibcscaner;
+package com.example.yg.wifibcscaner.data.model;
 
 /**
  * Created by yg on 14.12.2017.

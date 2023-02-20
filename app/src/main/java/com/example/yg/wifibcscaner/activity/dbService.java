@@ -1,4 +1,4 @@
-package com.example.yg.wifibcscaner;
+package com.example.yg.wifibcscaner.activity;
 
 import android.content.Intent;
 import android.os.AsyncTask;
@@ -6,18 +6,17 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import com.example.yg.wifibcscaner.service.ApiUtils;
-import com.example.yg.wifibcscaner.service.MessageUtils;
+import com.example.yg.wifibcscaner.DataBaseHelper;
+import com.example.yg.wifibcscaner.R;
+import com.example.yg.wifibcscaner.utils.MessageUtils;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.jar.Attributes;
 
 public class dbService extends AppCompatActivity {
     private DataBaseHelper mDBHelper;
@@ -97,7 +96,7 @@ public class dbService extends AppCompatActivity {
         task.execute(new String[]{null});
     }
     public void setDate(View v) { //Вызов активности выбора даты начала
-        startActivity(new Intent(this,lastUpdateActivity.class)); //Вызов активности lastUpdate
+        startActivity(new Intent(this, lastUpdateActivity.class)); //Вызов активности lastUpdate
     }
 
     private class SyncIncoData extends AsyncTask<String, Integer, String> {

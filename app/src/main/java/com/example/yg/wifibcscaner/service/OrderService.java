@@ -15,21 +15,24 @@ import retrofit2.http.POST;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 
-import com.example.yg.wifibcscaner.BoxMoves;
-import com.example.yg.wifibcscaner.data.repository.Boxes;
-import com.example.yg.wifibcscaner.Deps;
-import com.example.yg.wifibcscaner.Division;
-import com.example.yg.wifibcscaner.Operation;
-import com.example.yg.wifibcscaner.Orders;
-import com.example.yg.wifibcscaner.OutDocs;
-import com.example.yg.wifibcscaner.Prods;
-import com.example.yg.wifibcscaner.Sotr;
+import com.example.yg.wifibcscaner.data.dto.OrderWithOutDocWithBoxWithMovesWithPartsResponce;
+import com.example.yg.wifibcscaner.data.model.BoxMoves;
+import com.example.yg.wifibcscaner.data.model.Boxes;
+import com.example.yg.wifibcscaner.data.model.Deps;
+import com.example.yg.wifibcscaner.data.model.Division;
+import com.example.yg.wifibcscaner.data.model.Operation;
+import com.example.yg.wifibcscaner.data.model.Orders;
+import com.example.yg.wifibcscaner.data.model.OutDocs;
+import com.example.yg.wifibcscaner.data.model.Prods;
+import com.example.yg.wifibcscaner.data.model.Sotr;
 import com.example.yg.wifibcscaner.data.dto.OrderOutDocBoxMovePart;
-import com.example.yg.wifibcscaner.user;
+import com.example.yg.wifibcscaner.data.model.user;
 
 public interface OrderService {
     @GET("/dataPageable/v1")
-    Call<OrderOutDocBoxMovePart> getOrderV35(@Query("division_code") String division_code, @Query("date") String date);
+    Call<OrderOutDocBoxMovePart> getDataPageableV1(@Query("date") String date,
+                                             @Query("division_code") String division_code,
+                                             @Query("page") int page);
     @GET("/order/{id}")
     Call<OrderWithOutDocWithBoxWithMovesWithPartsResponce> getOrder(@Path("id") String orderId);
     @GET("/order/v35")
