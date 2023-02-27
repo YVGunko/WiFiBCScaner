@@ -1424,26 +1424,42 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             mDataBase.close();
         }
     }
-    public long insertOrders(Orders orders) {
+    public void insertOrdersInBulk(List<Orders> list){
+        //"INSERT INTO "+Orders.TABLE_orders+" ("+Orders.COLUMN_ID
+        //        +")";
+        //masterdata
+        try {
+            db.execSQL("PRAGMA foreign_keys = 0;");
+            db.beginTransaction();
+
+            db.execSQL("INSERT INTO MasterData (_id, Ord_id, Ord, Cust, Nomen, Attrib," +
+                    " Q_ord, Q_box, N_box, DT, archive, division_code" +
+                    " VALUES ();");
+        } catch (SQLException e) {
+            // TODO: handle exception
+            throw e;
+        }
+    }
+    public long insertOrder(Orders order) {
         long l = 0;
         try {
             try {
                 mDataBase = this.getWritableDatabase();
                 ContentValues values = new ContentValues();
                 values.clear();
-                values.put(Orders.COLUMN_ID, orders.get_id());
-                values.put(Orders.COLUMN_Ord_Id, orders.get_Ord_Id());
-                values.put(Orders.COLUMN_Ord, orders.get_Ord());
-                values.put(Orders.COLUMN_Cust, orders.get_Cust());
-                values.put(Orders.COLUMN_Nomen, orders.get_Nomen());
-                values.put(Orders.COLUMN_Attrib, orders.get_Attrib());
-                values.put(Orders.COLUMN_Q_ord, orders.get_Q_ord());
-                values.put(Orders.COLUMN_Q_box, orders.get_Q_box());
-                values.put(Orders.COLUMN_N_box, orders.get_N_box());
-                values.put(Orders.COLUMN_DT, sDateTimeToLong(orders.get_DT()));
-                values.put(Orders.COLUMN_Division_code, orders.getDivision_code());
-                values.put(Orders.COLUMN_Archive, orders.getArchive());
-                l = mDataBase.insertWithOnConflict(orders.TABLE_orders, null, values, 5);
+                values.put(Orders.COLUMN_ID, order.get_id());
+                values.put(Orders.COLUMN_Ord_Id, order.get_Ord_Id());
+                values.put(Orders.COLUMN_Ord, order.get_Ord());
+                values.put(Orders.COLUMN_Cust, order.get_Cust());
+                values.put(Orders.COLUMN_Nomen, order.get_Nomen());
+                values.put(Orders.COLUMN_Attrib, order.get_Attrib());
+                values.put(Orders.COLUMN_Q_ord, order.get_Q_ord());
+                values.put(Orders.COLUMN_Q_box, order.get_Q_box());
+                values.put(Orders.COLUMN_N_box, order.get_N_box());
+                values.put(Orders.COLUMN_DT, sDateTimeToLong(order.get_DT()));
+                values.put(Orders.COLUMN_Division_code, order.getDivision_code());
+                values.put(Orders.COLUMN_Archive, order.getArchive());
+                l = mDataBase.insertWithOnConflict(order.TABLE_orders, null, values, 5);
             } catch (SQLException e) {
                 // TODO: handle exception
                 throw e;
@@ -1478,8 +1494,8 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
     public long addOrders(foundorder fo) {
         try {
-            Orders orders = new Orders(fo._id, fo.Ord_Id, fo.Ord, fo.Cust, fo.Nomen, fo.Attrib, fo.QO, fo.QB, fo.NB, fo.DT, fo.division_code, fo.archive);
-            return insertOrders(orders);
+            Orders order = new Orders(fo._id, fo.Ord_Id, fo.Ord, fo.Cust, fo.Nomen, fo.Attrib, fo.QO, fo.QB, fo.NB, fo.DT, fo.division_code, fo.archive);
+            return insertOrder(order);
         } catch (Exception ex) {
             ex.printStackTrace();
             return 0;

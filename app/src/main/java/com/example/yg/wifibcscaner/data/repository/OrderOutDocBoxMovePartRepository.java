@@ -101,7 +101,7 @@ public class OrderOutDocBoxMovePartRepository {
                                     if (response.body() != null &&
                                             response.body().orderReqList != null &&
                                             !response.body().orderReqList.isEmpty()) {
-                                        response.body().orderReqList.stream().forEach(item -> mDBHelper.insertOrders(item));
+                                                mDBHelper.insertOrdersInBulk(response.body().orderReqList);
 
                                         if (response.body().outDocReqList != null &&
                                                 !response.body().outDocReqList.isEmpty())

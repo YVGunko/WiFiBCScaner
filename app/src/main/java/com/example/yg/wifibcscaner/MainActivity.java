@@ -83,7 +83,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
     boolean bCancelFlag;
     UsbManager mUsbManager = null;
     UsbDevice mdevice;
-    IntentFilter filterAttached_and_Detached = null;
+    //IntentFilter filterAttached_and_Detached = null;
 
     public static final long LOAD_TIMEOUT = 60000; // 1 min = 1 * 60 * 1000 ms
 
@@ -99,79 +99,6 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
     Button bScan;
     DataBaseHelper.foundbox fb;
     DataBaseHelper.foundorder fo;
-
-    //
-    private final BroadcastReceiver barcodeDataReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) {
-                synchronized (this) {
-                    mdevice = (UsbDevice)intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
-
-                    if(mdevice != null){
-                        //
-                        Log.d("1","USB устройство отключено-" + mdevice);
-                        showMessage("USB устройство отключено");
-                    }
-                }
-            }
-            //
-            if (UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action)) {
-                synchronized (this) {
-                    mdevice = (UsbDevice)intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
-                    if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
-
-                        if(mdevice != null){
-                            //
-
-                            Log.d("1","USB устройство подключено-" + mdevice);
-                            showMessage("USB устройство подключено");
-                        }
-                    }
-                    else {
-                        PendingIntent mPermissionIntent;
-                        mPermissionIntent = PendingIntent.getBroadcast(MainActivity.this, 0, new Intent(ACTION_USB_PERMISSION), PendingIntent.FLAG_ONE_SHOT);
-                        mUsbManager.requestPermission(mdevice, mPermissionIntent);
-
-                    }
-
-                }
-            }
-//
-            if (ACTION_USB_PERMISSION.equals(action)) {
-                synchronized (this) {
-                    mdevice = (UsbDevice)intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
-                    if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
-
-                        if(mdevice != null){
-                            //
-                            Log.d("1","USB устройство разрешено-" + mdevice);
-                            showMessage("USB устройство разрешено");
-                        }
-                    }
-
-                }
-            }
-
-        }
-    };
-    private boolean extScanerDetect(){
-        HashMap<String, UsbDevice> deviceList = mUsbManager.getDeviceList();
-        Log.d(TAG, deviceList.size()+" USB device(s) found.");
-        if (deviceList.size()==0) {
-            showMessage("USB устройство не подключено.");
-            return false;
-        }else {
-            Iterator<UsbDevice> deviceIterator = deviceList.values().iterator();
-            while(deviceIterator.hasNext()) {
-                mdevice = deviceIterator.next();
-                Log.d("1", "" + mdevice);
-                showMessage("USB устройство подключено.");
-            }
-            return true;
-        }
-    }
 
     private String getDeviceUniqueID(Activity activity){
         String device_unique_id = Settings.Secure.getString(activity.getContentResolver(),
@@ -201,7 +128,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
         //registerReceiver
         mUsbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
 
-        //
+        /*
         filterAttached_and_Detached = new IntentFilter(UsbManager.ACTION_USB_ACCESSORY_DETACHED);
         filterAttached_and_Detached.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
         filterAttached_and_Detached.addAction(ACTION_USB_PERMISSION);
@@ -209,7 +136,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
         registerReceiver(barcodeDataReceiver, filterAttached_and_Detached);
         //scaner detect
         extScanerDetect();
-
+        */
         AidcManager.create(this, new AidcManager.CreatedCallback() {
             @Override
             public void onCreated(AidcManager aidcManager) {
@@ -700,7 +627,7 @@ private static String filter (String str){
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        unregisterReceiver(barcodeDataReceiver);
+        //unregisterReceiver(barcodeDataReceiver);
 
         if (barcodeReader != null) {
             // close BarcodeReader to clean up resources.
