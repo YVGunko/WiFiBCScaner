@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
+import android.database.sqlite.SQLiteStatement;
 import android.os.Environment;
 import android.util.Log;
 
@@ -50,6 +51,9 @@ import static android.text.TextUtils.substring;
 import static java.lang.String.valueOf;
 
 public class DataBaseHelper extends SQLiteOpenHelper {
+
+    private static final String TAG = "DataBaseHelper";
+
     private static String DB_PATH = "";
     private static String DB_NAME = "SQR.db";
     private static final String TABLE_MD = "MasterData";
@@ -1424,22 +1428,6 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             mDataBase.close();
         }
     }
-    public void insertOrdersInBulk(List<Orders> list){
-        //"INSERT INTO "+Orders.TABLE_orders+" ("+Orders.COLUMN_ID
-        //        +")";
-        //masterdata
-        try {
-            db.execSQL("PRAGMA foreign_keys = 0;");
-            db.beginTransaction();
-
-            db.execSQL("INSERT INTO MasterData (_id, Ord_id, Ord, Cust, Nomen, Attrib," +
-                    " Q_ord, Q_box, N_box, DT, archive, division_code" +
-                    " VALUES ();");
-        } catch (SQLException e) {
-            // TODO: handle exception
-            throw e;
-        }
-    }
     public long insertOrder(Orders order) {
         long l = 0;
         try {
@@ -2638,6 +2626,202 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             tryCloseCursor(cursor);
             mDataBase.close();
             return count;
+        }
+    }
+//Insert in Bulk
+    public void insertOrdersInBulk(List<Orders> list){
+        SQLiteDatabase db = getWritableDatabase();
+        try {
+
+            db.execSQL("PRAGMA foreign_keys = 0;");
+            db.beginTransaction();
+            String sql = "INSERT OR REPLACE INTO MasterData (_id, Ord_id, Ord, Cust, Nomen, Attrib," +
+                    " Q_ord, Q_box, N_box, DT, archive, division_code)" +
+                    " VALUES (?,?,?,?,?,?,?,?,?,?,?,?);";
+
+            SQLiteStatement statement = db.compileStatement(sql);
+
+            for (Orders o : list) {
+                statement.clearBindings();
+                statement.bindLong(1, o.get_id());
+                statement.bindString(2, o.get_Ord_Id());
+                statement.bindString(3, o.get_Ord());
+                statement.bindString(4, o.get_Cust());
+                statement.bindString(5, o.get_Nomen());
+                if (o.get_Attrib() == null)
+                    statement.bindString(6, "");
+                else
+                    statement.bindString(6, (o.get_Attrib()));
+                statement.bindLong(7, o.get_Q_ord());
+                statement.bindLong(8, o.get_Q_box());
+                statement.bindLong(9, o.get_N_box());
+                statement.bindLong(10, sDateTimeToLong(o.get_DT()));
+                if (o.getArchive() == null)
+                    statement.bindLong(11, 0);
+                else
+                    statement.bindLong(11, (o.getArchive() ? 1 : 0));
+                statement.bindString(12, o.getDivision_code());
+                statement.executeInsert();
+            }
+
+            db.setTransactionSuccessful(); // This commits the transaction if there were no exceptions
+            db.execSQL("PRAGMA foreign_keys = 1;");
+        } catch (Exception e) {
+            Log.w(TAG, e);
+            throw new RuntimeException("To catch into upper level.");
+        } finally {
+            db.endTransaction();
+        }
+    }
+    public void insertOutDocInBulk(List<OutDocs> list){
+        SQLiteDatabase db = getWritableDatabase();
+        try {
+
+            db.execSQL("PRAGMA foreign_keys = 0;");
+            db.beginTransaction();
+            String sql = "INSERT OR REPLACE INTO OutDocs (_id, Id_o, number, comment, DT, sentToMasterDate, division_code, idUser) " +
+                    " VALUES (?,?,?,?,?,?,?,?);";
+
+            SQLiteStatement statement = db.compileStatement(sql);
+
+            for (OutDocs o : list) {
+                statement.clearBindings();
+                statement.bindString(1, o.get_id());
+                statement.bindLong(2, o.get_Id_o());
+                statement.bindLong(3, o.get_number());
+                if (o.get_comment() == null)
+                    statement.bindString(4, "");
+                else
+                    statement.bindString(4, o.get_comment());
+
+                statement.bindLong(5, sDateTimeToLong(o.get_DT()));
+
+                if (o.get_sentToMasterDate() == null)
+                    statement.bindLong(6, new Date().getTime());
+                else
+                    statement.bindLong(6, sDateTimeToLong(o.get_sentToMasterDate()));
+
+                statement.bindString(7, o.getDivision_code());
+                statement.bindLong(8, o.getIdUser());
+                statement.executeInsert();
+            }
+
+            db.setTransactionSuccessful(); // This commits the transaction if there were no exceptions
+            db.execSQL("PRAGMA foreign_keys = 1;");
+        } catch (Exception e) {
+            Log.w(TAG, e);
+            throw new RuntimeException("To catch into upper level.");
+        } finally {
+            db.endTransaction();
+        }
+    }
+    public void insertBoxInBulk(List<Boxes> list){
+        SQLiteDatabase db = getWritableDatabase();
+        try {
+
+            db.execSQL("PRAGMA foreign_keys = 0;");
+            db.beginTransaction();
+            String sql = "INSERT OR REPLACE INTO Boxes (_id, Id_m, Q_box, N_box, DT, sentToMasterDate, archive) " +
+                    " VALUES (?,?,?,?,?,?,?);";
+
+            SQLiteStatement statement = db.compileStatement(sql);
+
+            for (Boxes o : list) {
+                statement.clearBindings();
+                statement.bindString(1, o.get_id());
+                statement.bindLong(2, o.get_Id_m());
+                statement.bindLong(3, o.get_Q_box());
+                statement.bindLong(4, o.get_N_box());
+                statement.bindLong(5, sDateTimeToLong(o.get_DT()));
+
+                if (o.get_sentToMasterDate() == null)
+                    statement.bindLong(6, new Date().getTime());
+                else
+                    statement.bindLong(6, sDateTimeToLong(o.get_sentToMasterDate()));
+
+                statement.bindLong(7, (o.isArchive() ? 1 : 0));
+                statement.executeInsert();
+            }
+
+            db.setTransactionSuccessful(); // This commits the transaction if there were no exceptions
+            db.execSQL("PRAGMA foreign_keys = 1;");
+        } catch (Exception e) {
+            Log.w(TAG, e);
+            throw new RuntimeException("To catch into upper level.");
+        } finally {
+            db.endTransaction();
+        }
+    }
+
+    public void insertBoxMoveInBulk(List<BoxMoves> list) {
+        SQLiteDatabase db = getWritableDatabase();
+        try {
+
+            db.execSQL("PRAGMA foreign_keys = 0;");
+            db.beginTransaction();
+            String sql = "INSERT OR REPLACE INTO BoxMoves (_id, Id_b, Id_o, DT, sentToMasterDate) " +
+                    " VALUES (?,?,?,?,?);";
+
+            SQLiteStatement statement = db.compileStatement(sql);
+
+            for (BoxMoves o : list) {
+                statement.clearBindings();
+                statement.bindString(1, o.get_id());
+                statement.bindString(2, o.get_Id_b());
+                statement.bindLong(2, o.get_Id_o());
+                statement.bindLong(5, sDateTimeToLong(o.get_DT()));
+
+                if (o.get_sentToMasterDate() == null)
+                    statement.bindLong(4, new Date().getTime());
+                else
+                    statement.bindLong(4, sDateTimeToLong(o.get_sentToMasterDate()));
+
+                statement.executeInsert();
+            }
+
+            db.setTransactionSuccessful(); // This commits the transaction if there were no exceptions
+            db.execSQL("PRAGMA foreign_keys = 1;");
+        } catch (Exception e) {
+            Log.w(TAG, e);
+            throw new RuntimeException("To catch into upper level.");
+        } finally {
+            db.endTransaction();
+        }
+    }
+
+    public void insertProdInBulk(List<Prods> list) {
+        SQLiteDatabase db = getWritableDatabase();
+        try {
+
+            db.execSQL("PRAGMA foreign_keys = 0;");
+            db.beginTransaction();
+            String sql = "INSERT OR REPLACE INTO Prods (_id, Id_m, Id_d, Id_s, RQ_box, P_date, sentToMasterDate, idOutDocs) " +
+                    " VALUES (?,?,?,?,?,?,?,?);";
+
+            SQLiteStatement statement = db.compileStatement(sql);
+
+            for (Prods o : list) {
+                statement.clearBindings();
+                statement.bindString(1, o.get_id());
+                statement.bindString(2, o.get_Id_b());
+                statement.bindLong(2, o.get_Id_o());
+                statement.bindLong(5, sDateTimeToLong(o.get_DT()));
+
+                if (o.get_sentToMasterDate() == null)
+                    statement.bindLong(4, new Date().getTime());
+                else
+                    statement.bindLong(4, sDateTimeToLong(o.get_sentToMasterDate()));
+
+                statement.executeInsert();
+            }
+
+            db.setTransactionSuccessful(); // This commits the transaction if there were no exceptions
+            db.execSQL("PRAGMA foreign_keys = 1;");
+        } catch (Exception e) {
+            Log.w(TAG, e);
+            throw new RuntimeException("To catch into upper level.");
+        } finally {
+            db.endTransaction();
         }
     }
 }

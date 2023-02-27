@@ -747,7 +747,7 @@ private static String filter (String str){
                                     if (response.isSuccessful()) {
                                         //save order, boxes, boxMoves, partBox
                                         if (response.body().getOrder() != null) {
-                                            mDBHelper.insertOrders(response.body().getOrder());
+                                            mDBHelper.insertOrder(response.body().getOrder());
                                             for (OutDocs od : response.body().getOutDocReqList())
                                                 mDBHelper.insertOrUpdateOutDocs(od);
                                             for (Boxes boxes : response.body().getBoxReqList())

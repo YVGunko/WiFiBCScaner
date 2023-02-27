@@ -80,7 +80,7 @@ public class OrderOutDocBoxMovePartRepository {
 
     /**
      * fetch data from server and saves into local db
-     * @param returnData flag to return data
+     * param returnData flag to return data
      */
     public void fetchAndSaveData(DataBaseHelper mDBHelper) {
 
@@ -88,7 +88,7 @@ public class OrderOutDocBoxMovePartRepository {
 
             try {
                 ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getDataPageableV1(
-                        mDBHelper.getDayTimeString( mDBHelper.addDays(new Date(), - 10)),
+                        mDBHelper.getDayTimeString( mDBHelper.addDays(new Date(), - 19)),
                         mDBHelper.defs.getDivision_code(),0)
                         .enqueue(new Callback<OrderOutDocBoxMovePart>() {
                             @RequiresApi(api = Build.VERSION_CODES.N)
@@ -100,24 +100,28 @@ public class OrderOutDocBoxMovePartRepository {
                                     //save order, boxes, boxMoves, partBox
                                     if (response.body() != null &&
                                             response.body().orderReqList != null &&
-                                            !response.body().orderReqList.isEmpty()) {
-                                                mDBHelper.insertOrdersInBulk(response.body().orderReqList);
+                                            !response.body().orderReqList.isEmpty())
+                                    try {
+                                        mDBHelper.insertOrdersInBulk(response.body().orderReqList);
 
                                         if (response.body().outDocReqList != null &&
                                                 !response.body().outDocReqList.isEmpty())
-                                            response.body().outDocReqList.stream().forEach(item -> mDBHelper.insertOrUpdateOutDocs(item));
+                                                    mDBHelper.insertOutDocInBulk(response.body().outDocReqList);
 
                                         if (response.body().boxReqList != null &&
                                                 !response.body().boxReqList.isEmpty())
-                                            response.body().boxReqList.stream().forEach(item -> mDBHelper.insertBoxes(item));
+                                                    mDBHelper.insertBoxInBulk(response.body().boxReqList);
 
                                         if (response.body().movesReqList != null &&
                                                 !response.body().movesReqList.isEmpty())
-                                            response.body().movesReqList.stream().forEach(item -> mDBHelper.insertBoxMovesNoSelect(item));
+                                                    mDBHelper.insertBoxMoveInBulk(response.body().movesReqList);
 
                                         if (response.body().partBoxReqList != null &&
                                                 !response.body().partBoxReqList.isEmpty())
                                             response.body().partBoxReqList.stream().forEach(item -> mDBHelper.insertProds(item));
+                                    } catch (RuntimeException re) {
+                                        Log.w(TAG, re);
+                                        throw new RuntimeException("To catch onto method level.");
                                     }
                                 }
                             }

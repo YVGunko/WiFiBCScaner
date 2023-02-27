@@ -229,7 +229,7 @@ public class UpdateActivity extends AppCompatActivity {
                         Log.d("UpdateActivity", "Ответ сервера на запрос новых заказов: " + response.body().size());
                         if (response.isSuccessful()) {
                             for (Orders order : response.body())
-                                mDBHelper.insertOrders(order);
+                                mDBHelper.insertOrder(order);
                             //Прописать даты в lastUpdate
                             if (response.body().size() != 0)
                                 mDBHelper.setLastUpdate(new lastUpdate(Orders.TABLE_orders,

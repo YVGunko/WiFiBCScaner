@@ -42,6 +42,7 @@ public class Boxes {
         this._archive = _archive;
     }
 
+
     public Boxes(String _id, int _Id_m, int _Q_box, int _N_box, String _DT, String _sentToMasterDate, boolean _archive)  {
         this._id = _id;
         this._Id_m = _Id_m;
