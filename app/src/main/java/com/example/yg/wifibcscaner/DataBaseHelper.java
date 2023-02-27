@@ -2768,7 +2768,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 statement.clearBindings();
                 statement.bindString(1, o.get_id());
                 statement.bindString(2, o.get_Id_b());
-                statement.bindLong(2, o.get_Id_o());
+                statement.bindLong(3, o.get_Id_o());
                 statement.bindLong(5, sDateTimeToLong(o.get_DT()));
 
                 if (o.get_sentToMasterDate() == null)
@@ -2795,7 +2795,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
             db.execSQL("PRAGMA foreign_keys = 0;");
             db.beginTransaction();
-            String sql = "INSERT OR REPLACE INTO Prods (_id, Id_m, Id_d, Id_s, RQ_box, P_date, sentToMasterDate, idOutDocs) " +
+            String sql = "INSERT OR REPLACE INTO Prods (_id, Id_bm, Id_d, Id_s, RQ_box, P_date, sentToMasterDate, idOutDocs) " +
                     " VALUES (?,?,?,?,?,?,?,?);";
 
             SQLiteStatement statement = db.compileStatement(sql);
@@ -2803,15 +2803,17 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             for (Prods o : list) {
                 statement.clearBindings();
                 statement.bindString(1, o.get_id());
-                statement.bindString(2, o.get_Id_b());
-                statement.bindLong(2, o.get_Id_o());
-                statement.bindLong(5, sDateTimeToLong(o.get_DT()));
+                statement.bindString(2, o.get_Id_bm());
+                statement.bindLong(3, o.get_Id_d());
+                statement.bindLong(4, o.get_Id_s());
+                statement.bindLong(5, o.get_RQ_box());
+                statement.bindLong(6, sDateToLong(o.get_P_date()));
 
                 if (o.get_sentToMasterDate() == null)
-                    statement.bindLong(4, new Date().getTime());
+                    statement.bindLong(7, new Date().getTime());
                 else
-                    statement.bindLong(4, sDateTimeToLong(o.get_sentToMasterDate()));
-
+                    statement.bindLong(7, sDateTimeToLong(o.get_sentToMasterDate()));
+                statement.bindString(8, o.get_idOutDocs());
                 statement.executeInsert();
             }
 

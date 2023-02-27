@@ -91,7 +91,7 @@ public class OrderOutDocBoxMovePartRepository {
                         mDBHelper.getDayTimeString( mDBHelper.addDays(new Date(), - 19)),
                         mDBHelper.defs.getDivision_code(),0)
                         .enqueue(new Callback<OrderOutDocBoxMovePart>() {
-                            @RequiresApi(api = Build.VERSION_CODES.N)
+                            //@RequiresApi(api = Build.VERSION_CODES.N)
                             @Override
                             public void onResponse(Call<OrderOutDocBoxMovePart> call,
                                                    Response<OrderOutDocBoxMovePart> response) {
@@ -118,7 +118,7 @@ public class OrderOutDocBoxMovePartRepository {
 
                                         if (response.body().partBoxReqList != null &&
                                                 !response.body().partBoxReqList.isEmpty())
-                                            response.body().partBoxReqList.stream().forEach(item -> mDBHelper.insertProds(item));
+                                                    mDBHelper.insertProdInBulk(response.body().partBoxReqList);
                                     } catch (RuntimeException re) {
                                         Log.w(TAG, re);
                                         throw new RuntimeException("To catch onto method level.");
