@@ -124,15 +124,6 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
         //registerReceiver
         mUsbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
 
-        /*
-        filterAttached_and_Detached = new IntentFilter(UsbManager.ACTION_USB_ACCESSORY_DETACHED);
-        filterAttached_and_Detached.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
-        filterAttached_and_Detached.addAction(ACTION_USB_PERMISSION);
-        //
-        registerReceiver(barcodeDataReceiver, filterAttached_and_Detached);
-        //scaner detect
-        extScanerDetect();
-        */
         AidcManager.create(this, new AidcManager.CreatedCallback() {
             @Override
             public void onCreated(AidcManager aidcManager) {
@@ -140,12 +131,12 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
                 barcodeReader = manager.createBarcodeReader();
                 try {
                     if(barcodeReader!=null) {
-                        Log.d("honeywellscanner: ", "barcodereader not claimed in OnCreate()");
+                        Log.d(TAG, "barcodereader not claimed in OnCreate()");
                         barcodeReader.claim();
                     }
                 }
                 catch (ScannerUnavailableException e) {
-                    showMessage("Невозможно включить встроенный сканер.");
+                    MessageUtils.showToast(MainActivity.this, "Невозможно включить встроенный сканер.",true);
                     //e.printStackTrace();
                 }
                 // register bar code event listener
@@ -212,10 +203,10 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
         if (barcodeReader != null) {
             try {
                 barcodeReader.claim();
-                Log.d("honeywellscanner: ", "scanner claimed");
+                Log.d(TAG, "Device scanner claimed");
             } catch (ScannerUnavailableException e) {
                 e.printStackTrace();
-                showMessage("Встроенный сканер не включается!");
+                MessageUtils.showToast(MainActivity.this, "Невозможно включить встроенный сканер.",true);
             }
         }
     }
@@ -223,15 +214,15 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
 
     public void ocl_scan(View v) { //Вызов активности Сканирования
         if (mDBHelper.defs.get_idUser()==0){
-            showLongMessage("Нужно войти в систему...");
+            MessageUtils.showToast(MainActivity.this, "Нужно войти в систему...",true);
             startActivity(new Intent(this, LoginActivity.class));
             //if not a superuser check for current user today's outdoc and add new one if not exist.
             return;
         }
         if ((mDBHelper.defs.get_Id_o()==0)||(new String("0").equals(mDBHelper.defs.getDivision_code())))
         {   //Операция не выбрана
-            showLongMessage("Нужно зайти в настройки и выбрать операцию, подразделение...");
-            startActivity(new Intent(this,SettingsActivity.class));  //Вызов активности Коробки
+            MessageUtils.showToast(MainActivity.this, "Нужно зайти в настройки и выбрать операцию, подразделение...",true);
+            startActivity(new Intent(this,SettingsActivity.class));
             return;
         }
         if ((mDBHelper.defs.get_Id_o()==mDBHelper.defs.get_idOperLast())&(
@@ -254,8 +245,8 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
                 startActivity(new Intent(this,OutDocsActivity.class));
 
             } else {
-                showLongMessage("Нужно зайти в настройки и выбрать бригаду и сотрудника...");
-                startActivity(new Intent(this,SettingsActivity.class));  //Вызов активности Коробки
+                MessageUtils.showToast(MainActivity.this, "Нужно зайти в настройки и выбрать бригаду и сотрудника...",true);
+                startActivity(new Intent(this,SettingsActivity.class));
             }
             return;
         }
@@ -275,7 +266,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
             ocl_bOk(v);
         }else {
         if (mdevice != null){//внешний usb сканер
-            showMessage("Режим работы с внешним сканером.");
+            MessageUtils.showToast(MainActivity.this, "Режим работы с внешним сканером.",false);
             input.setEnabled(true);
             input.requestFocus();
             //input.setInputType(InputType.TYPE_NULL);
@@ -289,7 +280,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
                     String currentbarcode = input.getText().toString();
                     if( currentbarcode.indexOf("\n") > 0) {
                         currentbarcode = substring(currentbarcode,0,currentbarcode.indexOf("\n"));
-                        showMessage(currentbarcode);
+                        MessageUtils.showToast(MainActivity.this, currentbarcode,false);
                         scanResultHandler(currentbarcode);
                         input.setText("");
                         input.requestFocus();
@@ -315,7 +306,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
                 }
             }
             else{
-                showMessage("Режим работы с камерой.");
+                MessageUtils.showToast(MainActivity.this, "Режим работы с камерой.",true);
                 IntentIntegrator integrator = new IntentIntegrator(this);
                 integrator.initiateScan();
             }
@@ -386,7 +377,7 @@ private static String filter (String str){
             //поискать символ с кодом 194
         currentbarcode = filter(currentbarcode);
         if ((currentbarcode.length()<20)&&(StringUtils.countMatches(currentbarcode,'.')!=5)) {
-            showMessage("QR-код не распознан.");
+            MessageUtils.showToast(MainActivity.this, "QR-код не распознан.",true);
             return;
         }
         fo = mDBHelper.searchOrder(currentbarcode);
@@ -409,15 +400,19 @@ private static String filter (String str){
                             editTextRQ = (EditText) findViewById(R.id.editTextRQ);
                             editTextRQ.setText(String.valueOf(fb.QB - fb.RQ));
                             editTextRQ.setEnabled(false);
-                            if (mDBHelper.defs.get_Id_o()==mDBHelper.defs.get_idOperFirst()) showLongMessage("Эта коробка уже принята полной!");
-                            else showLongMessage("Эта коробка уже отгружена!");
+                            if (mDBHelper.defs.get_Id_o()==mDBHelper.defs.get_idOperFirst())
+                                MessageUtils.showToast(MainActivity.this, "Эта коробка уже принята полной!",false);
+                            else
+                                MessageUtils.showToast(MainActivity.this, "Эта коробка уже отгружена!",false);
                         } else {
                             Button bScan = (Button) findViewById(R.id.bScan);
                             bScan.setText("OK!");
                             editTextRQ = (EditText) findViewById(R.id.editTextRQ);
                             editTextRQ.setText(String.valueOf(fb.QB - fb.RQ));
                             editTextRQ.setEnabled(true);
-                            if (fb.RQ != 0) {showMessage("Эта коробка ранее принималась неполной!");}
+                            if (fb.RQ != 0) {
+                                MessageUtils.showToast(MainActivity.this, "Эта коробка ранее принималась неполной!",false);
+                                }
                         }
                     } else {                                                //Коробки нет , подставить колво в поле редактирования колва и дожаться ОК.
                         if (mDBHelper.defs.get_Id_o()==mDBHelper.defs.get_idOperFirst()){ //Добавить коробку если это операция приемки baseOper = 1
@@ -427,14 +422,14 @@ private static String filter (String str){
                             editTextRQ.setText(String.valueOf(fb.QB - fb.RQ));
                             editTextRQ.setEnabled(true);
                         }else{
-                            showLongMessage("Эта коробка не принималась на производстве!");
+                            MessageUtils.showToast(MainActivity.this, "Эта коробка не принималась на производстве!",false);
                         }
                     }
                 }else {
-                    showLongMessage("Эта коробка уже в архиве! Никакие операции невозможны!");
+                    MessageUtils.showToast(MainActivity.this, "Эта коробка уже в архиве! Никакие операции невозможны!",false);
                 }
             } else {
-                showLongMessage("Заказ для этой коробки не загружен! Будет загружен автоматически при подключении к WiFi.");
+                MessageUtils.showToast(MainActivity.this, "Заказ для этой коробки не загружен! Будет загружен автоматически при подключении к WiFi.",false);
                 //TODO 1. make request to server to load the order if not save the order and load it later
                 saveOrderNotFoundAsync save = new saveOrderNotFoundAsync();
                 String response = null;
@@ -453,8 +448,8 @@ private static String filter (String str){
                         mDBHelper.getOrder_id(currentbarcode));
             }
         } else {
-            showLongMessage("Этот заказ уже в архиве! Никакие операции невозможны!");
-        }
+            MessageUtils.showToast(MainActivity.this, "Этот заказ уже в архиве! Никакие операции невозможны!",false);
+       }
     }
 
     public void ocl_bOk(View v) { //Вызов активности Сканирования
@@ -481,20 +476,26 @@ private static String filter (String str){
                             //showMessage(mDBHelper.defs.descOper+". Обработана новая коробка.");
                             newBM=false;
                         }else {
-                            showMessage(mDBHelper.defs.descOper+". В коробку добавлено "+String.valueOf(iRQ));
+                            MessageUtils.showToast(MainActivity.this,
+                                    mDBHelper.defs.descOper+". В коробку добавлено "+String.valueOf(iRQ),false);
                         }
                         tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
                         tVDBInfo.setText(mDBHelper.lastBox());
                         currentDocDetails  = (TextView) findViewById(R.id.currentDocDetails);
                         currentDocDetails.setText("Накл.№" +mDBHelper.currentOutDoc.get_number() + ", " + mDBHelper.selectCurrentOutDocDetails(mDBHelper.currentOutDoc.get_id()));
-                        if (mDBHelper.lastBoxCheck(fo)) showLongMessage("Это последняя коробка из заказа!");
+                        if (mDBHelper.lastBoxCheck(fo)) {
+                            MessageUtils.showToast(MainActivity.this,
+                                    "Это последняя коробка из заказа!",false);
+                        }
                     }else {
-                        showLongMessage(mDBHelper.defs.descOper+". Повторный прием коробки в смену! Повторный прием возможен в другую смену.");
+                        MessageUtils.showToast(MainActivity.this,
+                                mDBHelper.defs.descOper+". Повторный прием коробки в смену! Повторный прием возможен в другую смену.",true);
                     }
 
                 }else {
                     if (!mDBHelper.addBoxes(fo,iRQ)) {            //---Вызов метода добавления коробки и продс
-                        showLongMessage(mDBHelper.defs.descOper+". Ошибка! Коробка не добавлена в БД!");
+                        MessageUtils.showToast(MainActivity.this,
+                        mDBHelper.defs.descOper+". Ошибка! Коробка не добавлена в БД!",true);
                     } else {
                         tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
                         tVDBInfo.setText(mDBHelper.lastBox());
@@ -502,7 +503,10 @@ private static String filter (String str){
                         currentDocDetails.setText("Накл.№" +mDBHelper.currentOutDoc.get_number() + ", " + mDBHelper.selectCurrentOutDocDetails(mDBHelper.currentOutDoc.get_id()));
 
                         //showMessage(mDBHelper.defs.descOper+". Принята новая коробка.");
-                        if (mDBHelper.lastBoxCheck(fo)) showLongMessage("Это последняя коробка из заказа!");
+                        if (mDBHelper.lastBoxCheck(fo)){
+                            MessageUtils.showToast(MainActivity.this,
+                                    "Это последняя коробка из заказа!",true);
+                        }
                     }
                 }
                 if (mdevice != null){//внешний usb сканер
@@ -511,10 +515,12 @@ private static String filter (String str){
                 }
             } catch (Exception e) {
                 Log.e(TAG, mDBHelper.defs.descOper+". Ошибка при получении количества в коробке!", e);
-                showMessage(mDBHelper.defs.descOper+". Ошибка! Невозможно получить введенное количество!");
+                MessageUtils.showToast(MainActivity.this,
+                        mDBHelper.defs.descOper+". Ошибка! Невозможно получить введенное количество!",true);
             }
         }else {
-            showLongMessage("Ошибка! Введите количество верно!");
+            MessageUtils.showToast(MainActivity.this,
+                    "Ошибка! Введите количество верно!",true);
         }
     }
 
@@ -555,7 +561,8 @@ private static String filter (String str){
             String currentbarcode = scanResult.getContents();
             scanResultHandler(currentbarcode);
         }else{
-            showMessage("Ошибка сканера !");
+            MessageUtils.showToast(MainActivity.this,
+                    "Ошибка сканера !",true);
         }
     }
 
@@ -576,7 +583,8 @@ private static String filter (String str){
                     String currentbarcode = event.getBarcodeData();
                     scanResultHandler(currentbarcode);
                 }else{
-                    showMessage("Ошибка сканера !");
+                    MessageUtils.showToast(MainActivity.this,
+                            "Ошибка сканера !",true);
                 }
             }
         });
@@ -612,31 +620,6 @@ private static String filter (String str){
 
     }
 
-    private void showMessage (String s){
-        Context context = getApplicationContext();
-        int duration = Toast.LENGTH_SHORT;
-
-        if (android.os.Build.VERSION.SDK_INT >= 25) {
-            ToastCompat.makeText(context, s, duration)
-                        .setBadTokenListener(toast -> {
-                            Log.e("failed toast",s);
-                        }).show();
-        } else {
-            Toast.makeText(context, s, duration).show();
-        }
-    }
-    private void showLongMessage (String s){
-        Context context = getApplicationContext();
-        int duration = Toast.LENGTH_LONG;
-        if (android.os.Build.VERSION.SDK_INT >= 25) {
-            ToastCompat.makeText(context, s, duration)
-                    .setBadTokenListener(toast -> {
-                        Log.e("failed toast",s);
-                    }).show();
-        } else {
-            Toast.makeText(context, s, duration).show();
-        }
-    }
     @Override
     public void onBackPressed() {
         // super.onBackPressed();

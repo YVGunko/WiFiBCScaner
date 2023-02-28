@@ -1,6 +1,10 @@
 package com.example.yg.wifibcscaner.utils;
 
+import android.app.Activity;
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
+import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -36,5 +40,23 @@ public class MessageUtils {
         } else {
             Toast.makeText(context, s, duration).show();
         }
+    }
+    public static void showToast(final Context context, final String message, final boolean longDuration) {
+        try {
+            if (context instanceof Activity && ((Activity) context).isFinishing()) {
+                return;
+            }
+
+            if (TextUtils.isEmpty(message) || context == null)
+                return;
+
+            Handler handler = new Handler(Looper.getMainLooper());
+            handler.post(() -> Toast.makeText(context.getApplicationContext(), message, longDuration ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT).show());
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 }
