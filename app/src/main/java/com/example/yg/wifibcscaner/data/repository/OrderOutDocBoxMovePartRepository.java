@@ -85,13 +85,19 @@ public class OrderOutDocBoxMovePartRepository {
     public void fetchAndSaveData(DataBaseHelper mDBHelper) {
 
         DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
+            String strUpdateDate ;
 
+            if (!mDBHelper.globalUpdateDate.equals("")) {
+                strUpdateDate = mDBHelper.globalUpdateDate;
+            } else {
+                strUpdateDate = mDBHelper.getMaxOrderDate();
+            }
+            Log.i(TAG, "fetchAndSaveData -> update date: " + strUpdateDate);
             try {
                 ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getDataPageableV1(
-                        mDBHelper.getDayTimeString( mDBHelper.addDays(new Date(), - 19)),
+                        strUpdateDate,
                         mDBHelper.defs.getDivision_code(),0)
                         .enqueue(new Callback<OrderOutDocBoxMovePart>() {
-                            //@RequiresApi(api = Build.VERSION_CODES.N)
                             @Override
                             public void onResponse(Call<OrderOutDocBoxMovePart> call,
                                                    Response<OrderOutDocBoxMovePart> response) {
@@ -119,6 +125,8 @@ public class OrderOutDocBoxMovePartRepository {
                                         if (response.body().partBoxReqList != null &&
                                                 !response.body().partBoxReqList.isEmpty())
                                                     mDBHelper.insertProdInBulk(response.body().partBoxReqList);
+
+                                        SharedPreferenceManager.getInstance().setNextPageTimestamp();
                                     } catch (RuntimeException re) {
                                         Log.w(TAG, re);
                                         throw new RuntimeException("To catch onto method level.");
