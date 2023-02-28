@@ -4,6 +4,8 @@ import android.content.Context;
 import android.util.Log;
 import android.widget.Toast;
 
+import java.util.Date;
+
 import me.drakeet.support.toast.ToastCompat;
 
 /**
@@ -11,6 +13,7 @@ import me.drakeet.support.toast.ToastCompat;
  */
 
 public class MessageUtils {
+
     public void showMessage (Context context, String s){
         int duration = Toast.LENGTH_SHORT;
 

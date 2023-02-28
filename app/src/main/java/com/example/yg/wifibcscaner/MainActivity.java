@@ -4,11 +4,9 @@ package com.example.yg.wifibcscaner;
 import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.hardware.usb.UsbDevice;
@@ -46,11 +44,11 @@ import com.example.yg.wifibcscaner.data.model.Boxes;
 import com.example.yg.wifibcscaner.data.model.OrdersActivity;
 import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.data.model.Prods;
-import com.example.yg.wifibcscaner.receiver.Config;
 import com.example.yg.wifibcscaner.receiver.SyncDataBroadcastReceiver;
 import com.example.yg.wifibcscaner.utils.ApiUtils;
 import com.example.yg.wifibcscaner.utils.MessageUtils;
 import com.example.yg.wifibcscaner.data.dto.OrderWithOutDocWithBoxWithMovesWithPartsResponce;
+import com.example.yg.wifibcscaner.utils.SharedPreferenceManager;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 import com.honeywell.aidc.AidcManager;
@@ -63,8 +61,6 @@ import com.honeywell.aidc.ScannerUnavailableException;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
 
 import me.drakeet.support.toast.ToastCompat;
@@ -161,22 +157,22 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
 
     private boolean checkFirstRun() {
         // Get current version code
-        int currentVersionCode = BuildConfig.VERSION_CODE;
+        int currentCodeVersion = BuildConfig.VERSION_CODE;
 
-        // Get saved version code
-        SharedPreferences prefs = getSharedPreferences(SharedPrefs.PREFS_NAME, MODE_PRIVATE);
-        int savedVersionCode = prefs.getInt(SharedPrefs.PREF_VERSION_CODE_KEY, SharedPrefs.DOESNT_EXIST);
-        boolean savedDbNeedReplace = prefs.getBoolean(SharedPrefs.PREF_DB_NEED_REPLACE, SharedPrefs.DOESNT_EXIST==-1);
+        // Get saved version code and check if Db needs to be replaced
+        int savedVersionCode = SharedPreferenceManager.getInstance().getCodeVersion();
+        boolean savedDbNeedReplace = SharedPreferenceManager.getInstance().getDbNeedReplace();
 
         // Check for first run or upgrade
-        if (!savedDbNeedReplace & currentVersionCode == savedVersionCode) {
+        if (!savedDbNeedReplace & currentCodeVersion == savedVersionCode) {
             // This is just a normal run
             return false;
 
         } else {
-            mDBHelper = DataBaseHelper.getInstance(this, currentVersionCode, true);
-            prefs.edit().putInt(SharedPrefs.PREF_VERSION_CODE_KEY, currentVersionCode).apply();
-            prefs.edit().putBoolean(SharedPrefs.PREF_DB_NEED_REPLACE, !savedDbNeedReplace).apply();
+            mDBHelper = DataBaseHelper.getInstance(this, currentCodeVersion, true);
+            SharedPreferenceManager.getInstance().setDbNeedReplace(!savedDbNeedReplace);
+            SharedPreferenceManager.getInstance().setCodeVersion(currentCodeVersion);
+
             return true;
         }
     }
@@ -352,37 +348,10 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
             case R.id.action_update:
                 startActivity(new Intent(this, UpdateActivity.class));
                 return true;
-            case R.id.action_db_need_replace:
-                try {
-                    openDbReplaceDialog();
-                } catch (Exception e) {
-                    Log.d(mDBHelper.LOG_TAG, "Запрос на очистку БД: " + e.getMessage());
-                }
-                return true;
+
             default:
                 return super.onOptionsItemSelected(item);
         }
-    }
-    private void openDbReplaceDialog() {
-        AlertDialog.Builder quitDialog = new AlertDialog.Builder(
-                MainActivity.this);
-        final boolean curState = SharedPrefs.getDefaults(SharedPrefs.PREF_DB_NEED_REPLACE, MainActivity.this);
-        quitDialog.setTitle("Очистить базу данных: Вы уверены? CurState ".concat(String.valueOf(curState)));
-
-        quitDialog.setPositiveButton("Да!", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                SharedPrefs.setDefaults(SharedPrefs.PREF_DB_NEED_REPLACE, true, MainActivity.this);
-            }
-        });
-
-        quitDialog.setNegativeButton("Нет.", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                // TODO Auto-generated method stub
-            }
-        });
-        quitDialog.show();
     }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -541,7 +510,7 @@ private static String filter (String str){
                     input.requestFocus();
                 }
             } catch (Exception e) {
-                Log.e(mDBHelper.LOG_TAG, mDBHelper.defs.descOper+". Ошибка при получении количества в коробке!", e);
+                Log.e(TAG, mDBHelper.defs.descOper+". Ошибка при получении количества в коробке!", e);
                 showMessage(mDBHelper.defs.descOper+". Ошибка! Невозможно получить введенное количество!");
             }
         }else {
@@ -729,14 +698,14 @@ private static String filter (String str){
             try {
                 ArrayList<String> OrdersId = new ArrayList<String>();
                 bCancelFlag = false;
-                Log.i("loadOrderAsync", " bCancelFlag was set to: "+bCancelFlag);
+                Log.i(TAG, " bCancelFlag was set to: "+bCancelFlag);
                 if (strings !=null && strings.length != 0)
                     OrdersId.add(strings[0]);
                 else
                     OrdersId.addAll(mDBHelper.getOrdersNotFound());
                 for (String s : OrdersId) {
                     if (isCancelled() || bCancelFlag) {
-                        Log.i("loadOrderAsync", "Breaked. isCanceled="+isCancelled()+" bCancelFlag"+bCancelFlag);
+                        Log.i(TAG, "Breaked. isCanceled="+isCancelled()+" bCancelFlag"+bCancelFlag);
                         break;
                     }
                     ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getOrder(s)
@@ -768,14 +737,14 @@ private static String filter (String str){
                                 public void onFailure(Call<OrderWithOutDocWithBoxWithMovesWithPartsResponce> call, Throwable t) {
                                     cancel(true);
                                     //resetLoadDataTimer();
-                                    Log.w("loadOrderAsync", "Request failed: " + t.getMessage());
+                                    Log.w(TAG, "Request failed: " + t.getMessage());
                                 }
                             });
                 }
             } catch (Exception e) {
                 cancel(true);
                 //resetLoadDataTimer();
-                Log.e("loadOrderAsync", "Exception : " + e.getMessage());
+                Log.e(TAG, "Exception : " + e.getMessage());
                 return null;
             }
             return null;
@@ -801,140 +770,13 @@ private static String filter (String str){
             try {
                 mDBHelper.saveOrderNotFound(strings[0]);
             } catch (Exception e) {
-                Log.d("saveOrderNotFoundAsync", "save exception : " + e.getMessage());
+                Log.d(TAG, "save exception : " + e.getMessage());
                 return "Ошибка при записи";
             }
 
             return "Записано успешно";
         }
     }
-    /*@Override
-    protected void onPause() {
-        super.onPause();
-        Thread myThread = new Thread(new DownloadDataThread());
-        myThread.start();
-    }
-    public void downloadData(View view) {
-        Thread myThread = new Thread(new DownloadDataThread());
-        myThread.start();
-    }
-    private class DownloadDataThread implements Runnable {
-
-        @Override
-        public void run() {
-
-            if (isNetworkAvailable()) {
-
-                if (mDBHelper.defs.getUrl() != null) {
-                    MainActivity.this.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            showLongMessage("Пытаюсь обновиться...");
-                        }
-                    });
-                    downloadDataUsingThread();
-                }
-            }
-        }
-    }
-    public boolean downloadDataUsingThread() {
-
-        boolean isSuccessful = false;
-        try {
-            //TODO
-            ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getOrderV35(mDBHelper.defs.getDivision_code(),null)
-                    .enqueue(new Callback<OrderOutDocBoxMovePart>() {
-                        @RequiresApi(api = Build.VERSION_CODES.N)
-                        @Override
-                        public void onResponse(Call<OrderOutDocBoxMovePart> call,
-                                               Response<OrderOutDocBoxMovePart> response) {
-                            if (response.isSuccessful()) {
-                                if (response.code() != 200) return ;
-                                //save order, boxes, boxMoves, partBox
-                                if (response.body() != null &&
-                                        response.body().orderReqList != null &&
-                                        !response.body().orderReqList.isEmpty()) {
-                                    response.body().orderReqList.stream().forEach(item -> mDBHelper.insertOrders(item));
-
-                                    if (response.body().outDocReqList != null &&
-                                            !response.body().outDocReqList.isEmpty())
-                                        response.body().outDocReqList.stream().forEach(item -> mDBHelper.insertOrUpdateOutDocs(item));
-
-                                    if (response.body().boxReqList != null &&
-                                            !response.body().boxReqList.isEmpty())
-                                        response.body().boxReqList.stream().forEach(item -> mDBHelper.insertBoxes(item));
-
-                                    if (response.body().movesReqList != null &&
-                                            !response.body().movesReqList.isEmpty())
-                                        response.body().movesReqList.stream().forEach(item -> mDBHelper.insertBoxMovesNoSelect(item));
-
-                                    if (response.body().partBoxReqList != null &&
-                                            !response.body().partBoxReqList.isEmpty())
-                                        response.body().partBoxReqList.stream().forEach(item -> mDBHelper.insertProds(item));
-                                }
-                            }
-                        }
-
-                        @Override
-                        public void onFailure(Call<OrderOutDocBoxMovePart> call, Throwable t) {
-                            Log.w("loadOrderAsync", "Request failed: " + t.getMessage());
-                        }
-
-                    });
-
-            isSuccessful = true;
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            this.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    showLongMessage("Вроде обновились...");
-                }
-            });
-        }
-
-        return isSuccessful;
-    }
-    private boolean isNetworkAvailable() {
-        ConnectivityManager connectivityManager
-                = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
-    }
-    private Handler loadDataHandler = new Handler(new Handler.Callback() {
-        @Override
-        public boolean handleMessage(Message msg) {
-            // todo
-            showMessage("loadDataHandler");
-            return true;
-        }
-    });
-
-    private Runnable loadDataCallback = new Runnable() {
-        @Override
-        public void run() {
-            showMessage("loadDataCallback’s started to run.");
-
-            Thread myThread = new Thread(new DownloadDataThread());
-            myThread.start();
-
-        }
-    };
-    public void resetLoadDataTimer(){
-        bCancelFlag = true;
-        loadDataHandler.removeCallbacks(loadDataCallback);
-        loadDataHandler.postDelayed(loadDataCallback, LOAD_TIMEOUT);
-    }
-    public void stopLoadDataTimer(){
-        loadDataHandler.removeCallbacks(loadDataCallback);
-    }
-    @Override
-    public void onUserInteraction(){
-        resetLoadDataTimer();
-    }
-    */
     @Override
     protected void onPostCreate(@Nullable Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
@@ -942,7 +784,7 @@ private static String filter (String str){
     }
 
     /**
-     * sets repeating alarm for syncing
+     * sets repeating alarm for data download
      */
     public void setSyncRepeatingAlarm() {
         Intent intent = new Intent(this, SyncDataBroadcastReceiver.class);

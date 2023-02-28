@@ -1,8 +1,6 @@
 package com.example.yg.wifibcscaner;
 
 import android.annotation.SuppressLint;
-import android.app.AlarmManager;
-import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -11,8 +9,6 @@ import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.os.AsyncTask;
-import android.os.SystemClock;
-import android.support.annotation.Nullable;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -29,17 +25,16 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Spinner;
 
-import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.Defs;
 import com.example.yg.wifibcscaner.data.model.Deps;
 import com.example.yg.wifibcscaner.data.model.Operation;
 import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.data.model.Sotr;
 import com.example.yg.wifibcscaner.data.model.user;
-import com.example.yg.wifibcscaner.receiver.Config;
 import com.example.yg.wifibcscaner.utils.ApiUtils;
 import com.example.yg.wifibcscaner.utils.MessageUtils;
 import com.example.yg.wifibcscaner.service.PartBoxService;
+import com.example.yg.wifibcscaner.utils.SharedPreferenceManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,6 +45,8 @@ import retrofit2.Response;
 
 public class SettingsActivity extends AppCompatActivity implements
         AdapterView.OnItemSelectedListener {
+
+    private static final String TAG = "SettingsActivity";
 
     private PartBoxService boxesService;
     EditText host_v;
@@ -266,7 +263,7 @@ public class SettingsActivity extends AppCompatActivity implements
 
                 } catch (Exception e) {
 
-                    Log.d(mDBHelper.LOG_TAG, "Ответ сервера на запрос новых заказов: " + e.getMessage());
+                    Log.d(TAG, "Ответ сервера на запрос новых заказов: " + e.getMessage());
                 }
                 return true;
 
@@ -275,7 +272,7 @@ public class SettingsActivity extends AppCompatActivity implements
                     openDbReplaceDialog();
                 } catch (Exception e) {
 
-                    Log.d(mDBHelper.LOG_TAG, "Запрос на очистку БД: " + e.getMessage());
+                    Log.d(TAG, "Запрос на очистку БД: " + e.getMessage());
                 }
                 return true;
             default:
@@ -323,8 +320,7 @@ public class SettingsActivity extends AppCompatActivity implements
             public void onClick(DialogInterface dialog, int which) {
                 int length =getResources().getStringArray(R.array.options_db_need_replace).length;
                 if (selectedItems.size() == length) {
-                    SharedPreferences prefs = getSharedPreferences(SharedPrefs.PREFS_NAME, MODE_PRIVATE);
-                    prefs.edit().putBoolean(SharedPrefs.PREF_DB_NEED_REPLACE, true).apply();
+                    SharedPreferenceManager.getInstance().setDbNeedReplace(true);
                     triggerRebirth(SettingsActivity.this);
                 } else
                 {
@@ -457,21 +453,21 @@ public class SettingsActivity extends AppCompatActivity implements
                     opers_select_label = (TextView) findViewById(R.id.select_label);
                     opers_select_label.setText(spinner.getItemAtPosition(0).toString());}
                 catch (Exception e){
-                    Log.d(mDBHelper.LOG_TAG, "Error : " + e.getMessage());
+                    Log.d(TAG, "Error : " + e.getMessage());
                 }
                 try {
                     loadSpinnerData();
                     select_label = (TextView) findViewById(R.id.select_label);
                     select_label.setText(spinner.getItemAtPosition(0).toString());}
                 catch (Exception e){
-                    Log.d(mDBHelper.LOG_TAG, "Error : " + e.getMessage());
+                    Log.d(TAG, "Error : " + e.getMessage());
                 }
                 try {
                     loadSpinnerSotrData();
                     labelSotr = (TextView) findViewById(R.id.labelSotr);
                     labelSotr.setText(spinnerSotr.getItemAtPosition(0).toString());}
                 catch (Exception e){
-                    Log.d(mDBHelper.LOG_TAG, "Error : " + e.getMessage());
+                    Log.d(TAG, "Error : " + e.getMessage());
                 }
                 messageUtils.showMessage(getApplicationContext(),"Вы выбрали: " + label);
             }
@@ -491,14 +487,14 @@ public class SettingsActivity extends AppCompatActivity implements
                     select_label = (TextView) findViewById(R.id.select_label);
                     select_label.setText(spinner.getItemAtPosition(0).toString());}
                 catch (Exception e){
-                    Log.d(mDBHelper.LOG_TAG, "Error : " + e.getMessage());
+                    Log.d(TAG, "Error : " + e.getMessage());
                 }
                 try {
                     loadSpinnerSotrData();
                     labelSotr = (TextView) findViewById(R.id.labelSotr);
                     labelSotr.setText(spinnerSotr.getItemAtPosition(0).toString());}
                 catch (Exception e){
-                    Log.d(mDBHelper.LOG_TAG, "Error : " + e.getMessage());
+                    Log.d(TAG, "Error : " + e.getMessage());
                 }
             }
         }
@@ -518,7 +514,7 @@ public class SettingsActivity extends AppCompatActivity implements
                     labelSotr = (TextView) findViewById(R.id.labelSotr);
                     labelSotr.setText(spinnerSotr.getItemAtPosition(0).toString());}
                 catch (Exception e){
-                    Log.d(mDBHelper.LOG_TAG, "Error : " + e.getMessage());
+                    Log.d(TAG, "Error : " + e.getMessage());
                 }
             }
         }
@@ -554,7 +550,7 @@ public class SettingsActivity extends AppCompatActivity implements
                         }
                     }
                     catch (Exception e){
-                        Log.d(mDBHelper.LOG_TAG, "Error : " + e.getMessage());
+                        Log.d(TAG, "Error : " + e.getMessage());
                     }
                 }
             }
@@ -639,11 +635,11 @@ public class SettingsActivity extends AppCompatActivity implements
 
                     @Override
                     public void onFailure(Call<List<String>> call, Throwable t) {
-                        Log.d("UpdateActivity", "Ответ сервера на запрос новых операций: " + t.getMessage());
+                        Log.d(TAG, "Ответ сервера на запрос новых операций: " + t.getMessage());
                     }
                 });
             } catch (Exception e) {
-                Log.e("UpdateActivity", "Error : " + e.getMessage());
+                Log.e(TAG, "Error : " + e.getMessage());
             }
             return null;
         }

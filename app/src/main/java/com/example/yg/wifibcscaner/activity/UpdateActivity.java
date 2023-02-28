@@ -30,11 +30,10 @@ import retrofit2.Response;
 import android.view.Menu;
 import android.view.MenuItem;
 
-import static com.example.yg.wifibcscaner.DataBaseHelper.getStartOfDayString;
+import static com.example.yg.wifibcscaner.utils.DateTimeUtils.*;
 
 public class UpdateActivity extends AppCompatActivity {
     private DataBaseHelper mDBHelper;
-    //private final Context uContext;
     ProgressBar pbar;
     Button buttonStart;
     ListView listView;
@@ -53,10 +52,6 @@ public class UpdateActivity extends AppCompatActivity {
             "Движения коробок",
             "Подошва"
     };
-
-/*    public UpdateActivity(Context uContext) {
-        this.uContext = uContext;
-    }*/
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

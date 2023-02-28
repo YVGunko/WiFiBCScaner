@@ -12,7 +12,7 @@ android {
         versionName '4.0'
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
-        buildConfigField("int", "CACHE_TIMEOUT", (10 * 60 * 1000).toString()) //10 min
+        buildConfigField("int", "CACHE_TIMEOUT", (30 * 60 * 1000).toString()) //30 min
         buildConfigField("int", "NEXT_PAGE_TIMEOUT", (30 * 1000).toString()) //30sec =
     }
     buildTypes {
