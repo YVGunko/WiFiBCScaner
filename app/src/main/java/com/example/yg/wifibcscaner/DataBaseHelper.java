@@ -58,10 +58,6 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     private static String DB_PATH = "";
     private static String DB_NAME = "SQR.db";
     private static final String TABLE_MD = "MasterData";
-    private static final String dtPattern = "dd.MM.yyyy HH:mm:ss";
-    private static final String d0Pattern = "dd.MM.yyyy 00:00:00";
-    private static final String y0Pattern = "01.01.yyyy 00:00:00";
-    private static final String dayPattern = "dd.MM.yyyy";
 
 
     public static final String COLUMN_sentToMasterDate = "sentToMasterDate";
@@ -76,13 +72,13 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     private static DataBaseHelper sInstance;
 
     public static final Long ldtMin = getStartOfDayLong(addDays(new Date(), -numberOfDaysInMonth(new Date())));
-    public static final String dtMin = getStartOfDayString(ldtMin);
+    public static final String dtMin = getStartOfDayString(getStartOfDayLong(addDays(new Date(), -numberOfDaysInMonth(new Date()))));
 
     public Defs defs;
     public OutDocs currentOutDoc;
     public Sotr sotr;
 
-    public class foundbox {
+    public static class foundbox {
         String barcode; //строка описания
         String boxdef; //строка описания
         int QB; //количество в коробке
@@ -94,7 +90,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         boolean _archive;
     }
 
-    public class foundorder {
+    public static class foundorder {
         String barcode; //строка описания
         String orderdef; //строка описания
         int _id; //
@@ -374,7 +370,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                     "Q_box         INTEGER,"+
                     "N_box         INTEGER,"+
                     "DT            INTEGER,"+
-                    "archive       BOOLEAN       DEFAULT false,"+
+                    "archive       BOOLEAN       DEFAULT 0,"+
                     "division_code VARCHAR (255) REFERENCES Division (code) DEFAULT (0)," +
                     "PRIMARY KEY (_id));");
             db.execSQL("INSERT INTO MasterData (_id,Ord_id,Ord,Cust,Nomen,Attrib,Q_ord,Q_box,N_box,DT,archive,division_code)"+
@@ -428,7 +424,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                         "_id INTEGER PRIMARY KEY,"+
                         "name VARCHAR (30) UNIQUE NOT NULL,"+
                         "pswd VARCHAR (10) NOT NULL DEFAULT (1234),"+
-                        "superUser BOOLEAN DEFAULT false,"+
+                        "superUser BOOLEAN DEFAULT 0,"+
                         "Id_s INTEGER REFERENCES Sotr (_id) DEFAULT (0),"+
                         "DT INTEGER );");
 
@@ -624,7 +620,8 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             readOrder.put("Ord", cursor.getString(0) + ". " + cursor.getString(1));
             readOrder.put("Cust", cursor.getString(2) + "\n" + retStringFollowingCRIfNotNull(cursor.getString(3)) +
                     "Заказ: " + cursor.getString(4) + ". Коробок" +
-                    ": " + cursor.getString(6) + ". Регл: " + cursor.getString(5) + "\n" + " Загружен: " + lDateToString(cursor.getLong(7)));
+                    ": " + cursor.getString(6) + ". Регл: " + cursor.getString(5) + "\n" +
+                    " Загружен: " + getLongDateTimeString(cursor.getLong(7)));
 
             //Закидываем в список
             readOrders.add(readOrder);
@@ -680,11 +677,11 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 values.put(OutDocs.COLUMN_Id_o, outdocs.get_Id_o());
                 values.put(OutDocs.COLUMN_number, outdocs.get_number());
                 values.put(OutDocs.COLUMN_comment, outdocs.get_comment());
-                values.put(OutDocs.COLUMN_DT, sDateTimeToLong(outdocs.get_DT()));
+                values.put(OutDocs.COLUMN_DT, getDateTimeLong(outdocs.get_DT()));
                 values.put(COLUMN_sentToMasterDate, new Date().getTime());
                 values.put(OutDocs.COLUMN_Division_code, outdocs.getDivision_code());
                 values.put(OutDocs.COLUMN_idUser, outdocs.getIdUser());
-                l = mDataBase.insertWithOnConflict(outdocs.TABLE, null, values, 5);
+                l = mDataBase.insertWithOnConflict(OutDocs.TABLE, null, values, 5);
             } catch (SQLException e) {
                 // TODO: handle exception
                 throw e;
@@ -880,7 +877,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 //Пробегаем по всем коробкам
                 while (!cursor.isAfterLast()) {
                     OutDocs readBoxMove = new OutDocs(cursor.getString(0), cursor.getInt(4), cursor.getInt(1), cursor.getString(2),
-                            lDateToString(cursor.getLong(3)), null, cursor.getString(5), cursor.getInt(6));
+                            getLongDateTimeString(cursor.getLong(3)), null, cursor.getString(5), cursor.getInt(6));
                     //Закидываем в список
                     readBoxMoves.add(readBoxMove);
                     //Переходим к следующеq
@@ -969,7 +966,8 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
 //Пробегаем по всем коробкам
             while (!cursor.isAfterLast()) {
-                Boxes readBox = new Boxes(cursor.getString(0), cursor.getInt(1), cursor.getInt(2), cursor.getInt(3), lDateToString((cursor.getLong(4))), null, false);
+                Boxes readBox = new Boxes(cursor.getString(0), cursor.getInt(1), cursor.getInt(2),
+                        cursor.getInt(3), getLongDateTimeString((cursor.getLong(4))), null, false);
                 if ((readBox.get_id()!= "")&(((int) readBox.get_Id_m()) != 0))
                     //Закидываем в список
                     readBoxes.add(readBox);
@@ -993,7 +991,8 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
 //Пробегаем по всем коробкам
             while (!cursor.isAfterLast()) {
-                BoxMoves readBoxMove = new BoxMoves(cursor.getString(0), cursor.getString(1), cursor.getInt(2), lDateToString((cursor.getLong(3))), null);
+                BoxMoves readBoxMove = new BoxMoves(cursor.getString(0), cursor.getString(1), cursor.getInt(2),
+                        getLongDateTimeString((cursor.getLong(3))), null);
                 //Закидываем в список
                 readBoxMoves.add(readBoxMove);
                 //Переходим к следующеq
@@ -1018,7 +1017,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 //Пробегаем по всем коробкам
             while (!cursor.isAfterLast()) {
                 Prods readProd = new Prods(cursor.getString(0), cursor.getString(1), cursor.getInt(2), cursor.getInt(3), cursor.getInt(4),
-                        lDateToString(cursor.getLong(5)), cursor.getString(6), cursor.getString(7));
+                        getLongDateTimeString(cursor.getLong(5)), cursor.getString(6), cursor.getString(7));
                 //Закидываем в список
                 readProds.add(readProd);
                 //Переходим к следующеq
@@ -1090,13 +1089,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         product += "В кор: " + cursor.getString(7) + ". " + cursor.getString(8)+", " + cursor.getString(9);
         return product;
     }
-    private String lDateToString (long lDate){
-        Calendar cal = Calendar.getInstance();
-        cal.setTimeInMillis(lDate);
-        Date d = cal.getTime();
-        SimpleDateFormat sdf = new SimpleDateFormat(dtPattern);
-        return sdf.format(d);
-    }
+
     // version 3.5
     public foundorder loadOrder(String storedbarcode) {
         //TODO load
@@ -1137,7 +1130,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 fo.QO = c.getInt(6);
                 fo.QB = c.getInt(7);
                 fo.NB = c.getInt(8);
-                fo.DT = lDateToString(c.getLong(9));
+                fo.DT = getLongDateTimeString(c.getLong(9));
                 fo.orderdef = makeOrderdef(c);
                 fo.barcode = storedbarcode;
                 fo.archive = (c.getInt(c.getColumnIndex("archive")) != 0);
@@ -1251,26 +1244,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             return b;
         }
     }
-    public long sDateToLong (String sDate){
-        try {
-            SimpleDateFormat sdf = new SimpleDateFormat(dayPattern);
-            Date date = sdf.parse(sDate);
-            return date.getTime();
-        } catch (ParseException e) {
-            e.printStackTrace();
-            return 0;
-        }
-    }
-    public long sDateTimeToLong (String sDate){
-        try {
-            SimpleDateFormat sdf = new SimpleDateFormat(dtPattern);
-            Date date = sdf.parse(sDate);
-            return date.getTime();
-        } catch (ParseException e) {
-            e.printStackTrace();
-            return 0;
-        }
-    }
+
     public long insertUser(user user) {
         long l = 0;
         try {
@@ -1282,7 +1256,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 values.put(user.COLUMN_Id_s, user.get_Id_s());
                 values.put(user.COLUMN_name, user.getName());
                 values.put(user.COLUMN_pswd, user.getPswd());
-                values.put(user.COLUMN_DT, sDateTimeToLong(user.get_DT()));
+                values.put(user.COLUMN_DT, getDateTimeLong(user.get_DT()));
                 values.put(user.COLUMN_superUser, user.isSuperUser());
 
                 l = mDataBase.insertWithOnConflict(user.TABLE, null, values, 5);
@@ -1305,7 +1279,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 values.put(Sotr.COLUMN_id, sotr.get_id());
                 values.put(Sotr.COLUMN_Sotr, sotr.get_Sotr());
                 values.put(Sotr.COLUMN_tn_Sotr, sotr.get_tn_Sotr());
-                values.put(Sotr.COLUMN_DT, sDateTimeToLong(sotr.get_DT()));
+                values.put(Sotr.COLUMN_DT, getDateTimeLong(sotr.get_DT()));
                 values.put(Sotr.COLUMN_Division_code, sotr.getDivision_code());
                 values.put(Sotr.COLUMN_Id_d, sotr.get_Id_d());
                 values.put(Sotr.COLUMN_Id_o, sotr.get_Id_o());
@@ -1330,7 +1304,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 values.put(Deps.COLUMN_id, deps.get_id());
                 values.put(Deps.COLUMN_Id_deps, deps.get_Id_deps());
                 values.put(Deps.COLUMN_Name_Deps, deps.get_Name_Deps());
-                values.put(Deps.COLUMN_DT, sDateTimeToLong(deps.get_DT()));
+                values.put(Deps.COLUMN_DT, getDateTimeLong(deps.get_DT()));
                 values.put(Deps.COLUMN_Division_code, deps.getDivision_code());
                 values.put(Deps.COLUMN_Id_o, deps.get_Id_o());
 
@@ -1353,7 +1327,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 values.clear();
                 values.put(Operation.COLUMN_id, opers.get_id());
                 values.put(Operation.COLUMN_Opers, opers.get_Opers());
-                values.put(Operation.COLUMN_DT, sDateTimeToLong(opers.get_dt()));
+                values.put(Operation.COLUMN_DT, getDateTimeLong(opers.get_dt()));
                 values.put(Operation.COLUMN_Division, opers.getDivision_code());
 
                 l = mDataBase.insertWithOnConflict(opers.TABLE, null, values, 5);
@@ -1382,7 +1356,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 values.put(Orders.COLUMN_Q_ord, order.get_Q_ord());
                 values.put(Orders.COLUMN_Q_box, order.get_Q_box());
                 values.put(Orders.COLUMN_N_box, order.get_N_box());
-                values.put(Orders.COLUMN_DT, sDateTimeToLong(order.get_DT()));
+                values.put(Orders.COLUMN_DT, getDateTimeLong(order.get_DT()));
                 values.put(Orders.COLUMN_Division_code, order.getDivision_code());
                 values.put(Orders.COLUMN_Archive, order.getArchive());
                 l = mDataBase.insertWithOnConflict(order.TABLE_orders, null, values, 5);
@@ -1440,9 +1414,9 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 values.put(Prods.COLUMN_Id_d, prods.get_Id_d());
                 values.put(Prods.COLUMN_Id_s, prods.get_Id_s());
                 values.put(Prods.COLUMN_RQ_box, prods.get_RQ_box());
-                values.put(Prods.COLUMN_P_date, sDateToLong(prods.get_P_date()));
+                values.put(Prods.COLUMN_P_date, getDateLong(prods.get_P_date()));
                 values.put(Prods.COLUMN_idOutDocs, prods.get_idOutDocs());
-                if (prods.get_sentToMasterDate() != null) values.put(Prods.COLUMN_sentToMasterDate, sDateTimeToLong(prods.get_sentToMasterDate()));
+                if (prods.get_sentToMasterDate() != null) values.put(Prods.COLUMN_sentToMasterDate, getDateTimeLong(prods.get_sentToMasterDate()));
 
                 b = (mDataBase.insertWithOnConflict(Prods.TABLE_prods, null, values, 5) > 0);
             } catch (SQLException e) {
@@ -1459,7 +1433,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         boolean b = false;
         try {
             try {
-                BoxMoves bm = new BoxMoves (getUUID(),fb._id, defs.get_Id_o(),lDateToString(new Date().getTime()),null);
+                BoxMoves bm = new BoxMoves (getUUID(),fb._id, defs.get_Id_o(),getLongDateTimeString(new Date().getTime()),null);
                 if (insertBoxMoves(bm)) {
                     Prods prods = null;
                     if (bm.get_Id_o()== defs.get_idOperLast()) {//Базовая операция
@@ -1484,7 +1458,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 mDataBase = this.getWritableDatabase();
                 ContentValues values = new ContentValues();
                 values.clear();
-                values.put(Prods.COLUMN_sentToMasterDate, sDateTimeToLong(prods.get_sentToMasterDate()));
+                values.put(Prods.COLUMN_sentToMasterDate, getDateTimeLong(prods.get_sentToMasterDate()));
                 b = (mDataBase.update(Prods.TABLE_prods, values,Prods.COLUMN_ID +"='"+prods.get_id()+ "'",null) > 0) ;
             } catch (SQLiteException e) {
                 // TODO: handle exception
@@ -1503,7 +1477,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 ContentValues values = new ContentValues();
                 values.clear();
 
-                values.put(BoxMoves.COLUMN_sentToMasterDate, sDateTimeToLong(bm.get_sentToMasterDate()));
+                values.put(BoxMoves.COLUMN_sentToMasterDate, getDateTimeLong(bm.get_sentToMasterDate()));
                 b = (mDataBase.update(BoxMoves.TABLE_bm, values,BoxMoves.COLUMN_ID +"='"+bm.get_id()+"'",null) > 0) ;
             } catch (SQLiteException e) {
                 // TODO: handle exception
@@ -1601,7 +1575,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 ContentValues values = new ContentValues();
                 values.clear();
 
-                values.put(Boxes.COLUMN_sentToMasterDate, sDateTimeToLong(boxes.get_sentToMasterDate()));
+                values.put(Boxes.COLUMN_sentToMasterDate, getDateTimeLong(boxes.get_sentToMasterDate()));
                 values.put(Boxes.COLUMN_archive, boxes.isArchive());
                 b = (mDataBase.update(Boxes.TABLE_boxes, values,Boxes.COLUMN_ID +"='"+boxes.get_id()+"'",null) > 0) ;
             } catch (SQLiteException e) {
@@ -1627,9 +1601,9 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 values.put(Boxes.COLUMN_Id_m, boxes.get_Id_m());
                 values.put(Boxes.COLUMN_Q_box, boxes.get_Q_box());
                 values.put(Boxes.COLUMN_N_box, boxes.get_N_box());
-                values.put(Boxes.COLUMN_DT, sDateTimeToLong(boxes.get_DT()));
+                values.put(Boxes.COLUMN_DT, getDateTimeLong(boxes.get_DT()));
                 values.put(Boxes.COLUMN_archive, boxes.isArchive());
-                if (boxes.get_sentToMasterDate() != null) values.put(Boxes.COLUMN_sentToMasterDate, sDateTimeToLong(boxes.get_sentToMasterDate()));
+                if (boxes.get_sentToMasterDate() != null) values.put(Boxes.COLUMN_sentToMasterDate, getDateTimeLong(boxes.get_sentToMasterDate()));
                 b = (mDataBase.insertWithOnConflict(Boxes.TABLE_boxes, null, values, 5) > 0);
             } catch (SQLiteConstraintException e) {
                 // TODO: handle exception
@@ -1663,8 +1637,8 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                     values.put(Boxes.COLUMN_Id_m, boxes.get_Id_m());
                     values.put(Boxes.COLUMN_Q_box, boxes.get_Q_box());
                     values.put(Boxes.COLUMN_N_box, boxes.get_N_box());
-                    values.put(Boxes.COLUMN_DT, sDateTimeToLong(boxes.get_DT()));
-                    if (boxes.get_sentToMasterDate() != null) values.put(Boxes.COLUMN_sentToMasterDate, sDateTimeToLong(boxes.get_sentToMasterDate()));
+                    values.put(Boxes.COLUMN_DT, getDateTimeLong(boxes.get_DT()));
+                    if (boxes.get_sentToMasterDate() != null) values.put(Boxes.COLUMN_sentToMasterDate, getDateTimeLong(boxes.get_sentToMasterDate()));
                     b = (mDataBase.insertWithOnConflict(Boxes.TABLE_boxes, null, values, 5) > 0);
                 } catch (SQLiteConstraintException e) {
                 // TODO: handle exception
@@ -1688,8 +1662,8 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                     values.put(BoxMoves.COLUMN_ID, bm.get_id());
                     values.put(BoxMoves.COLUMN_Id_b, bm.get_Id_b());
                     values.put(BoxMoves.COLUMN_Id_o, bm.get_Id_o());
-                    values.put(BoxMoves.COLUMN_DT, sDateTimeToLong(bm.get_DT()));
-                    if (bm.get_sentToMasterDate() != null) values.put(BoxMoves.COLUMN_sentToMasterDate, sDateTimeToLong(bm.get_sentToMasterDate()));
+                    values.put(BoxMoves.COLUMN_DT, getDateTimeLong(bm.get_DT()));
+                    if (bm.get_sentToMasterDate() != null) values.put(BoxMoves.COLUMN_sentToMasterDate, getDateTimeLong(bm.get_sentToMasterDate()));
                     b = (mDataBase.insertWithOnConflict(BoxMoves.TABLE_bm, null, values, 5) > 0);
             } catch (SQLException mSQLException) {
                 throw mSQLException;
@@ -1723,8 +1697,8 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                     values.put(BoxMoves.COLUMN_ID, bm.get_id());
                     values.put(BoxMoves.COLUMN_Id_b, bm.get_Id_b());
                     values.put(BoxMoves.COLUMN_Id_o, bm.get_Id_o());
-                    values.put(BoxMoves.COLUMN_DT, sDateTimeToLong(bm.get_DT()));
-                    if (bm.get_sentToMasterDate() != null) values.put(BoxMoves.COLUMN_sentToMasterDate, sDateTimeToLong(bm.get_sentToMasterDate()));
+                    values.put(BoxMoves.COLUMN_DT, getDateTimeLong(bm.get_DT()));
+                    if (bm.get_sentToMasterDate() != null) values.put(BoxMoves.COLUMN_sentToMasterDate, getDateTimeLong(bm.get_sentToMasterDate()));
                     b = (mDataBase.insertWithOnConflict(BoxMoves.TABLE_bm, null, values, 5) > 0);
                     //Log.d(LOG_TAG, "insertBoxMoves insertOrThrow return OK ");
                     }
@@ -2312,7 +2286,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             cursor = mDataBase.rawQuery("SELECT max(DT) FROM user", null);
             if ((cursor != null) & (cursor.getCount() != 0)) {
                 cursor.moveToFirst();
-                nm = lDateToString(cursor.getLong(0));
+                nm = getLongDateTimeString(cursor.getLong(0));
             }
         } finally {
             tryCloseCursor(cursor);
@@ -2331,7 +2305,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             cursor = mDataBase.rawQuery("SELECT max(DT) FROM Sotr", null);
             if ((cursor != null) & (cursor.getCount() != 0)) {
                 cursor.moveToFirst();
-                nm = lDateToString(cursor.getLong(0));
+                nm = getLongDateTimeString(cursor.getLong(0));
             }
         } finally {
             tryCloseCursor(cursor);
@@ -2349,7 +2323,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             cursor = mDataBase.rawQuery("SELECT max(DT) FROM Deps", null);
             if ((cursor != null) & (cursor.getCount() != 0)) {
                 cursor.moveToFirst();
-                nm = lDateToString(cursor.getLong(0));
+                nm = getLongDateTimeString(cursor.getLong(0));
             }
         } finally {
             tryCloseCursor(cursor);
@@ -2367,7 +2341,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             cursor = mDataBase.rawQuery("SELECT max(DT) FROM Opers", null);
             if ((cursor != null) & (cursor.getCount() != 0)) {
                 cursor.moveToFirst();
-                nm = lDateToString(cursor.getLong(0));
+                nm = getLongDateTimeString(cursor.getLong(0));
             }
         } finally {
             tryCloseCursor(cursor);
@@ -2490,7 +2464,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             cursor = mDataBase.rawQuery("SELECT min(P_date) FROM Prods", null);
             if ((cursor != null) & (cursor.getCount() != 0)) {
                 cursor.moveToFirst();
-                nm = lDateToString(cursor.getLong(0));
+                nm = getLongDateTimeString(cursor.getLong(0));
             }
         } finally {
             tryCloseCursor(cursor);
@@ -2524,7 +2498,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             cursor = mDataBase.rawQuery("SELECT min(DT) FROM "+tableName, null);
             if ((cursor != null) & (cursor.getCount() != 0)) {
                 cursor.moveToFirst();
-                nm = lDateToString(cursor.getLong(0));
+                nm = getLongDateTimeString(cursor.getLong(0));
             }
         } finally {
             tryCloseCursor(cursor);
@@ -2593,7 +2567,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 statement.bindLong(7, o.get_Q_ord());
                 statement.bindLong(8, o.get_Q_box());
                 statement.bindLong(9, o.get_N_box());
-                statement.bindLong(10, sDateTimeToLong(o.get_DT()));
+                statement.bindLong(10, getDateTimeLong(o.get_DT()));
                 if (o.getArchive() == null)
                     statement.bindLong(11, 0);
                 else
@@ -2632,12 +2606,12 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 else
                     statement.bindString(4, o.get_comment());
 
-                statement.bindLong(5, sDateTimeToLong(o.get_DT()));
+                statement.bindLong(5, getDateTimeLong(o.get_DT()));
 
                 if (o.get_sentToMasterDate() == null)
                     statement.bindLong(6, new Date().getTime());
                 else
-                    statement.bindLong(6, sDateTimeToLong(o.get_sentToMasterDate()));
+                    statement.bindLong(6, getDateTimeLong(o.get_sentToMasterDate()));
 
                 statement.bindString(7, o.getDivision_code());
                 statement.bindLong(8, o.getIdUser());
@@ -2670,12 +2644,12 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 statement.bindLong(2, o.get_Id_m());
                 statement.bindLong(3, o.get_Q_box());
                 statement.bindLong(4, o.get_N_box());
-                statement.bindLong(5, sDateTimeToLong(o.get_DT()));
+                statement.bindLong(5, getDateTimeLong(o.get_DT()));
 
                 if (o.get_sentToMasterDate() == null)
                     statement.bindLong(6, new Date().getTime());
                 else
-                    statement.bindLong(6, sDateTimeToLong(o.get_sentToMasterDate()));
+                    statement.bindLong(6, getDateTimeLong(o.get_sentToMasterDate()));
 
                 statement.bindLong(7, (o.isArchive() ? 1 : 0));
                 statement.executeInsert();
@@ -2707,12 +2681,12 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 statement.bindString(1, o.get_id());
                 statement.bindString(2, o.get_Id_b());
                 statement.bindLong(3, o.get_Id_o());
-                statement.bindLong(5, sDateTimeToLong(o.get_DT()));
+                statement.bindLong(5, getDateTimeLong(o.get_DT()));
 
                 if (o.get_sentToMasterDate() == null)
                     statement.bindLong(4, new Date().getTime());
                 else
-                    statement.bindLong(4, sDateTimeToLong(o.get_sentToMasterDate()));
+                    statement.bindLong(4, getDateTimeLong(o.get_sentToMasterDate()));
 
                 statement.executeInsert();
             }
@@ -2745,12 +2719,12 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 statement.bindLong(3, o.get_Id_d());
                 statement.bindLong(4, o.get_Id_s());
                 statement.bindLong(5, o.get_RQ_box());
-                statement.bindLong(6, sDateToLong(o.get_P_date()));
+                statement.bindLong(6, getDateLong(o.get_P_date()));
 
                 if (o.get_sentToMasterDate() == null)
                     statement.bindLong(7, new Date().getTime());
                 else
-                    statement.bindLong(7, sDateTimeToLong(o.get_sentToMasterDate()));
+                    statement.bindLong(7, getDateTimeLong(o.get_sentToMasterDate()));
                 statement.bindString(8, o.get_idOutDocs());
                 statement.executeInsert();
             }

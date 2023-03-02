@@ -55,7 +55,7 @@ public class DefaultExecutorSupplier {
                 NUMBER_OF_CORES * 2,
                 NUMBER_OF_CORES * 2,
                 60L,
-                TimeUnit.SECONDS,
+                TimeUnit.MINUTES,
                 new LinkedBlockingQueue<Runnable>(),
                 backgroundPriorityThreadFactory
         );

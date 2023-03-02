@@ -15,6 +15,6 @@ public class SyncDataBroadcastReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         Log.d(TAG, "called");
-        new OrderOutDocBoxMovePartRepository().fetchAndSaveData(DataBaseHelper.getInstance(context));
+        new OrderOutDocBoxMovePartRepository().downloadData(context);
     }
 }

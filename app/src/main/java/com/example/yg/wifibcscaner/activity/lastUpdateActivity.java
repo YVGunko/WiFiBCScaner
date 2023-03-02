@@ -9,6 +9,7 @@ import android.widget.TextView;
 
 import com.example.yg.wifibcscaner.DataBaseHelper;
 import com.example.yg.wifibcscaner.R;
+import com.example.yg.wifibcscaner.utils.SharedPreferenceManager;
 
 
 public class lastUpdateActivity extends AppCompatActivity {
@@ -44,6 +45,7 @@ public class lastUpdateActivity extends AppCompatActivity {
                 };
                 tvw.setText("Выбрана дата: "+ spDay+"."+ spMonth+"."+picker.getYear());
                 mDBHelper.globalUpdateDate = spDay+"."+ spMonth+"."+picker.getYear()+" 00:00:00";
+                SharedPreferenceManager.getInstance().setUpdateDate(spDay+"."+ spMonth+"."+picker.getYear()+" 00:00:00");
             }
         });
     }

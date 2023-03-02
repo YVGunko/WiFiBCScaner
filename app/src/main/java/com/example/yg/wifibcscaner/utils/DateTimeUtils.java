@@ -1,5 +1,6 @@
 package com.example.yg.wifibcscaner.utils;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -61,16 +62,16 @@ public class DateTimeUtils {
     public static String getStartOfDayString(Date date) {
         return org.apache.commons.lang3.time.DateFormatUtils.format(date, DAY_PATTERN);
     }
-    public static String getStartOfDayString(Long lDate) {
+    public static String getStartOfDayString(long lDate) {
         return org.apache.commons.lang3.time.DateFormatUtils.format(lDate, D0_PATTERN);
     }
-    public static String getLongDateTimeString(Long lDate) {
+    public static String getLongDateTimeString(long lDate) {
         return org.apache.commons.lang3.time.DateFormatUtils.format(lDate, DT_PATTERN);
     }
-    public static String getStartOfYearString(Long lDate) {
+    public static String getStartOfYearString(long lDate) {
         return org.apache.commons.lang3.time.DateFormatUtils.format(lDate, Y0_PATTERN);
     }
-    public static long getLongStartOfDayLong(Long lDate) {
+    public static long getLongStartOfDayLong(long lDate) {
         return org.apache.commons.lang3.time.DateUtils.truncate(lDate, Calendar.DATE).getTime();
     }
     public static Date getStartOfYear(){
@@ -105,5 +106,25 @@ public class DateTimeUtils {
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);
         return cal.get(Calendar.DAY_OF_MONTH);
+    }
+    public static long getDateLong (String sDate){
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat(DAY_PATTERN);
+            Date date = sdf.parse(sDate);
+            return date.getTime();
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return 0;
+        }
+    }
+    public static long getDateTimeLong (String sDate){
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat(DT_PATTERN);
+            Date date = sdf.parse(sDate);
+            return date.getTime();
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return 0;
+        }
     }
 }

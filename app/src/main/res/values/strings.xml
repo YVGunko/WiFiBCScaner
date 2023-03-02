@@ -36,4 +36,6 @@
     <string name="dialog_db_need_replace">Очистить базу данных? Восстановление невозможно!</string>
     <string name="error_connection">server connection error</string>
     <string name="error_something_went_wrong">Something went wrong</string>
+    <string name="downloaded_succesfully">Данные загружены успешно</string>
+    <string name="download_started">Загрузка данных начата...</string>
 </resources>

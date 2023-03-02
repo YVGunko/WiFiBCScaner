@@ -25,12 +25,15 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Spinner;
 
+import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.Defs;
 import com.example.yg.wifibcscaner.data.model.Deps;
 import com.example.yg.wifibcscaner.data.model.Operation;
 import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.data.model.Sotr;
 import com.example.yg.wifibcscaner.data.model.user;
+import com.example.yg.wifibcscaner.data.repository.OrderOutDocBoxMovePartRepository;
+import com.example.yg.wifibcscaner.interfaces.FetchListDataListener;
 import com.example.yg.wifibcscaner.utils.ApiUtils;
 import com.example.yg.wifibcscaner.utils.MessageUtils;
 import com.example.yg.wifibcscaner.service.PartBoxService;
@@ -44,7 +47,7 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class SettingsActivity extends AppCompatActivity implements
-        AdapterView.OnItemSelectedListener {
+        AdapterView.OnItemSelectedListener, FetchListDataListener {
 
     private static final String TAG = "SettingsActivity";
 
@@ -258,8 +261,7 @@ public class SettingsActivity extends AppCompatActivity implements
                 return true;
             case R.id.action_receive_box:
                 try {
-                    SettingsActivity.SyncIncoData task = new SettingsActivity.SyncIncoData();
-                    task.execute(new String[]{null});
+                    new OrderOutDocBoxMovePartRepository().getData(getApplicationContext());
 
                 } catch (Exception e) {
 
@@ -604,6 +606,21 @@ public class SettingsActivity extends AppCompatActivity implements
         //loadSpinnerData();
         //loadSpinnerSotrData();
         checkConnection();
+    }
+
+    @Override
+    public void onLoading() {
+        MessageUtils.showToast(this, AppController.getInstance().getResourses().getString(R.string.download_started),true);
+    }
+
+    @Override
+    public void onSuccess(String scsMsg) {
+        MessageUtils.showToast(this, AppController.getInstance().getResourses().getString(R.string.downloaded_succesfully),true);
+    }
+
+    @Override
+    public void onError(String errMsg, boolean canRetry) {
+        MessageUtils.showToast(this, AppController.getInstance().getResourses().getString(R.string.error_something_went_wrong),true);
     }
 
     private class SyncIncoData extends AsyncTask<String, Integer, String> {

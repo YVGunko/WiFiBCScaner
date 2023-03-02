@@ -7,8 +7,14 @@ import android.preference.PreferenceManager;
 import com.example.yg.wifibcscaner.BuildConfig;
 import com.example.yg.wifibcscaner.controller.AppController;
 
+import java.util.Date;
+
 import static android.content.Context.MODE_PRIVATE;
 import static com.example.yg.wifibcscaner.Config.DEFAULT_UPDATE_DATE;
+import static com.example.yg.wifibcscaner.utils.DateTimeUtils.addDays;
+import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getStartOfDayLong;
+import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getStartOfDayString;
+import static com.example.yg.wifibcscaner.utils.DateTimeUtils.numberOfDaysInMonth;
 
 public class SharedPreferenceManager {
 
@@ -81,11 +87,30 @@ public class SharedPreferenceManager {
         editor.putInt(NEXT_PAGE_TO_LOAD, getCurrentPageToLoad()+1);
         editor.commit();
     }
-
+    public void setNextPageToLoadToZero() {
+        editor = AppController.getInstance().getSharedPreferences().edit();
+        editor.putInt(NEXT_PAGE_TO_LOAD, 0);
+        editor.commit();
+    }
     public int getCurrentPageToLoad() {
         return AppController.getInstance().getSharedPreferences().getInt(NEXT_PAGE_TO_LOAD, 0);
     }
     public String getUpdateDateString() {
-        return AppController.getInstance().getSharedPreferences().getString(UPDATE_DATE, DEFAULT_UPDATE_DATE);
+        return AppController.getInstance().getSharedPreferences().getString(UPDATE_DATE, getStartOfDayString(getStartOfDayLong(addDays(new Date(), -numberOfDaysInMonth(new Date())))));
+    }
+    public void setUpdateDateToday() {
+        editor = AppController.getInstance().getSharedPreferences().edit();
+        editor.putString(UPDATE_DATE, getStartOfDayString(new Date()));
+        editor.commit();
+    }
+    public void setUpdateDate(long lDate) {
+        editor = AppController.getInstance().getSharedPreferences().edit();
+        editor.putString(UPDATE_DATE, getStartOfDayString(lDate));
+        editor.commit();
+    }
+    public void setUpdateDate(String sDate) {
+        editor = AppController.getInstance().getSharedPreferences().edit();
+        editor.putString(UPDATE_DATE, sDate);
+        editor.commit();
     }
 }
