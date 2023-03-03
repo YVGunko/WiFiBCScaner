@@ -51,6 +51,7 @@ public class SettingsActivity extends AppCompatActivity implements
 
     private static final String TAG = "SettingsActivity";
 
+    private OrderOutDocBoxMovePartRepository orderOutDocBoxMovePartRepository;
     private PartBoxService boxesService;
     EditText host_v;
     TextView select_label, opers_select_label, labelSotr, labelDivision2;
@@ -77,6 +78,10 @@ public class SettingsActivity extends AppCompatActivity implements
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
         setRequestedOrientation (ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+
+        orderOutDocBoxMovePartRepository = new OrderOutDocBoxMovePartRepository();
+        orderOutDocBoxMovePartRepository.setFetchListDataListener(this);
+
         mDBHelper = DataBaseHelper.getInstance(this);
         host_v=(EditText) findViewById(R.id.host);
 

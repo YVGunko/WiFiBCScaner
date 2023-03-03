@@ -7,6 +7,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 
 import com.example.yg.wifibcscaner.receiver.NetworkStateReceiver;
+import com.example.yg.wifibcscaner.receiver.NotificationReceiver;
 
 
 /**
@@ -21,11 +22,13 @@ public abstract class BaseActivity extends AppCompatActivity implements NetworkS
     protected abstract void onNetworkChange(boolean isConnected);
 
     public NetworkStateReceiver networkStateReceiver;      // Receiver that detects network state changes
+    public NotificationReceiver notificationReceiver;      // Receiver that detects network state changes
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         startNetworkBroadcastReceiver(this);
+        notificationReceiver.startNotificationReceiver(this);
     }
 
     @Override

@@ -59,6 +59,9 @@ public class DateTimeUtils {
     public static String getDayTimeString(Date date) {
         return org.apache.commons.lang3.time.DateFormatUtils.format(date, DT_PATTERN);
     }
+    public static String getDayTimeString(long lDate) {
+        return org.apache.commons.lang3.time.DateFormatUtils.format(lDate, DT_PATTERN);
+    }
     public static String getStartOfDayString(Date date) {
         return org.apache.commons.lang3.time.DateFormatUtils.format(date, DAY_PATTERN);
     }

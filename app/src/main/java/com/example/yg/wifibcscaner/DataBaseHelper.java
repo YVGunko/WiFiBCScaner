@@ -22,18 +22,24 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.channels.FileChannel;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import android.database.sqlite.SQLiteStatement;
+import android.os.Build;
 import android.os.Environment;
+import android.support.annotation.RequiresApi;
 import android.util.Log;
 
+import com.example.yg.wifibcscaner.data.dto.OrderOutDocBoxMovePart;
 import com.example.yg.wifibcscaner.data.model.BoxMoves;
 import com.example.yg.wifibcscaner.data.model.Boxes;
 import com.example.yg.wifibcscaner.data.model.Defs;
@@ -2736,6 +2742,34 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             throw new RuntimeException("To catch into upper level.");
         } finally {
             db.endTransaction();
+        }
+    }
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    public String saveToDB(OrderOutDocBoxMovePart r) {
+        try {
+            insertOrdersInBulk(r.orderReqList);
+
+            if (r.outDocReqList != null &&
+                    !r.outDocReqList.isEmpty())
+                insertOutDocInBulk(r.outDocReqList);
+
+            if (r.boxReqList != null &&
+                    !r.boxReqList.isEmpty())
+                insertBoxInBulk(r.boxReqList);
+
+            if (r.movesReqList != null &&
+                    !r.movesReqList.isEmpty())
+                insertBoxMoveInBulk(r.movesReqList);
+
+            if (r.partBoxReqList != null &&
+                    !r.partBoxReqList.isEmpty())
+                insertProdInBulk(r.partBoxReqList);
+
+            Log.d(TAG, "saveToDB reached its return point.");
+            return Collections.max(r.orderReqList, Comparator.comparing(Orders::get_DT)).get_DT();
+        } catch (RuntimeException re) {
+            Log.w(TAG, re);
+            throw new RuntimeException("To catch onto method level.");
         }
     }
 }

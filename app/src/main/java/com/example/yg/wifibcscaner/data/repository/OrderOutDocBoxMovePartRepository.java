@@ -2,6 +2,8 @@ package com.example.yg.wifibcscaner.data.repository;
 
 import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.Build;
+import android.support.annotation.RequiresApi;
 import android.util.Log;
 import android.content.Context;
 
@@ -36,15 +38,86 @@ public class OrderOutDocBoxMovePartRepository {
     public void setFetchListDataListener(FetchListDataListener fetchListDataListener) {
         this.fetchListDataListener = fetchListDataListener;
     }
-    interface DownLoadCallback{
-        void callingBack();
+    /**
+     * run a download sequence
+     * @param context
+     */
+    public boolean downloadData(Context context) {
+        AtomicBoolean result = new AtomicBoolean(false);
+        DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
+            try {
+                Log.d(TAG, "downloadData -> update date: " + SharedPreferenceManager.getInstance().getUpdateDateString());
+                Log.d(TAG, "downloadData -> current page to load: " + SharedPreferenceManager.getInstance().getCurrentPageToLoad());
+
+                DataBaseHelper mDbHelper = DataBaseHelper.getInstance(context);
+
+                SharedPreferenceManager.getInstance().setNextPageToLoadToZero();
+
+                ApiUtils.getOrderService(mDbHelper.defs.getUrl()).getDataPageableV1(
+                        SharedPreferenceManager.getInstance().getUpdateDateString(),
+                        mDbHelper.defs.getDivision_code(),
+                        SharedPreferenceManager.getInstance().getCurrentPageToLoad())
+                        .enqueue(downloadDataCallback());
+
+                SharedPreferenceManager.getInstance().setLastUpdatedTimestamp();
+                result.set(true);
+            } catch (Exception e) {
+                Log.e(TAG, "downloadData -> " + AppController.getInstance().getResourses().getString(R.string.error_something_went_wrong));
+                e.printStackTrace();
+            }
+        });
+        return result.get();
+    }
+    private Callback<OrderOutDocBoxMovePart> downloadDataCallback() {
+        return new Callback<OrderOutDocBoxMovePart>() {
+            @RequiresApi(api = Build.VERSION_CODES.N)
+            @Override
+            public void onResponse(Call<OrderOutDocBoxMovePart> call, Response<OrderOutDocBoxMovePart> response) {
+                if (response.isSuccessful()) {
+                    Log.d(TAG, "Responce code: "+response.code());
+                    if (response.code() == 204) {
+                        //no content, so prepare environment to stop current request and prepare for next one
+                        SharedPreferenceManager.getInstance().setNextPageToLoadToZero();
+                        SharedPreferenceManager.getInstance().setUpdateDateNow();
+                        return ;
+                    }
+                    if (response.code() != 200) return ;
+                    //save order, boxes, boxMoves, partBox
+                    if (response.body() != null &&
+                            response.body().orderReqList != null &&
+                            !response.body().orderReqList.isEmpty())
+                        try {
+                            Log.d(TAG, "saveToDB here.");
+                            String dt = AppController.getInstance().getDbHelper().saveToDB(response.body());
+                            if (dt == null) return;
+
+                            SharedPreferenceManager.getInstance().setNextPageToLoadAsInc();
+                            SharedPreferenceManager.getInstance().setUpdateDate(dt);
+                            Log.d(TAG, "downloadDataCallback -> pageNumber: " + SharedPreferenceManager.getInstance().getCurrentPageToLoad());
+
+                            if (SharedPreferenceManager.getInstance().getCurrentPageToLoad() != 0) {
+                                ApiUtils.getOrderService(AppController.getInstance().getDbHelper().defs.getUrl()).getDataPageableV1(
+                                        SharedPreferenceManager.getInstance().getUpdateDateString(),
+                                        AppController.getInstance().getDbHelper().defs.getDivision_code(),
+                                        SharedPreferenceManager.getInstance().getCurrentPageToLoad())
+                                            .enqueue(downloadDataCallback());
+                            }
+                        } catch (RuntimeException re) {
+                            Log.w(TAG, re);
+                            SharedPreferenceManager.getInstance().setNextPageToLoadToZero();
+                        }
+                }
+            }
+
+            @Override
+            public void onFailure(Call<OrderOutDocBoxMovePart> call, Throwable t) {
+                Log.w(TAG, "downloadDataCallback -> API Request failed: " + t.getMessage());
+                SharedPreferenceManager.getInstance().setNextPageToLoadToZero();
+            }
+
+        };
     }
 
-    DownLoadCallback dCallback;
-
-    public void registerCallBack(DownLoadCallback callback){
-        this.dCallback = callback;
-    }
     /**
      * only this method should be used from UI
      * handles all success and fallback
@@ -72,101 +145,6 @@ public class OrderOutDocBoxMovePartRepository {
                     fetchListDataListener.onSuccess(AppController.getInstance().getResourses().getString(R.string.downloaded_succesfully));
                 });
     }
-    /**
-     * run a download sequence
-     * @param context
-     */
-    public boolean downloadData(Context context) {
-        AtomicBoolean result = new AtomicBoolean(false);
-        DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
-            try {
-                Log.i(TAG, "downloadData -> update date: " + SharedPreferenceManager.getInstance().getUpdateDateString());
-                //TODO here we should call next page download, but how ?
-                //if last download went right we should have zero as next page to download
-                SharedPreferenceManager.getInstance().setNextPageToLoadAsInc();
-
-                do {
-                    downloadSinglePage(DataBaseHelper.getInstance(context));
-                    Log.w(TAG, "downloadData -> "+SharedPreferenceManager.getInstance().getCurrentPageToLoad());
-                }
-                while (SharedPreferenceManager.getInstance().getCurrentPageToLoad() != 0);
-
-                SharedPreferenceManager.getInstance().setLastUpdatedTimestamp();
-                result.set(true);
-            } catch (Exception e) {
-                Log.w(TAG, "downloadData -> " + AppController.getInstance().getResourses().getString(R.string.error_something_went_wrong));
-                e.printStackTrace();
-            }
-        });
-        return result.get();
-    }
-
-    /**
-     * fetch data from server and saves into local db
-     * @param mDBHelper is an instance of DataBaseHelper
-     */
-    public void downloadSinglePage(DataBaseHelper mDBHelper) {
-         try {
-                Log.i(TAG, "singlePageDownload -> page number: " + SharedPreferenceManager.getInstance().getCurrentPageToLoad());
-                ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getDataPageableV1(
-                        SharedPreferenceManager.getInstance().getUpdateDateString(),
-                            mDBHelper.defs.getDivision_code(),
-                                SharedPreferenceManager.getInstance().getCurrentPageToLoad())
-                        .enqueue(new Callback<OrderOutDocBoxMovePart>() {
-                            @Override
-                            public void onResponse(Call<OrderOutDocBoxMovePart> call,
-                                                   Response<OrderOutDocBoxMovePart> response) {
-                                if (response.isSuccessful()) {
-                                    if (response.code() == 204) {
-                                        //no content, so prepare environment to stop current request and prepare for next one
-                                        SharedPreferenceManager.getInstance().setNextPageToLoadToZero();
-                                        SharedPreferenceManager.getInstance().setUpdateDateToday();
-                                        return ;
-                                    }
-                                    if (response.code() != 200) return ;
-                                    //save order, boxes, boxMoves, partBox
-                                    if (response.body() != null &&
-                                            response.body().orderReqList != null &&
-                                            !response.body().orderReqList.isEmpty())
-                                        try {
-                                            mDBHelper.insertOrdersInBulk(response.body().orderReqList);
-
-                                            if (response.body().outDocReqList != null &&
-                                                    !response.body().outDocReqList.isEmpty())
-                                                mDBHelper.insertOutDocInBulk(response.body().outDocReqList);
-
-                                            if (response.body().boxReqList != null &&
-                                                    !response.body().boxReqList.isEmpty())
-                                                mDBHelper.insertBoxInBulk(response.body().boxReqList);
-
-                                            if (response.body().movesReqList != null &&
-                                                    !response.body().movesReqList.isEmpty())
-                                                mDBHelper.insertBoxMoveInBulk(response.body().movesReqList);
-
-                                            if (response.body().partBoxReqList != null &&
-                                                    !response.body().partBoxReqList.isEmpty())
-                                                mDBHelper.insertProdInBulk(response.body().partBoxReqList);
-
-                                            SharedPreferenceManager.getInstance().setNextPageToLoadAsInc();
-                                            //TODO callback here
-                                        } catch (RuntimeException re) {
-                                            Log.w(TAG, re);
-                                            SharedPreferenceManager.getInstance().setNextPageToLoadToZero();
-                                        }
-                                }
-                            }
-
-                            @Override
-                            public void onFailure(Call<OrderOutDocBoxMovePart> call, Throwable t) {
-                                Log.w(TAG, "fetchAndSaveData -> API Request failed: " + t.getMessage());
-                                SharedPreferenceManager.getInstance().setNextPageToLoadToZero();
-                            }
-                        });
-            } catch (Exception e) {
-                e.printStackTrace();
-                SharedPreferenceManager.getInstance().setNextPageToLoadToZero();
-            }
-    }
 
     /**
      * fetch data from server and saves into local db
@@ -177,9 +155,10 @@ public class OrderOutDocBoxMovePartRepository {
         DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
             try {
                 Log.i(TAG, "fetchAndSaveData -> update date: " + SharedPreferenceManager.getInstance().getUpdateDateString());
-                ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getDataPageableV1(
+                ApiUtils.getOrderService(AppController.getInstance().getDbHelper().defs.getUrl()).getDataPageableV1(
                         SharedPreferenceManager.getInstance().getUpdateDateString(),
-                        mDBHelper.defs.getDivision_code(),SharedPreferenceManager.getInstance().getCurrentPageToLoad())
+                        AppController.getInstance().getDbHelper().defs.getDivision_code(),
+                        SharedPreferenceManager.getInstance().getCurrentPageToLoad())
                         .enqueue(new Callback<OrderOutDocBoxMovePart>() {
                             @Override
                             public void onResponse(Call<OrderOutDocBoxMovePart> call,
@@ -188,7 +167,7 @@ public class OrderOutDocBoxMovePartRepository {
                                     if (response.code() == 204) {
                                         //no content, so prepare environment to stop current request and prepare for next one
                                         SharedPreferenceManager.getInstance().setNextPageToLoadToZero();
-                                        SharedPreferenceManager.getInstance().setUpdateDateToday();
+                                        SharedPreferenceManager.getInstance().setUpdateDateNow();
                                         return ;
                                     }
                                     if (response.code() != 200) return ;
