@@ -6,10 +6,12 @@
     <string name="check_server">Check Server</string>
     <string name="action_settings">Настройки</string>
     <string name="action_boxes">Коробки</string>
-    <string name="action_orders">Заказы</string>
+    <string name="setUpdateDate">Дата обновления</string>
     <string name="action_prods">Текущая смена</string>
     <string name="action_sendboxes">Отправить коробки</string>
     <string name="action_out_docs">Отправить накладные</string>
+    <string name="actOutDoc">Накладные</string>
+    <string name="actLogin">Пользователь</string>
     <string name="action_update_menu_1">Сервис БД</string>
     <string name="action_receive_orders">Принять заказы</string>
     <string name="action_get_data">Синхронизировать данные</string>
@@ -38,4 +40,7 @@
     <string name="error_something_went_wrong">Something went wrong</string>
     <string name="downloaded_succesfully">Данные загружены успешно</string>
     <string name="download_started">Загрузка данных начата...</string>
+    <string name="main_channel">main channel</string>
+    <string name="main_channel_description">this is Download Notification</string>
+    <string name="show_update_date_dialog">Выберите дату</string>
 </resources>

@@ -39,6 +39,7 @@ import android.os.Environment;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
 
+import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.dto.OrderOutDocBoxMovePart;
 import com.example.yg.wifibcscaner.data.model.BoxMoves;
 import com.example.yg.wifibcscaner.data.model.Boxes;
@@ -52,6 +53,10 @@ import com.example.yg.wifibcscaner.data.model.Prods;
 import com.example.yg.wifibcscaner.data.model.Sotr;
 import com.example.yg.wifibcscaner.data.model.lastUpdate;
 import com.example.yg.wifibcscaner.data.model.user;
+import com.example.yg.wifibcscaner.utils.ApiUtils;
+import com.example.yg.wifibcscaner.utils.MessageUtils;
+import com.example.yg.wifibcscaner.utils.SharedPreferenceManager;
+import com.example.yg.wifibcscaner.utils.executors.DefaultExecutorSupplier;
 
 import static android.text.TextUtils.substring;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.*;
@@ -1226,29 +1231,32 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             return fb;
         }
     }
-    public boolean lastBoxCheck(foundorder fo){
-        boolean b = false;
-        Cursor c = null;
-        String query;
-        try {
+    public void lastBoxCheck(foundorder fo, Context context){
+        DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
+            Cursor c = null;
             try {
+                Log.d(TAG, "lastBoxCheck in background entered");
                 mDataBase = this.getWritableDatabase();
+                String query;
                 query = "SELECT count(b._id) as N_box FROM Boxes b, BoxMoves bm Where Id_m=" + fo._id+" and b._id=bm.Id_b and bm.Id_o="+defs.get_Id_o();
                 c = mDataBase.rawQuery(query, null);
                 if ((c != null) & (c.getCount() != 0)) {            //есть записи в BoxMoves и Prods
                     c.moveToFirst(); //есть boxes & prods
                     Log.d(TAG, "Checking for order's last box = " + fo.NB + ", Box checked num =" + c.getString((int) 0));
-                    b = (fo.NB == c.getInt(0));
+                    if (fo.NB == c.getInt(0)){
+                        MessageUtils.showToast(context,
+                                "Это последняя коробка из заказа!",true);
+                    }
                 }
-            } catch (SQLException e) {
-                // TODO: handle exception
-                throw e;
+            } catch (Exception e) {
+                Log.e(TAG, "lastBoxCheck -> " + AppController.getInstance().getResourses().getString(R.string.error_something_went_wrong));
+                e.printStackTrace();
+            }finally {
+                mDataBase.close();
+                tryCloseCursor(c);
             }
-        }finally {
-            mDataBase.close();
-            tryCloseCursor(c);
-            return b;
-        }
+        });
+        return ;
     }
 
     public long insertUser(user user) {
@@ -1741,13 +1749,18 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     }
 
     public String lastBox() {
-        mDataBase = this.getReadableDatabase();
+        boolean dbWasOpen = false;
         long rowId = 0;
         String product = "Принятых коробок нет.";
         Cursor cursor = null;
-        if (rowId <= 0) {
+        try {
+            if (!mDataBase.isOpen()) {
+                mDataBase = this.getReadableDatabase();
+            } else dbWasOpen = true;
+
+
             cursor = mDataBase.rawQuery("SELECT max(p.ROWID) as _id FROM Boxes, BoxMoves bm, Prods p, OutDocs o Where Boxes._id=bm.Id_b and bm.Id_o=" + valueOf(defs.get_Id_o()) +
-                    " and bm._id=p.Id_bm and p.idOutDocs=o._id and o.division_code=?" , new String [] {String.valueOf(defs.getDivision_code())});
+                        " and bm._id=p.Id_bm and p.idOutDocs=o._id and o.division_code=?" , new String [] {String.valueOf(defs.getDivision_code())});
             if ((cursor != null) & (cursor.getCount() > 0)) {
                 Log.d(TAG, "lastbox Records count = " + cursor.getCount());
                 cursor.moveToFirst();
@@ -1755,9 +1768,9 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             } else {
                 rowId = 1;
             }
-        }
-        if (rowId!=0)
-        try {
+
+            if (rowId!=0)
+
             cursor = mDataBase.rawQuery("SELECT MasterData.Ord, MasterData.Cust, MasterData.Nomen, MasterData.Attrib, MasterData.Q_ord, " +
                     "Boxes.Q_box, Boxes.N_box, Prods.RQ_box, Deps.Name_Deps, s.Sotr, o.number,  strftime('%d-%m-%Y %H:%M:%S', o.DT/1000, 'unixepoch', 'localtime') as DT" +
                     " FROM Opers, Boxes, BoxMoves bm, Prods, Deps, MasterData, Sotr s, outDocs o Where MasterData.division_code=?" +
@@ -1785,10 +1798,11 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         } catch (SQLException e) {
             Log.d(TAG, "lastBox SQLException rawQuery");
             return product;
+        } finally {
+            tryCloseCursor(cursor);
+            if (!dbWasOpen) mDataBase.close();
+            return product;
         }
-        tryCloseCursor(cursor);
-        mDataBase.close();
-        return product;
     }
     public foundbox getnewbox(String storedbarcode) {
         foundbox retnb = new foundbox();
@@ -2111,16 +2125,25 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         return nm;
     }
     public String getUserName(int code){
-        mDataBase = this.getReadableDatabase();
+        Cursor cursor = null;
         String nm = "";
-        Cursor cursor = mDataBase.rawQuery("SELECT name FROM user Where _id=?", new String [] {String.valueOf(code)});
-        if ((cursor != null) & (cursor.getCount() != 0)) {
-            cursor.moveToFirst();
-            nm = String.format("%s", cursor.getString(0));
+        boolean dbWasOpen = false;
+        try {
+            if (!mDataBase.isOpen()) {
+                mDataBase = this.getReadableDatabase();
+            } else dbWasOpen = true;
+            mDataBase = this.getReadableDatabase();
+
+            cursor = mDataBase.rawQuery("SELECT name FROM user Where _id=?", new String[]{String.valueOf(code)});
+            if ((cursor != null) & (cursor.getCount() != 0)) {
+                cursor.moveToFirst();
+                nm = String.format("%s", cursor.getString(0));
+            }
+        }finally {
+            tryCloseCursor(cursor);
+            if (!dbWasOpen) mDataBase.close();
+            return nm;
         }
-        tryCloseCursor(cursor);
-        mDataBase.close();
-        return nm;
     }
     public int getUserId_s(int _id){
         mDataBase = this.getReadableDatabase();
@@ -2744,7 +2767,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             db.endTransaction();
         }
     }
-    @RequiresApi(api = Build.VERSION_CODES.N)
+
     public String saveToDB(OrderOutDocBoxMovePart r) {
         try {
             insertOrdersInBulk(r.orderReqList);

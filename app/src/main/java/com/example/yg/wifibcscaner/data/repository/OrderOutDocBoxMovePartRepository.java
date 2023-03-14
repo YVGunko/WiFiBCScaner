@@ -1,12 +1,9 @@
 package com.example.yg.wifibcscaner.data.repository;
 
-import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Build;
-import android.support.annotation.RequiresApi;
 import android.util.Log;
 import android.content.Context;
-
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.example.yg.wifibcscaner.DataBaseHelper;
@@ -16,6 +13,7 @@ import com.example.yg.wifibcscaner.data.dto.OrderOutDocBoxMovePart;
 import com.example.yg.wifibcscaner.interfaces.FetchListDataListener;
 import com.example.yg.wifibcscaner.utils.ApiUtils;
 import com.example.yg.wifibcscaner.utils.AppUtils;
+import com.example.yg.wifibcscaner.utils.NotificationUtils;
 import com.example.yg.wifibcscaner.utils.SharedPreferenceManager;
 import com.example.yg.wifibcscaner.utils.executors.DefaultExecutorSupplier;
 
@@ -30,47 +28,82 @@ import retrofit2.Response;
 public class OrderOutDocBoxMovePartRepository {
 
     private static final String TAG = "dataDownloadRepository";
+    private static final String MY_CHANNEL_ID = "Download Status";
 
     SQLiteDatabase db;
 
-    FetchListDataListener fetchListDataListener;
+    NotificationUtils notificationUtils;
 
-    public void setFetchListDataListener(FetchListDataListener fetchListDataListener) {
-        this.fetchListDataListener = fetchListDataListener;
+    public void setNotificationUtils(NotificationUtils notificationUtils) {
+        this.notificationUtils = notificationUtils;
+    }
+
+    /**
+     * only this method should be used from UI
+     * handles all success and fallback
+     *
+     * @param context
+     */
+    public void getData(Context context) {
+
+        notificationUtils = new NotificationUtils();
+        setNotificationUtils(notificationUtils);
+
+        if (notificationUtils != null)
+            Log.d(TAG, "notificationUtils -> null");
+
+        if (!AppUtils.isNetworkAvailable(AppController.getInstance())) {
+            Log.d(TAG, "isNetworkAvailable -> no");
+            if (notificationUtils != null)
+                //notificationUtils.notify(context, AppController.getInstance().getResourses().getString(R.string.error_connection));
+            DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
+                notificationUtils.notify(context,
+                        AppController.getInstance().getResourses().getString(R.string.error_something_went_wrong),
+                        MY_CHANNEL_ID);
+            });
+            return;
+        }
+
+        downloadData(context);
     }
     /**
      * run a download sequence
      * @param context
      */
-    public boolean downloadData(Context context) {
-        AtomicBoolean result = new AtomicBoolean(false);
+    public void downloadData(Context context) {
         DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
             try {
                 Log.d(TAG, "downloadData -> update date: " + SharedPreferenceManager.getInstance().getUpdateDateString());
                 Log.d(TAG, "downloadData -> current page to load: " + SharedPreferenceManager.getInstance().getCurrentPageToLoad());
 
                 DataBaseHelper mDbHelper = DataBaseHelper.getInstance(context);
-
                 SharedPreferenceManager.getInstance().setNextPageToLoadToZero();
-
+                String updateDate = SharedPreferenceManager.getInstance().getUpdateDateString();
                 ApiUtils.getOrderService(mDbHelper.defs.getUrl()).getDataPageableV1(
-                        SharedPreferenceManager.getInstance().getUpdateDateString(),
+                        updateDate,
                         mDbHelper.defs.getDivision_code(),
                         SharedPreferenceManager.getInstance().getCurrentPageToLoad())
-                        .enqueue(downloadDataCallback());
+                        .enqueue(downloadDataCallback(updateDate));
 
                 SharedPreferenceManager.getInstance().setLastUpdatedTimestamp();
-                result.set(true);
+                Log.e(TAG, "downloadData -> " + AppController.getInstance().getResourses().getString(R.string.downloaded_succesfully));
+                if (notificationUtils != null)
+                    DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
+                        notificationUtils.notify(AppController.getInstance(), AppController.getInstance().getResourses().getString(R.string.downloaded_succesfully), MY_CHANNEL_ID);
+                    });
             } catch (Exception e) {
                 Log.e(TAG, "downloadData -> " + AppController.getInstance().getResourses().getString(R.string.error_something_went_wrong));
                 e.printStackTrace();
+                if (notificationUtils != null)
+                    DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
+                        notificationUtils.notify(AppController.getInstance(), AppController.getInstance().getResourses().getString(R.string.error_something_went_wrong), MY_CHANNEL_ID);
+                    });
             }
         });
-        return result.get();
+        return ;
     }
-    private Callback<OrderOutDocBoxMovePart> downloadDataCallback() {
+    private Callback<OrderOutDocBoxMovePart> downloadDataCallback(String updateDate) {
         return new Callback<OrderOutDocBoxMovePart>() {
-            @RequiresApi(api = Build.VERSION_CODES.N)
             @Override
             public void onResponse(Call<OrderOutDocBoxMovePart> call, Response<OrderOutDocBoxMovePart> response) {
                 if (response.isSuccessful()) {
@@ -97,10 +130,10 @@ public class OrderOutDocBoxMovePartRepository {
 
                             if (SharedPreferenceManager.getInstance().getCurrentPageToLoad() != 0) {
                                 ApiUtils.getOrderService(AppController.getInstance().getDbHelper().defs.getUrl()).getDataPageableV1(
-                                        SharedPreferenceManager.getInstance().getUpdateDateString(),
+                                        updateDate,
                                         AppController.getInstance().getDbHelper().defs.getDivision_code(),
                                         SharedPreferenceManager.getInstance().getCurrentPageToLoad())
-                                            .enqueue(downloadDataCallback());
+                                            .enqueue(downloadDataCallback(updateDate));
                             }
                         } catch (RuntimeException re) {
                             Log.w(TAG, re);
@@ -113,38 +146,16 @@ public class OrderOutDocBoxMovePartRepository {
             public void onFailure(Call<OrderOutDocBoxMovePart> call, Throwable t) {
                 Log.w(TAG, "downloadDataCallback -> API Request failed: " + t.getMessage());
                 SharedPreferenceManager.getInstance().setNextPageToLoadToZero();
+                if (notificationUtils != null)
+                    DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
+                        notificationUtils.notify(AppController.getInstance(), AppController.getInstance().getResourses().getString(R.string.error_something_went_wrong), MY_CHANNEL_ID);
+                    });
             }
 
         };
     }
 
-    /**
-     * only this method should be used from UI
-     * handles all success and fallback
-     *
-     * @param context
-     */
-    public void getData(Context context) {
 
-        if (fetchListDataListener != null)
-            fetchListDataListener.onLoading();
-
-        if (!AppUtils.isNetworkAvailable(AppController.getInstance())) {
-            if (fetchListDataListener != null)
-                fetchListDataListener.onError(AppController.getInstance().getResourses().getString(R.string.error_connection), true);
-            return;
-        }
-
-        if (!downloadData(context))
-            if (fetchListDataListener != null)
-                DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
-                    fetchListDataListener.onError(AppController.getInstance().getResourses().getString(R.string.error_something_went_wrong), true);
-                });
-            else if (fetchListDataListener != null)
-                DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
-                    fetchListDataListener.onSuccess(AppController.getInstance().getResourses().getString(R.string.downloaded_succesfully));
-                });
-    }
 
     /**
      * fetch data from server and saves into local db
@@ -214,99 +225,12 @@ public class OrderOutDocBoxMovePartRepository {
 
             } catch (Exception e) {
                 e.printStackTrace();
-                if (fetchListDataListener != null)
+                if (notificationUtils != null)
                     DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
-                        fetchListDataListener.onError(AppController.getInstance().getResourses().getString(R.string.error_something_went_wrong), true);
+                        notificationUtils.notify(AppController.getInstance(), AppController.getInstance().getResourses().getString(R.string.error_something_went_wrong), MY_CHANNEL_ID);
                     });
             }
         });
     }
-
-
-    private boolean isLocalDataAvailable() {
-        db = AppController.getInstance().getDbHelper().getReadableDatabase();
-        long count = DatabaseUtils.queryNumEntries(db, "Boxes");
-        db.close();
-        return count > 0;
-    }
-
-    /**
-     * get all publishers/authors name
-     * @return list of publishers
-     *//*
-    public ArrayList<String> getAllPublishers() {
-        ArrayList<String> authorList = new ArrayList<>();
-        db = AppController.getInstance().getDbHelper().getReadableDatabase();
-        Cursor c = db.query(true, ArticleContract.ArticleEntry.TABLE_NAME, new String[]{ArticleContract.ArticleEntry.COLUMN_NAME_AUTHOR}, null, null, ArticleContract.ArticleEntry.COLUMN_NAME_AUTHOR, null, null, null);
-        while (c.moveToNext()) {
-            String author = c.getString(c.getColumnIndexOrThrow(ArticleContract.ArticleEntry.COLUMN_NAME_AUTHOR));
-            authorList.add(author);
-        }
-        c.close();
-        return authorList;
-    }*/
-
-    /**
-     * get data from local db
-     *//*
-    private void getArticlesFromDb() {
-
-        DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
-
-            db = AppController.getInstance().getArticleDbHelper().getReadableDatabase();
-
-            String sortOrder = null;
-            String selection = null;
-            String[] selectionArgs = null;
-
-            if (filterModel != null) {
-                if (filterModel.isSortByDateAsc()) {
-                    sortOrder = ArticleContract.ArticleEntry.COLUMN_NAME_PUBLISHED_AT + " ASC";
-                } else {
-                    sortOrder = ArticleContract.ArticleEntry.COLUMN_NAME_PUBLISHED_AT + " DESC";
-                }
-                if (!TextUtils.isEmpty(filterModel.getFilterByAuthor())) {
-                    selection = ArticleContract.ArticleEntry.COLUMN_NAME_AUTHOR + "= ?";
-                    selectionArgs = new String[]{filterModel.getFilterByAuthor()};
-                }
-            }
-
-            Cursor c = db.query(
-                    ArticleContract.ArticleEntry.TABLE_NAME,   // The table to query
-                    projection,             // The array of columns to return (pass null to get all)
-                    selection,              // The columns for the WHERE clause
-                    selectionArgs,          // The values for the WHERE clause
-                    null,                   // don't group the rows
-                    null,                   // don't filter by row groups
-                    sortOrder               // The sort order
-            );
-
-            mArticleList = new ArrayList<>();
-            while (c.moveToNext()) {
-
-                String author = c.getString(c.getColumnIndexOrThrow(ArticleContract.ArticleEntry.COLUMN_NAME_AUTHOR));
-                String title = c.getString(c.getColumnIndexOrThrow(ArticleContract.ArticleEntry.COLUMN_NAME_TITLE));
-                String description = c.getString(c.getColumnIndexOrThrow(ArticleContract.ArticleEntry.COLUMN_NAME_DESCRIPTION));
-                String url = c.getString(c.getColumnIndexOrThrow(ArticleContract.ArticleEntry.COLUMN_NAME_URL));
-                String urlToImage = c.getString(c.getColumnIndexOrThrow(ArticleContract.ArticleEntry.COLUMN_NAME_URL_TO_IMAGE));
-                String publishedAt = DateTimeUtils.getFormattedDateTime(c.getLong(c.getColumnIndexOrThrow(ArticleContract.ArticleEntry.COLUMN_NAME_PUBLISHED_AT)));
-                String content = c.getString(c.getColumnIndexOrThrow(ArticleContract.ArticleEntry.COLUMN_NAME_CONTENT));
-                String sourceId = c.getString(c.getColumnIndexOrThrow(ArticleContract.ArticleEntry.COLUMN_NAME_SOURCE_ID));
-                String sourceName = c.getString(c.getColumnIndexOrThrow(ArticleContract.ArticleEntry.COLUMN_NAME_SOURCE_NAME));
-
-                Source source = new Source(sourceId, sourceName);
-                Article article = new Article(author, title, description, url, urlToImage, publishedAt, content, source);
-
-                mArticleList.add(article);
-            }
-            c.close();
-
-            if (fetchListDataListener != null)
-                DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
-                    fetchListDataListener.onSuccess(mArticleList);
-                });
-
-        });
-    }*/
 
 }

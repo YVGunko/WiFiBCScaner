@@ -12,6 +12,7 @@ import static com.example.yg.wifibcscaner.utils.DateTimeUtils.numberOfDaysInMont
 public class Config {
 
     public static final int SYNC_ALARM_REQUEST_CODE = 101;
+    public static final int SYNC_NOTIF_REQUEST_CODE = 102;
     public static final String ACTION_USB_PERMISSION = "com.example.yg.wifibcscaner.USB_PERMISSION";
     public static final String DEFAULT_UPDATE_DATE = getStartOfDayString(getStartOfDayLong(addDays(new Date(), -numberOfDaysInMonth(new Date()))));
 

@@ -290,7 +290,5 @@ public class UpdateActivity extends AppCompatActivity {
             SyncIncoData task = new SyncIncoData();
             task.execute(new String[]{null});
     }
-    public void setDate(View v) { //Вызов активности выбора даты начала
-        startActivity(new Intent(this, lastUpdateActivity.class)); //Вызов активности lastUpdate
-    }
+
 }

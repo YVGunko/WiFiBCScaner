@@ -47,7 +47,7 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class SettingsActivity extends AppCompatActivity implements
-        AdapterView.OnItemSelectedListener, FetchListDataListener {
+        AdapterView.OnItemSelectedListener {
 
     private static final String TAG = "SettingsActivity";
 
@@ -80,7 +80,6 @@ public class SettingsActivity extends AppCompatActivity implements
         setRequestedOrientation (ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
         orderOutDocBoxMovePartRepository = new OrderOutDocBoxMovePartRepository();
-        orderOutDocBoxMovePartRepository.setFetchListDataListener(this);
 
         mDBHelper = DataBaseHelper.getInstance(this);
         host_v=(EditText) findViewById(R.id.host);
@@ -266,7 +265,7 @@ public class SettingsActivity extends AppCompatActivity implements
                 return true;
             case R.id.action_receive_box:
                 try {
-                    new OrderOutDocBoxMovePartRepository().getData(getApplicationContext());
+                    orderOutDocBoxMovePartRepository.getData(getApplicationContext());
 
                 } catch (Exception e) {
 
@@ -611,21 +610,6 @@ public class SettingsActivity extends AppCompatActivity implements
         //loadSpinnerData();
         //loadSpinnerSotrData();
         checkConnection();
-    }
-
-    @Override
-    public void onLoading() {
-        MessageUtils.showToast(this, AppController.getInstance().getResourses().getString(R.string.download_started),true);
-    }
-
-    @Override
-    public void onSuccess(String scsMsg) {
-        MessageUtils.showToast(this, AppController.getInstance().getResourses().getString(R.string.downloaded_succesfully),true);
-    }
-
-    @Override
-    public void onError(String errMsg, boolean canRetry) {
-        MessageUtils.showToast(this, AppController.getInstance().getResourses().getString(R.string.error_something_went_wrong),true);
     }
 
     private class SyncIncoData extends AsyncTask<String, Integer, String> {

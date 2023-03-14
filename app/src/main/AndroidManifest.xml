@@ -26,17 +26,13 @@
         <activity android:name=".activity.dbService" />
         <activity android:name=".activity.BoxesActivity" />
         <activity android:name=".SettingsActivity" />
-        <activity android:name=".data.model.OrdersActivity" />
         <activity android:name=".activity.ProdsActivity" />
         <activity android:name=".activity.OutDocsActivity" />
-        <activity android:name=".activity.UpdateActivity" />
-        <activity android:name=".activity.lastUpdateActivity" />
     </application>
     <uses-permission android:name="com.honeywell.decode.permission.DECODE" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
 </manifest>

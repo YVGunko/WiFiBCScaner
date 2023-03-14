@@ -95,9 +95,6 @@ public class dbService extends AppCompatActivity {
         SyncIncoData task = new SyncIncoData();
         task.execute(new String[]{null});
     }
-    public void setDate(View v) { //Вызов активности выбора даты начала
-        startActivity(new Intent(this, lastUpdateActivity.class)); //Вызов активности lastUpdate
-    }
 
     private class SyncIncoData extends AsyncTask<String, Integer, String> {
         Integer counter;

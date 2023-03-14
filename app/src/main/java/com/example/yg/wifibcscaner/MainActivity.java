@@ -3,11 +3,11 @@ package com.example.yg.wifibcscaner;
 
 import android.app.Activity;
 import android.app.AlarmManager;
+import android.app.DatePickerDialog;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
@@ -27,6 +27,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -37,17 +38,17 @@ import com.example.yg.wifibcscaner.activity.BoxesActivity;
 import com.example.yg.wifibcscaner.activity.LoginActivity;
 import com.example.yg.wifibcscaner.activity.OutDocsActivity;
 import com.example.yg.wifibcscaner.activity.ProdsActivity;
-import com.example.yg.wifibcscaner.activity.UpdateActivity;
 import com.example.yg.wifibcscaner.controller.AppController;
+import com.example.yg.wifibcscaner.data.dto.OrderWithOutDocWithBoxWithMovesWithPartsResponce;
 import com.example.yg.wifibcscaner.data.model.BoxMoves;
 import com.example.yg.wifibcscaner.data.model.Boxes;
 import com.example.yg.wifibcscaner.data.model.OrdersActivity;
 import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.data.model.Prods;
+import com.example.yg.wifibcscaner.data.repository.OrderOutDocBoxMovePartRepository;
 import com.example.yg.wifibcscaner.receiver.SyncDataBroadcastReceiver;
 import com.example.yg.wifibcscaner.utils.ApiUtils;
 import com.example.yg.wifibcscaner.utils.MessageUtils;
-import com.example.yg.wifibcscaner.data.dto.OrderWithOutDocWithBoxWithMovesWithPartsResponce;
 import com.example.yg.wifibcscaner.utils.SharedPreferenceManager;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
@@ -61,9 +62,9 @@ import com.honeywell.aidc.ScannerUnavailableException;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.concurrent.ExecutionException;
 
-import me.drakeet.support.toast.ToastCompat;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -71,7 +72,7 @@ import retrofit2.Response;
 import static android.text.TextUtils.substring;
 
 
-public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeListener {
+public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeListener, DatePickerDialog.OnDateSetListener {
     private static final String TAG = "MainActivity";
 
     private static BarcodeReader barcodeReader; //honeywell
@@ -79,15 +80,9 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
     boolean bCancelFlag;
     UsbManager mUsbManager = null;
     UsbDevice mdevice;
-    //IntentFilter filterAttached_and_Detached = null;
 
-    public static final long LOAD_TIMEOUT = 60000; // 1 min = 1 * 60 * 1000 ms
+    private OrderOutDocBoxMovePartRepository orderOutDocBoxMovePartRepository;
 
-
-    //
-
-    private int sId_o = 1;
-    private int sId_d = 1;
     private DataBaseHelper mDBHelper;
     TextView tVDBInfo, currentDocDetails, currentUser;
     ListView lvCurrentDoc;
@@ -96,7 +91,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
     DataBaseHelper.foundbox fb;
     DataBaseHelper.foundorder fo;
 
-    private String getDeviceUniqueID(Activity activity){
+    private static String getDeviceUniqueID(Activity activity){
         String device_unique_id = Settings.Secure.getString(activity.getContentResolver(),
                 Settings.Secure.ANDROID_ID);
         return device_unique_id;
@@ -115,14 +110,20 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
 
         setContentView(R.layout.activity_main);
         setRequestedOrientation (ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-        tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
+
+        //tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
+        //SetVDBInfo setVDBInfo = new SetVDBInfo();
+        //setVDBInfo.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        //tVDBInfo.setText(mDBHelper.lastBox());
+
         currentDocDetails  = (TextView) findViewById(R.id.currentDocDetails);
         currentUser  = (TextView) findViewById(R.id.currentUser);
-        tVDBInfo.setText(mDBHelper.lastBox());
+
         editTextRQ = (EditText) findViewById(R.id.editTextRQ);
         editTextRQ.setEnabled(false);
         //registerReceiver
         mUsbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
+        orderOutDocBoxMovePartRepository = new OrderOutDocBoxMovePartRepository();
 
         AidcManager.create(this, new AidcManager.CreatedCallback() {
             @Override
@@ -191,8 +192,10 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
         actionBar.setSubtitle(Html.fromHtml("<font color='#FFBF00'>"+snum+"</font>"));
         actionBar.setTitle("Подразделение: "+mDBHelper.defs.descDivision);
 
-        tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
-        tVDBInfo.setText(mDBHelper.lastBox());
+        //tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
+       // tVDBInfo.setText(mDBHelper.lastBox());
+        SetVDBInfo setVDBInfo = new SetVDBInfo();
+        setVDBInfo.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
 
         currentDocDetails  = (TextView) findViewById(R.id.currentDocDetails);
         currentDocDetails.setText("Накл.№" +mDBHelper.currentOutDoc.get_number() + ", " + mDBHelper.selectCurrentOutDocDetails(mDBHelper.currentOutDoc.get_id()));
@@ -324,20 +327,14 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
             case R.id.action_login:
                 startActivity(new Intent(this,LoginActivity.class));  //Вызов активности
                 return true;
-            case R.id.action_boxes:
-                startActivity(new Intent(this, BoxesActivity.class)); //Вызов активности Коробки
-                return true;
-            case R.id.action_orders:
-                startActivity(new Intent(this, OrdersActivity.class));
-                return true;
             case R.id.action_prods:
                 startActivity(new Intent(this, ProdsActivity.class));
                 return true;
-            case R.id.action_test:
+            case R.id.actOutDoc:
                 startActivity(new Intent(this,OutDocsActivity.class));
                 return true;
             case R.id.action_update:
-                startActivity(new Intent(this, UpdateActivity.class));
+                orderOutDocBoxMovePartRepository.getData(getApplicationContext());
                 return true;
 
             default:
@@ -347,7 +344,14 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
-
+        MenuItem setUpdateDate = menu.findItem(R.id.setUpdateDate);
+        setUpdateDate.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                showDatePickerDialog();
+                return false;
+            }
+        });
         return true;
     }
     @Override
@@ -356,20 +360,21 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
             boolean checkSuper= mDBHelper.checkSuperUser(mDBHelper.defs.get_idUser());
             invalidateOptionsMenu();
             menu.findItem(R.id.action_settings).setVisible(checkSuper);
-            menu.findItem(R.id.action_orders).setVisible(checkSuper);
+            //menu.findItem(R.id.action_orders).setVisible(checkSuper);
         }
         return super.onPrepareOptionsMenu(menu);
     }
-private static String filter (String str){
-        StringBuilder filtered = new StringBuilder(str.length());
-        for (int i = 0; i < str.length(); i++) {
-            char current = str.charAt(i);
-            if (current >= 0x2E && current <= 0x39) {
-                filtered.append(current);
+
+    private static String filter (String str){
+            StringBuilder filtered = new StringBuilder(str.length());
+            for (int i = 0; i < str.length(); i++) {
+                char current = str.charAt(i);
+                if (current >= 0x2E && current <= 0x39) {
+                    filtered.append(current);
+                }
             }
-        }
-        return filtered.toString();
-}
+            return filtered.toString();
+    }
     private void scanResultHandler (String currentbarcode) {
             /*---Тут нужно данные коробки вывести и дать отредактировать количество. Есть код в currentbarcode.
             Нужно его обработать, выбрать данные новой коробки для вывода tVDBInfo и в editTextRQ
@@ -453,11 +458,10 @@ private static String filter (String str){
     }
 
     public void ocl_bOk(View v) { //Вызов активности Сканирования
-        int idar = 0;
         int iRQ = 0;
         boolean newBM = false;
 
-        String _RQ = editTextRQ.getText().toString();
+        final String _RQ = editTextRQ.getText().toString();
         if ((!TextUtils.isEmpty(_RQ))&(Integer.valueOf(_RQ)<=(fb.QB - fb.RQ))) {//колво  не пустое
             try {
                 Button bScan = (Button) findViewById(R.id.bScan);
@@ -472,21 +476,19 @@ private static String filter (String str){
                     }
                     fb.RQ = iRQ;
                     if (mDBHelper.addProds(fb)) {
-                        if (newBM){
-                            //showMessage(mDBHelper.defs.descOper+". Обработана новая коробка.");
-                            newBM=false;
-                        }else {
+                        if (!newBM) {
                             MessageUtils.showToast(MainActivity.this,
-                                    mDBHelper.defs.descOper+". В коробку добавлено "+String.valueOf(iRQ),false);
+                                    mDBHelper.defs.descOper+". В коробку добавлено "+ iRQ,false);
                         }
-                        tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
-                        tVDBInfo.setText(mDBHelper.lastBox());
+                        mDBHelper.lastBoxCheck(fo, MainActivity.this);
+
+                        SetVDBInfo setVDBInfo = new SetVDBInfo();
+                        setVDBInfo.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                        //TODO run in background
+                        //tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
+                        //tVDBInfo.setText(mDBHelper.lastBox());
                         currentDocDetails  = (TextView) findViewById(R.id.currentDocDetails);
                         currentDocDetails.setText("Накл.№" +mDBHelper.currentOutDoc.get_number() + ", " + mDBHelper.selectCurrentOutDocDetails(mDBHelper.currentOutDoc.get_id()));
-                        if (mDBHelper.lastBoxCheck(fo)) {
-                            MessageUtils.showToast(MainActivity.this,
-                                    "Это последняя коробка из заказа!",false);
-                        }
                     }else {
                         MessageUtils.showToast(MainActivity.this,
                                 mDBHelper.defs.descOper+". Повторный прием коробки в смену! Повторный прием возможен в другую смену.",true);
@@ -497,21 +499,14 @@ private static String filter (String str){
                         MessageUtils.showToast(MainActivity.this,
                         mDBHelper.defs.descOper+". Ошибка! Коробка не добавлена в БД!",true);
                     } else {
-                        tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
-                        tVDBInfo.setText(mDBHelper.lastBox());
+                        mDBHelper.lastBoxCheck(fo, MainActivity.this);
+                        SetVDBInfo setVDBInfo = new SetVDBInfo();
+                        setVDBInfo.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                        //tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
+                        //tVDBInfo.setText(mDBHelper.lastBox());
                         currentDocDetails  = (TextView) findViewById(R.id.currentDocDetails);
                         currentDocDetails.setText("Накл.№" +mDBHelper.currentOutDoc.get_number() + ", " + mDBHelper.selectCurrentOutDocDetails(mDBHelper.currentOutDoc.get_id()));
-
-                        //showMessage(mDBHelper.defs.descOper+". Принята новая коробка.");
-                        if (mDBHelper.lastBoxCheck(fo)){
-                            MessageUtils.showToast(MainActivity.this,
-                                    "Это последняя коробка из заказа!",true);
-                        }
                     }
-                }
-                if (mdevice != null){//внешний usb сканер
-                    final     EditText            input = (EditText) findViewById(R.id.barCodeInput);
-                    input.requestFocus();
                 }
             } catch (Exception e) {
                 Log.e(TAG, mDBHelper.defs.descOper+". Ошибка при получении количества в коробке!", e);
@@ -522,16 +517,6 @@ private static String filter (String str){
             MessageUtils.showToast(MainActivity.this,
                     "Ошибка! Введите количество верно!",true);
         }
-    }
-
-    public void ocl_boxes(View v) {
-        startActivity(new Intent(this,BoxesActivity.class)); //Вызов активности Коробки
-    }
-    public void ocl_orders(View v) {
-        startActivity(new Intent(this,OrdersActivity.class)); //Вызов активности Коробки
-    }
-    public void ocl_prods(View v) {
-        startActivity(new Intent(this, ProdsActivity.class)); //Вызов активности Коробки
     }
 
     @Override
@@ -553,7 +538,7 @@ private static String filter (String str){
         }
 
     }
-
+    //Crushial for camera scann
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
         IntentResult scanResult = IntentIntegrator.parseActivityResult(requestCode, resultCode, intent);
         if (scanResult.getContents() != null) {
@@ -653,7 +638,7 @@ private static String filter (String str){
     private void openCancelDialog() {
         AlertDialog.Builder quitDialog = new AlertDialog.Builder(
                 MainActivity.this);
-        quitDialog.setTitle("Отменить: Вы уверены?");
+        quitDialog.setTitle("Отменить? Вы уверены?");
 
         quitDialog.setPositiveButton("Да!", new DialogInterface.OnClickListener() {
             @Override
@@ -673,6 +658,35 @@ private static String filter (String str){
         });
         quitDialog.show();
     }
+    /* set Update Date */
+    public void showDatePickerDialog(){
+        DatePickerDialog datePickerDialog = new DatePickerDialog(
+                this,
+                this,
+                Calendar.getInstance().get(Calendar.YEAR),
+                Calendar.getInstance().get(Calendar.MONTH),
+                Calendar.getInstance().get(Calendar.DAY_OF_MONTH));
+        datePickerDialog.show();
+    }
+    @Override
+    public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
+        String spMonth = "";
+        String spDay = "";
+
+        if (String.format("%d", dayOfMonth).length()==1) {
+            spDay = "0"+String.format("%d", dayOfMonth);
+        }else{
+            spDay = String.format("%d", dayOfMonth);
+        };
+        if (String.format("%d", (month + 1)).length()==1) {
+            spMonth = "0"+String.format("%d", (month + 1));
+        }else{
+            spMonth = String.format("%d", (month + 1));
+        };
+        AppController.getInstance().getDbHelper().globalUpdateDate = spDay+"."+ spMonth+"."+year+" 00:00:00";
+        SharedPreferenceManager.getInstance().setUpdateDate(spDay+"."+ spMonth+"."+year+" 00:00:00");
+    }
+
     // version 3.5.22
     private class loadOrderAsync extends AsyncTask<String, Integer, String> {
 
@@ -745,7 +759,20 @@ private static String filter (String str){
             messageUtils.showMessage(getApplicationContext(), "onPostExecute.  "+result);
         }
     }
-    // version 3.5.22
+
+    /**
+     * sets repeating alarm for data download
+     */
+    public void setSyncRepeatingAlarm() {
+        Intent intent = new Intent(this, SyncDataBroadcastReceiver.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this,
+                Config.SYNC_ALARM_REQUEST_CODE, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        AppController.getInstance().getAlarmManager().setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP,
+                SystemClock.elapsedRealtime() + BuildConfig.CACHE_TIMEOUT,
+                BuildConfig.CACHE_TIMEOUT,
+                pendingIntent);
+    }
+    // version 4.0.
     private class saveOrderNotFoundAsync extends AsyncTask<String, Integer, String> {
 
         @Override
@@ -765,17 +792,36 @@ private static String filter (String str){
         super.onPostCreate(savedInstanceState);
         setSyncRepeatingAlarm();
     }
+    private class SetVDBInfo extends AsyncTask<Void, Void, String> {
 
-    /**
-     * sets repeating alarm for data download
-     */
-    public void setSyncRepeatingAlarm() {
-        Intent intent = new Intent(this, SyncDataBroadcastReceiver.class);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(this,
-                Config.SYNC_ALARM_REQUEST_CODE, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-        AppController.getInstance().getAlarmManager().setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP,
-                SystemClock.elapsedRealtime() + BuildConfig.CACHE_TIMEOUT,
-                BuildConfig.CACHE_TIMEOUT,
-                pendingIntent);
+        TextView tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
+
+        Exception e;
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            tVDBInfo.setText("Loading...");
+        }
+
+        protected String doInBackground(Void... params) {
+            String datetime = "";
+            try {
+                datetime = mDBHelper.lastBox();
+            } catch (Exception e) {
+                this.e = e;
+                Log.e(TAG, e.getMessage());
+            }
+            return datetime;
+        }
+
+        @Override
+        protected void onPostExecute(final String s) {
+            super.onPostExecute(s);
+
+            if (s != null) {
+                tVDBInfo.setText(s);
+            }
+        }
     }
 }
