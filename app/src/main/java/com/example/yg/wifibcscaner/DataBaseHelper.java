@@ -13,26 +13,6 @@ import android.database.sqlite.SQLiteConstraintException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.channels.FileChannel;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
 import android.database.sqlite.SQLiteStatement;
 import android.os.Build;
 import android.os.Environment;
@@ -53,13 +33,37 @@ import com.example.yg.wifibcscaner.data.model.Prods;
 import com.example.yg.wifibcscaner.data.model.Sotr;
 import com.example.yg.wifibcscaner.data.model.lastUpdate;
 import com.example.yg.wifibcscaner.data.model.user;
-import com.example.yg.wifibcscaner.utils.ApiUtils;
+import com.example.yg.wifibcscaner.utils.DbUtils;
 import com.example.yg.wifibcscaner.utils.MessageUtils;
-import com.example.yg.wifibcscaner.utils.SharedPreferenceManager;
 import com.example.yg.wifibcscaner.utils.executors.DefaultExecutorSupplier;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.channels.FileChannel;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.UUID;
+
 import static android.text.TextUtils.substring;
-import static com.example.yg.wifibcscaner.utils.DateTimeUtils.*;
+import static com.example.yg.wifibcscaner.utils.DateTimeUtils.addDays;
+import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDateLong;
+import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDateTimeLong;
+import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDayTimeString;
+import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getLongDateTimeString;
+import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getLongStartOfDayLong;
+import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getStartOfDayLong;
+import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getStartOfDayString;
+import static com.example.yg.wifibcscaner.utils.DateTimeUtils.numberOfDaysInMonth;
+import static com.example.yg.wifibcscaner.utils.DbUtils.tryCloseCursor;
 import static java.lang.String.valueOf;
 
 public class DataBaseHelper extends SQLiteOpenHelper {
@@ -137,11 +141,6 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             sInstance = new DataBaseHelper(context.getApplicationContext(), DB_VERSION, dbNeedReplace);
         }
         return sInstance;
-    }
-    private static void tryCloseCursor(Cursor c) {
-        if (c != null && !c.isClosed()) {
-            c.close();
-        }
     }
 
     public static String getUUID() {
@@ -2768,6 +2767,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.N)
     public String saveToDB(OrderOutDocBoxMovePart r) {
         try {
             insertOrdersInBulk(r.orderReqList);

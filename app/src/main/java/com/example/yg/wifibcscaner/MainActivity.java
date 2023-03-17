@@ -9,6 +9,8 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.databinding.DataBindingUtil;
+import android.databinding.ViewDataBinding;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
 import android.os.AsyncTask;
@@ -34,15 +36,14 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.yg.wifibcscaner.activity.BaseActivity;
-import com.example.yg.wifibcscaner.activity.BoxesActivity;
 import com.example.yg.wifibcscaner.activity.LoginActivity;
 import com.example.yg.wifibcscaner.activity.OutDocsActivity;
 import com.example.yg.wifibcscaner.activity.ProdsActivity;
 import com.example.yg.wifibcscaner.controller.AppController;
+import com.example.yg.wifibcscaner.data.dto.CurrentDocDetails;
 import com.example.yg.wifibcscaner.data.dto.OrderWithOutDocWithBoxWithMovesWithPartsResponce;
 import com.example.yg.wifibcscaner.data.model.BoxMoves;
 import com.example.yg.wifibcscaner.data.model.Boxes;
-import com.example.yg.wifibcscaner.data.model.OrdersActivity;
 import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.data.model.Prods;
 import com.example.yg.wifibcscaner.data.repository.OrderOutDocBoxMovePartRepository;
@@ -81,7 +82,6 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
     UsbManager mUsbManager = null;
     UsbDevice mdevice;
 
-    private OrderOutDocBoxMovePartRepository orderOutDocBoxMovePartRepository;
 
     private DataBaseHelper mDBHelper;
     TextView tVDBInfo, currentDocDetails, currentUser;
@@ -123,7 +123,6 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
         editTextRQ.setEnabled(false);
         //registerReceiver
         mUsbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
-        orderOutDocBoxMovePartRepository = new OrderOutDocBoxMovePartRepository();
 
         AidcManager.create(this, new AidcManager.CreatedCallback() {
             @Override
@@ -186,6 +185,10 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
         //resetLoadDataTimer();
 
         String snum = "Накл.???";
+        //ViewDataBinding binding = DataBindingUtil.setContentView(this, R.layout.activity_main);
+
+        //binding.setVariable(BR.name, new CurrentDocDetails(snum));
+
         if (mDBHelper.currentOutDoc.get_number() != 0) snum = "Накл.№"+mDBHelper.currentOutDoc.get_number();
         snum = mDBHelper.defs.descOper+", "+snum;
         android.support.v7.app.ActionBar actionBar = getSupportActionBar();
@@ -334,7 +337,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
                 startActivity(new Intent(this,OutDocsActivity.class));
                 return true;
             case R.id.action_update:
-                orderOutDocBoxMovePartRepository.getData(getApplicationContext());
+                new OrderOutDocBoxMovePartRepository().getData(getApplicationContext());
                 return true;
 
             default:

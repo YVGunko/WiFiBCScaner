@@ -23,7 +23,6 @@
             </intent-filter>
         </activity>
         <activity android:name=".activity.LoginActivity" />
-        <activity android:name=".activity.dbService" />
         <activity android:name=".activity.BoxesActivity" />
         <activity android:name=".SettingsActivity" />
         <activity android:name=".activity.ProdsActivity" />

@@ -1,16 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<layout xmlns:android="http://schemas.android.com/apk/res/android">
+    <data>
+
+        <variable
+            name="doc"
+            type="com.example.yg.wifibcscaner.data.dto.CurrentDocDetails" />
+
+    </data>
+    <android.support.constraint.ConstraintLayout
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="com.example.yg.wifibcscaner.activity.OutDocsActivity"
-    tools:showIn="@layout/activity_out_doc">
+    tools:showIn="@layout/activity_out_docs">
 
     <ListView
         android:id="@+id/lvData"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/currentDocDetails">
     </ListView>
     <TextView
         android:id="@+id/tvNumber"
@@ -44,4 +54,16 @@
         app:layout_constraintLeft_toRightOf="@+id/tvNumBox">
 
     </TextView>
+    <TextView
+        android:id="@+id/currentDocDetails"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@{doc.name}"
+        android:textAlignment="center"
+        android:textSize="20sp"
+        app:layout_constraintHorizontal_bias="0.505"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
 </android.support.constraint.ConstraintLayout>
+</layout>

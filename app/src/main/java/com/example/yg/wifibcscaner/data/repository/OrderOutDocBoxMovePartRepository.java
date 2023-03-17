@@ -30,8 +30,6 @@ public class OrderOutDocBoxMovePartRepository {
     private static final String TAG = "dataDownloadRepository";
     private static final String MY_CHANNEL_ID = "Download Status";
 
-    SQLiteDatabase db;
-
     NotificationUtils notificationUtils;
 
     public void setNotificationUtils(NotificationUtils notificationUtils) {
@@ -76,7 +74,7 @@ public class OrderOutDocBoxMovePartRepository {
                 Log.d(TAG, "downloadData -> update date: " + SharedPreferenceManager.getInstance().getUpdateDateString());
                 Log.d(TAG, "downloadData -> current page to load: " + SharedPreferenceManager.getInstance().getCurrentPageToLoad());
 
-                DataBaseHelper mDbHelper = DataBaseHelper.getInstance(context);
+                DataBaseHelper mDbHelper = AppController.getInstance().getDbHelper();
                 SharedPreferenceManager.getInstance().setNextPageToLoadToZero();
                 String updateDate = SharedPreferenceManager.getInstance().getUpdateDateString();
                 ApiUtils.getOrderService(mDbHelper.defs.getUrl()).getDataPageableV1(
