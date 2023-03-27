@@ -93,6 +93,9 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     public OutDocs currentOutDoc;
     public Sotr sotr;
 
+
+
+
     public static class foundbox {
         String barcode; //строка описания
         String boxdef; //строка описания
@@ -2794,6 +2797,86 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             Log.w(TAG, re);
             throw new RuntimeException("To catch onto method level.");
         }
+    }
+
+    public void insertUserInBulk(List<user> list){
+        SQLiteDatabase db = getWritableDatabase();
+        try {
+
+            db.execSQL("PRAGMA foreign_keys = 0;");
+            db.beginTransaction();
+            String sql = "INSERT OR REPLACE INTO USER (_id, name, pswd, superUser, Id_s, DT) " +
+                    " VALUES (?,?,?,?,?,?);";
+
+            SQLiteStatement statement = db.compileStatement(sql);
+
+            for (user o : list) {
+                statement.clearBindings();
+                statement.bindLong(1, o.get_id());
+                statement.bindString(2, o.getName());
+                statement.bindString(3, o.getPswd());
+                statement.bindLong(4, (o.isSuperUser() ? 1 : 0));
+                statement.bindLong(5, o.get_Id_s());
+
+                if (o.get_DT() == null)
+                    statement.bindLong(6, new Date().getTime());
+                else
+                    statement.bindLong(6, getDateTimeLong(o.get_DT()));
+                statement.executeInsert();
+            }
+
+            db.setTransactionSuccessful(); // This commits the transaction if there were no exceptions
+            db.execSQL("PRAGMA foreign_keys = 1;");
+        } catch (Exception e) {
+            Log.w(TAG, e);
+            throw new RuntimeException("To catch into upper level.");
+        } finally {
+            db.endTransaction();
+        }
+    }
+
+    public void insertOperationInBulk(List<Operation> list){
+        SQLiteDatabase db = getWritableDatabase();
+        try {
+
+            db.execSQL("PRAGMA foreign_keys = 0;");
+            db.beginTransaction();
+            String sql = "INSERT OR REPLACE INTO Operation (_id, opers, division_code, DT) " +
+                    " VALUES (?,?,?,?,?,?);";
+
+            SQLiteStatement statement = db.compileStatement(sql);
+
+            for (Operation o : list) {
+                statement.clearBindings();
+                statement.bindLong(1, o.get_id());
+
+                if (o.getDivision_code() == null) continue;
+                else
+                    statement.bindString(2, o.getDivision_code());
+
+                if (o.get_Opers() == null)
+                    statement.bindString(2, "");
+                else
+                    statement.bindString(2, o.get_Opers());
+                if (o.get_dt() == null)
+                    statement.bindLong(4, new Date().getTime());
+                else
+                    statement.bindLong(4, getDateTimeLong(o.get_dt()));
+                statement.executeInsert();
+            }
+
+            db.setTransactionSuccessful(); // This commits the transaction if there were no exceptions
+            db.execSQL("PRAGMA foreign_keys = 1;");
+        } catch (Exception e) {
+            Log.w(TAG, e);
+            throw new RuntimeException("To catch into upper level.");
+        } finally {
+            db.endTransaction();
+        }
+    }
+    public void insertDepsInBulk(List<Deps> body) {
+    }
+    public void insertSotrInBulk(List<Sotr> body) {
     }
 }
 

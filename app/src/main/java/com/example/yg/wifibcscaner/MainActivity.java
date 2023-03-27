@@ -9,8 +9,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
-import android.databinding.DataBindingUtil;
-import android.databinding.ViewDataBinding;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
 import android.os.AsyncTask;
@@ -46,6 +44,7 @@ import com.example.yg.wifibcscaner.data.model.BoxMoves;
 import com.example.yg.wifibcscaner.data.model.Boxes;
 import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.data.model.Prods;
+import com.example.yg.wifibcscaner.data.repository.BaseClassRepo;
 import com.example.yg.wifibcscaner.data.repository.OrderOutDocBoxMovePartRepository;
 import com.example.yg.wifibcscaner.receiver.SyncDataBroadcastReceiver;
 import com.example.yg.wifibcscaner.utils.ApiUtils;
@@ -337,6 +336,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
                 startActivity(new Intent(this,OutDocsActivity.class));
                 return true;
             case R.id.action_update:
+                new BaseClassRepo().getData(getApplicationContext());
                 new OrderOutDocBoxMovePartRepository().getData(getApplicationContext());
                 return true;
 

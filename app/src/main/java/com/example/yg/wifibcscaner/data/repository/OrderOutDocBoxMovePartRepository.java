@@ -2,6 +2,7 @@ package com.example.yg.wifibcscaner.data.repository;
 
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Build;
+import android.support.annotation.RequiresApi;
 import android.util.Log;
 import android.content.Context;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -10,7 +11,6 @@ import com.example.yg.wifibcscaner.DataBaseHelper;
 import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.dto.OrderOutDocBoxMovePart;
-import com.example.yg.wifibcscaner.interfaces.FetchListDataListener;
 import com.example.yg.wifibcscaner.utils.ApiUtils;
 import com.example.yg.wifibcscaner.utils.AppUtils;
 import com.example.yg.wifibcscaner.utils.NotificationUtils;
@@ -56,7 +56,7 @@ public class OrderOutDocBoxMovePartRepository {
                 //notificationUtils.notify(context, AppController.getInstance().getResourses().getString(R.string.error_connection));
             DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
                 notificationUtils.notify(context,
-                        AppController.getInstance().getResourses().getString(R.string.error_something_went_wrong),
+                        AppController.getInstance().getResourses().getString(R.string.network_unawailable),
                         MY_CHANNEL_ID);
             });
             return;
@@ -102,6 +102,7 @@ public class OrderOutDocBoxMovePartRepository {
     }
     private Callback<OrderOutDocBoxMovePart> downloadDataCallback(String updateDate) {
         return new Callback<OrderOutDocBoxMovePart>() {
+            @RequiresApi(api = Build.VERSION_CODES.N)
             @Override
             public void onResponse(Call<OrderOutDocBoxMovePart> call, Response<OrderOutDocBoxMovePart> response) {
                 if (response.isSuccessful()) {
