@@ -32,6 +32,7 @@ import com.example.yg.wifibcscaner.data.model.Operation;
 import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.data.model.Sotr;
 import com.example.yg.wifibcscaner.data.model.user;
+import com.example.yg.wifibcscaner.data.repository.BaseClassRepo;
 import com.example.yg.wifibcscaner.data.repository.OrderOutDocBoxMovePartRepository;
 import com.example.yg.wifibcscaner.interfaces.FetchListDataListener;
 import com.example.yg.wifibcscaner.utils.ApiUtils;
@@ -154,113 +155,7 @@ public class SettingsActivity extends AppCompatActivity implements
         // Операции для выбранного пункта меню
         switch (id) {
             case R.id.action_receive_spr:
-                try {
-
-                    ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getUser("01.01.2018 00:00:00").enqueue(new Callback<List<user>>() {
-                        // TODO Обработать результат. Записать поле sent... если успешно
-                        @Override
-                        public void onResponse(Call<List<user>> call, Response<List<user>> response) {
-                            if (response.isSuccessful()) {
-                                for (user user : response.body())
-                                    mDBHelper.insertUser(user);
-                                if (response.body().size() != 0) {
-                                    Log.d("UpdateActivity", "Ответ сервера на запрос новых users: " + response.body().size());
-                                }
-                            }
-                        }
-
-                        @Override
-                        public void onFailure(Call<List<user>> call, Throwable t) {
-                            Log.d("UpdateActivity", "Ответ сервера на запрос новых users: " + t.getMessage());
-                        }
-                    });
-
-                    ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getOperation("01.01.2018 00:00:00").enqueue(new Callback<List<Operation>>() {
-                        // TODO Обработать результат. Записать поле sent... если успешно
-                        @Override
-                        public void onResponse(Call<List<Operation>> call, Response<List<Operation>> response) {
-                            MessageUtils messageUtils = new MessageUtils();
-                            //Log.d("1","Ответ сервера на запрос новых операций: " + response.body());
-                            if(response.isSuccessful()) {
-                                for(Operation operation : response.body())
-                                    mDBHelper.insertOpers(operation);
-                                messageUtils.showMessage(getApplicationContext(), "Ок! Новые операции приняты!");
-                                loadOpers_spinnerData();
-                                opers_select_label = (TextView) findViewById(R.id.opers_select_label);
-                                opers_select_label.setText(mDBHelper.getOpers_Name_by_id(mDBHelper.defs.get_Id_o()));
-                            }else {
-                                messageUtils.showLongMessage(getApplicationContext(), "Ошибка при приеме операций!");
-                            }
-                        }
-
-                        @Override
-                        public void onFailure(Call<List<Operation>> call, Throwable t) {
-                            MessageUtils messageUtils = new MessageUtils();
-                            messageUtils.showLongMessage(getApplicationContext(), t.getMessage()+". Ошибка при приеме операций!");
-                            Log.d("UpdateActivity","Ответ сервера на запрос новых операций: " + t.getMessage());
-                        }
-                    });
-
-                    ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getSotr("01.01.2018 00:00:00").enqueue(new Callback<List<Sotr>>() {
-                        // TODO Обработать результат. Записать поле sent... если успешно
-                        @Override
-                        public void onResponse(Call<List<Sotr>> call, Response<List<Sotr>> response) {
-                            MessageUtils messageUtils = new MessageUtils();
-                            //Log.d("UpdateActivity","Ответ сервера на запрос новых сотрудников: " + response.body());
-                            if(response.isSuccessful()) {
-                                for(Sotr sotr : response.body())
-                                    mDBHelper.insertSotr(sotr);
-                                messageUtils.showMessage(getApplicationContext(), "Ок! Новые сотрудники приняты!");
-                                loadSpinnerSotrData();
-                                labelSotr = (TextView) findViewById(R.id.labelSotr);
-                                labelSotr.setText(mDBHelper.getSotr_Name_by_id(mDBHelper.defs.get_Id_s()));
-                            }else {
-                                messageUtils.showLongMessage(getApplicationContext(), "Ошибка при приеме сотрудников!");
-                            }
-                        }
-
-                        @Override
-                        public void onFailure(Call<List<Sotr>> call, Throwable t) {
-                            MessageUtils messageUtils = new MessageUtils();
-                            messageUtils.showLongMessage(getApplicationContext(), t.getMessage()+". Ошибка при приеме сотрудников!");
-                            Log.d("UpdateActivity","Ответ сервера на запрос новых сотрудников: " + t.getMessage());
-                        }
-                    });
-
-
-                    ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getDeps("01.01.2018 00:00:00").enqueue(new Callback<List<Deps>>() {
-                        // TODO Обработать результат. Записать поле sent... если успешно
-                        @Override
-                        public void onResponse(Call<List<Deps>> call, Response<List<Deps>> response) {
-                            MessageUtils messageUtils = new MessageUtils();
-                            //Log.d("UpdateActivity","Ответ сервера на запрос новых бригад: " + response.body());
-                            if(response.isSuccessful()) {
-                                for(Deps deps : response.body())
-                                    mDBHelper.insertDeps(deps);
-                                messageUtils.showMessage(getApplicationContext(), "Ок! Новые бригады приняты!");
-                                loadSpinnerData();
-                                select_label = (TextView) findViewById(R.id.select_label);
-                                select_label.setText(mDBHelper.getDeps_Name_by_id(mDBHelper.defs.get_Id_d()));
-                            }else {
-                                messageUtils.showLongMessage(getApplicationContext(), "Ошибка при приеме бригад!");
-                            }
-                        }
-
-                        @Override
-                        public void onFailure(Call<List<Deps>> call, Throwable t) {
-                            MessageUtils messageUtils = new MessageUtils();
-                            messageUtils.showLongMessage(getApplicationContext(), t.getMessage()+". Ошибка при приеме бригад!");
-                            Log.d("UpdateActivity","Ответ сервера на запрос новых бригад: " + t.getMessage());
-                        }
-                    });
-
-                } catch (Exception e) {
-                    messageUtils.showLongMessage(getApplicationContext(), "Ошибка при приеме заказов!");
-                    Log.d("UpdateActivity","Ответ сервера на запрос новых заказов: " + e.getMessage());
-                }
-                // Loading spinner data from database
-
-
+                new BaseClassRepo().getData(getApplicationContext());
 
                 return true;
             case R.id.action_receive_box:

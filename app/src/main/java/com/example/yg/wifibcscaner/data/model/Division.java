@@ -7,7 +7,6 @@ public class Division {
     public static final String TABLE = "Division";
     public static final String COLUMN_Name = "name";
     public static final String COLUMN_Code = "code";
-    private DataBaseHelper mDBHelper;
 
     private String code;
     private String name;

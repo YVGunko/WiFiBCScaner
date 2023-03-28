@@ -10,6 +10,7 @@ import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.dto.OrderOutDocBoxMovePart;
 import com.example.yg.wifibcscaner.data.model.Deps;
+import com.example.yg.wifibcscaner.data.model.Division;
 import com.example.yg.wifibcscaner.data.model.Operation;
 import com.example.yg.wifibcscaner.data.model.Sotr;
 import com.example.yg.wifibcscaner.data.model.user;
@@ -19,6 +20,7 @@ import com.example.yg.wifibcscaner.utils.NotificationUtils;
 import com.example.yg.wifibcscaner.utils.SharedPreferenceManager;
 import com.example.yg.wifibcscaner.utils.executors.DefaultExecutorSupplier;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import retrofit2.Call;
@@ -58,11 +60,51 @@ public class BaseClassRepo {
             return;
         }
 
-        downloadUser(context);
-        downloadOperation(context);
-        downloadSotr(context);
+        downloadDivision();
         downloadDeps(context);
+        downloadOperation(context);
+        downloadUser(context);
+        downloadSotr(context);
     }
+
+    private void downloadDivision() {
+        DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
+            try {
+                DataBaseHelper mDbHelper = AppController.getInstance().getDbHelper();
+
+                ApiUtils.getOrderService(mDbHelper.defs.getUrl()).getDiv().enqueue(new Callback<List<Division>>() {
+                    @Override
+                    public void onResponse(Call<List<Division>> call, Response<List<Division>> response) {
+                        if (response.isSuccessful()) {
+                            if (response.body() != null &&
+                                    !response.body().isEmpty())
+                                mDbHelper.insertDivisionInBulk(response.body());
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<List<Division>> call, Throwable t) {
+                        Log.w(TAG, "baseClassRepo -> downloadData -> Division -> " + t.getMessage());
+                    }
+                });
+
+                Log.d(TAG, "baseClassRepo -> downloadData -> Division -> " + AppController.getInstance().getResourses().getString(R.string.deps_downloaded_succesfully));
+                if (notificationUtils != null)
+                    DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
+                        notificationUtils.notify(AppController.getInstance(), AppController.getInstance().getResourses().getString(R.string.deps_downloaded_succesfully), MY_CHANNEL_ID);
+                    });
+            } catch (Exception e) {
+                Log.e(TAG, "baseClassRepo -> downloadData ->  Division -> " + AppController.getInstance().getResourses().getString(R.string.error_something_went_wrong));
+                e.printStackTrace();
+                if (notificationUtils != null)
+                    DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
+                        notificationUtils.notify(AppController.getInstance(), AppController.getInstance().getResourses().getString(R.string.error_something_went_wrong), MY_CHANNEL_ID);
+                    });
+            }
+        });
+        return ;
+    }
+
     /**
      * run a download sequence
      * @param context
@@ -89,10 +131,10 @@ public class BaseClassRepo {
                     }
                 });
 
-                Log.d(TAG, "baseClassRepo -> downloadData -> Deps -> " + AppController.getInstance().getResourses().getString(R.string.downloaded_succesfully));
+                Log.d(TAG, "baseClassRepo -> downloadData -> Deps -> " + AppController.getInstance().getResourses().getString(R.string.deps_downloaded_succesfully));
                 if (notificationUtils != null)
                     DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
-                        notificationUtils.notify(AppController.getInstance(), AppController.getInstance().getResourses().getString(R.string.downloaded_succesfully), MY_CHANNEL_ID);
+                        notificationUtils.notify(AppController.getInstance(), AppController.getInstance().getResourses().getString(R.string.deps_downloaded_succesfully), MY_CHANNEL_ID);
                     });
             } catch (Exception e) {
                 Log.e(TAG, "baseClassRepo -> downloadData ->  Deps -> " + AppController.getInstance().getResourses().getString(R.string.error_something_went_wrong));
@@ -110,7 +152,7 @@ public class BaseClassRepo {
      * run a download sequence
      * @param context
      */
-    public void downloadUser(Context context) {
+    private void downloadUser(Context context) {
         DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
             try {
                 DataBaseHelper mDbHelper = AppController.getInstance().getDbHelper();
@@ -132,10 +174,10 @@ public class BaseClassRepo {
                     }
                 });
 
-                Log.d(TAG, "baseClassRepo -> downloadData -> User -> " + AppController.getInstance().getResourses().getString(R.string.downloaded_succesfully));
+                Log.d(TAG, "baseClassRepo -> downloadData -> User -> " + AppController.getInstance().getResourses().getString(R.string.users_downloaded_succesfully));
                 if (notificationUtils != null)
                     DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
-                        notificationUtils.notify(AppController.getInstance(), AppController.getInstance().getResourses().getString(R.string.downloaded_succesfully), MY_CHANNEL_ID);
+                        notificationUtils.notify(AppController.getInstance(), AppController.getInstance().getResourses().getString(R.string.users_downloaded_succesfully), MY_CHANNEL_ID);
                     });
             } catch (Exception e) {
                 Log.e(TAG, "baseClassRepo -> downloadData ->  User -> " + AppController.getInstance().getResourses().getString(R.string.error_something_went_wrong));
@@ -148,7 +190,7 @@ public class BaseClassRepo {
         });
         return ;
     }
-    public void downloadOperation(Context context) {
+    private void downloadOperation(Context context) {
         DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
             try {
                 DataBaseHelper mDbHelper = AppController.getInstance().getDbHelper();
@@ -166,17 +208,17 @@ public class BaseClassRepo {
 
                     @Override
                     public void onFailure(Call<List<Operation>> call, Throwable t) {
-                        Log.w(TAG, "baseClassRepo -> downloadData -> User -> " + t.getMessage());
+                        Log.w(TAG, "baseClassRepo -> downloadData -> Operation -> " + t.getMessage());
                     }
                 });
 
-                Log.d(TAG, "baseClassRepo -> downloadData -> User -> " + AppController.getInstance().getResourses().getString(R.string.downloaded_succesfully));
+                Log.d(TAG, "baseClassRepo -> downloadData -> Operation -> " + AppController.getInstance().getResourses().getString(R.string.opers_downloaded_succesfully));
                 if (notificationUtils != null)
                     DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
-                        notificationUtils.notify(AppController.getInstance(), AppController.getInstance().getResourses().getString(R.string.downloaded_succesfully), MY_CHANNEL_ID);
+                        notificationUtils.notify(AppController.getInstance(), AppController.getInstance().getResourses().getString(R.string.opers_downloaded_succesfully), MY_CHANNEL_ID);
                     });
             } catch (Exception e) {
-                Log.e(TAG, "baseClassRepo -> downloadData ->  User -> " + AppController.getInstance().getResourses().getString(R.string.error_something_went_wrong));
+                Log.e(TAG, "baseClassRepo -> downloadData ->  Operation -> " + AppController.getInstance().getResourses().getString(R.string.error_something_went_wrong));
                 e.printStackTrace();
                 if (notificationUtils != null)
                     DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
@@ -187,7 +229,7 @@ public class BaseClassRepo {
         return ;
     }
 
-    public void downloadSotr(Context context) {
+    private void downloadSotr(Context context) {
         DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
             try {
                 DataBaseHelper mDbHelper = AppController.getInstance().getDbHelper();
@@ -209,10 +251,10 @@ public class BaseClassRepo {
                     }
                 });
 
-                Log.d(TAG, "baseClassRepo -> downloadData -> Sotr -> " + AppController.getInstance().getResourses().getString(R.string.downloaded_succesfully));
+                Log.d(TAG, "baseClassRepo -> downloadData -> Sotr -> " + AppController.getInstance().getResourses().getString(R.string.sotr_downloaded_succesfully));
                 if (notificationUtils != null)
                     DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
-                        notificationUtils.notify(AppController.getInstance(), AppController.getInstance().getResourses().getString(R.string.downloaded_succesfully), MY_CHANNEL_ID);
+                        notificationUtils.notify(AppController.getInstance(), AppController.getInstance().getResourses().getString(R.string.sotr_downloaded_succesfully), MY_CHANNEL_ID);
                     });
             } catch (Exception e) {
                 Log.e(TAG, "baseClassRepo -> downloadData ->  Sotr -> " + AppController.getInstance().getResourses().getString(R.string.error_something_went_wrong));

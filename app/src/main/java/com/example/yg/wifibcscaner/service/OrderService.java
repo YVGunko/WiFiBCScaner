@@ -58,23 +58,11 @@ public interface OrderService {
     @GET("/pbByDatePagebleCount")
     Call<Integer> getPartBoxByDatePagebleCount(@Query("date") String date);
 
-    @GET("/orderUser")
-    Call<List<Orders>> getOrdersUser(@Query("date") String date, @Query("userId") int userId);
-    @GET("/boxesByDateUser")
-    Call<List<Boxes>> getBoxesByDateUser(@Query("date") String date, @Query("userId") int userId);
-    @GET("/bmByDateUser")
-    Call<List<BoxMoves>> getBoxMovesByDateUser(@Query("date") String date, @Query("userId") int userId);
-    @GET("/pbByDateUser")
-    Call<List<Prods>> getPartBoxByDateUser(@Query("date") String date, @Query("userId") int userId);
+    @GET("/division")
+    Call<List<Division>> getDivision(@Query("division_code") String division_code);
 
-    @POST("/orders")
-    Call<List<Orders>> getAllOrders(@Body ArrayList<String> ordersId);
-
-    @POST("/archiveOrders")
-    Call<List<String>> getArchiveOrders(@Body ArrayList<String> ordersId);
-
-    @GET("/divisions")
-    Call<List<Division>> getDivision();
+    @GET("/division")
+    Call<List<Division>> getDiv();
 
     @GET("/employee")
     Call<List<Sotr>> getSotr(@Query("date") String date);
