@@ -155,7 +155,7 @@ public class SettingsActivity extends AppCompatActivity implements
         // Операции для выбранного пункта меню
         switch (id) {
             case R.id.action_receive_spr:
-                new BaseClassRepo().getData(getApplicationContext());
+                new BaseClassRepo().getData();
 
                 return true;
             case R.id.action_receive_box:

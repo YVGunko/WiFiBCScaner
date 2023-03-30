@@ -16,6 +16,7 @@ import retrofit2.http.Path;
 import retrofit2.http.Query;
 
 import com.example.yg.wifibcscaner.data.dto.OrderWithOutDocWithBoxWithMovesWithPartsResponce;
+import com.example.yg.wifibcscaner.data.dto.OutDocWithBoxWithMovesWithPartsRequest;
 import com.example.yg.wifibcscaner.data.model.BoxMoves;
 import com.example.yg.wifibcscaner.data.model.Boxes;
 import com.example.yg.wifibcscaner.data.model.Deps;
@@ -79,8 +80,8 @@ public interface OrderService {
     @POST("/outDocSaveOrUpdate")
     Call<List<OutDocs>> addOutDoc(@Body ArrayList<OutDocs> outDocs, @Query("deviceId") String deviceId);
 
-    @POST("/outDocPost")
-    Call<List<OutDocs>> getOutDocPost(@Body ArrayList<String> odId);
+    @POST("/outDocRequest/v3")
+    Call<OutDocWithBoxWithMovesWithPartsRequest> getOutDocPost(@Body OutDocWithBoxWithMovesWithPartsRequest request);
 
     @GET("/outDocGet")
     Call<List<OutDocs>> getOutDocGet(@Query("date") String date);

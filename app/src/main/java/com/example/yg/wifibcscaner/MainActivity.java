@@ -17,6 +17,7 @@ import android.os.Bundle;
 import android.os.SystemClock;
 import android.provider.Settings;
 import android.support.annotation.Nullable;
+import android.support.annotation.RequiresApi;
 import android.support.v7.app.AlertDialog;
 import android.text.Editable;
 import android.text.Html;
@@ -46,6 +47,7 @@ import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.data.model.Prods;
 import com.example.yg.wifibcscaner.data.repository.BaseClassRepo;
 import com.example.yg.wifibcscaner.data.repository.OrderOutDocBoxMovePartRepository;
+import com.example.yg.wifibcscaner.data.repository.OutDocWithBoxWithMovesWithPartsRepo;
 import com.example.yg.wifibcscaner.receiver.SyncDataBroadcastReceiver;
 import com.example.yg.wifibcscaner.utils.ApiUtils;
 import com.example.yg.wifibcscaner.utils.MessageUtils;
@@ -318,6 +320,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
         }
         }
     }
+    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
@@ -336,7 +339,8 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
                 startActivity(new Intent(this,OutDocsActivity.class));
                 return true;
             case R.id.action_update:
-                new BaseClassRepo().getData(getApplicationContext());
+                new OutDocWithBoxWithMovesWithPartsRepo().call();
+                new BaseClassRepo().getData();
                 new OrderOutDocBoxMovePartRepository().getData(getApplicationContext());
                 return true;
 

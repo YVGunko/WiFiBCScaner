@@ -122,6 +122,9 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         boolean archive;
     }
 
+    public SQLiteDatabase getDb() {
+        return mDataBase;
+    }
     public static synchronized DataBaseHelper getInstance(Context context) {
 
         // Use the application context, which will ensure that you
@@ -868,38 +871,6 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         }
     }
 
-    public ArrayList<OutDocs> getOutDocNotSent(){
-        boolean dbWasOpen = false;
-        Cursor cursor = null;
-        ArrayList<OutDocs> readBoxMoves = new ArrayList<OutDocs>();
-        try {
-            if (!mDataBase.isOpen()) {
-                mDataBase = this.getReadableDatabase();
-            } else dbWasOpen = true;
-
-            mDataBase = this.getReadableDatabase();
-            cursor = mDataBase.rawQuery("SELECT _id, number, comment, DT, Id_o, division_code, idUser" +
-                    " FROM OutDocs where ((" + COLUMN_sentToMasterDate + " IS NULL) OR (" + COLUMN_sentToMasterDate + " = ''))", null);
-
-            if ((cursor != null) & (cursor.getCount() != 0)) {
-                cursor.moveToFirst();
-
-                //Пробегаем по всем коробкам
-                while (!cursor.isAfterLast()) {
-                    OutDocs readBoxMove = new OutDocs(cursor.getString(0), cursor.getInt(4), cursor.getInt(1), cursor.getString(2),
-                            getLongDateTimeString(cursor.getLong(3)), null, cursor.getString(5), cursor.getInt(6));
-                    //Закидываем в список
-                    readBoxMoves.add(readBoxMove);
-                    //Переходим к следующеq
-                    cursor.moveToNext();
-                }
-            }
-        }finally {
-            tryCloseCursor(cursor);
-            if (!dbWasOpen) mDataBase.close();
-            return readBoxMoves;
-        }
-    }
 /*
 *             return mDataBase.rawQuery("SELECT o.number, o.comment, count(bm.Id_b) as numbox, sum(p.RQ_box) as quantitybox " +
                     " FROM Prods p, BoxMoves bm, OutDocs o where bm.Id_o="+String.valueOf(defs.get_Id_o())+" and bm._id=p.Id_bm and p.idOutDocs=o._id"+
@@ -962,81 +933,6 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             e.printStackTrace();
         }
         return retString;
-    }
-
-    //get all Boxes  records filtered by operation
-    public ArrayList<Boxes> getBoxes() throws ParseException {
-        ArrayList<Boxes> readBoxes = new ArrayList<Boxes>();
-        mDataBase = this.getReadableDatabase();
-        Cursor cursor = mDataBase.rawQuery("SELECT _id,Id_m,Q_box,N_box,DT FROM Boxes where (("
-                        +Boxes.COLUMN_sentToMasterDate+" IS NULL) OR ("+Boxes.COLUMN_sentToMasterDate+" = ''))", null);
-                //+ " and Id_m="+OrdId, null);
-        if ((cursor != null) & (cursor.getCount() != 0)) {
-            cursor.moveToFirst();
-
-//Пробегаем по всем коробкам
-            while (!cursor.isAfterLast()) {
-                Boxes readBox = new Boxes(cursor.getString(0), cursor.getInt(1), cursor.getInt(2),
-                        cursor.getInt(3), getLongDateTimeString((cursor.getLong(4))), null, false);
-                if ((readBox.get_id()!= "")&(((int) readBox.get_Id_m()) != 0))
-                    //Закидываем в список
-                    readBoxes.add(readBox);
-                //Переходим к следующеq
-                cursor.moveToNext();
-            }
-        }
-        cursor.close();
-        mDataBase.close();
-        return readBoxes;
-    }
-    //get all Boxes  records filtered by operation
-    public ArrayList<BoxMoves> getBoxMoves() throws ParseException {
-        ArrayList<BoxMoves> readBoxMoves = new ArrayList<BoxMoves>();
-        mDataBase = this.getReadableDatabase();
-        Cursor cursor = mDataBase.rawQuery("SELECT bm._id,bm.Id_b,bm.Id_o,bm.DT FROM BoxMoves bm where ((bm."
-                +BoxMoves.COLUMN_sentToMasterDate+" IS NULL) OR (bm."+BoxMoves.COLUMN_sentToMasterDate+" = ''))", null);
-
-        if ((cursor != null) & (cursor.getCount() != 0)) {
-            cursor.moveToFirst();
-
-//Пробегаем по всем коробкам
-            while (!cursor.isAfterLast()) {
-                BoxMoves readBoxMove = new BoxMoves(cursor.getString(0), cursor.getString(1), cursor.getInt(2),
-                        getLongDateTimeString((cursor.getLong(3))), null);
-                //Закидываем в список
-                readBoxMoves.add(readBoxMove);
-                //Переходим к следующеq
-                cursor.moveToNext();
-            }
-        }
-        cursor.close();
-        mDataBase.close();
-        return readBoxMoves;
-    }
-    //get all Boxes  records filtered by operation
-    public ArrayList<Prods> getProds() throws ParseException {
-        ArrayList<Prods> readProds = new ArrayList<Prods>();
-        mDataBase = this.getReadableDatabase();
-        Cursor cursor = mDataBase.rawQuery("SELECT _id, Id_bm,Id_d,Id_s,RQ_box,P_date,sentToMasterDate,idOutDocs FROM Prods where (("
-                +Prods.COLUMN_sentToMasterDate+" IS NULL) OR ("+Prods.COLUMN_sentToMasterDate+" = '')) and "
-                +Prods.COLUMN_Id_bm+" in " +
-                "(SELECT bm._id FROM BoxMoves bm)", null);
-        if ((cursor != null) & (cursor.getCount() != 0)) {
-            cursor.moveToFirst();
-
-//Пробегаем по всем коробкам
-            while (!cursor.isAfterLast()) {
-                Prods readProd = new Prods(cursor.getString(0), cursor.getString(1), cursor.getInt(2), cursor.getInt(3), cursor.getInt(4),
-                        getLongDateTimeString(cursor.getLong(5)), cursor.getString(6), cursor.getString(7));
-                //Закидываем в список
-                readProds.add(readProd);
-                //Переходим к следующеq
-                cursor.moveToNext();
-            }
-        }
-        cursor.close();
-        mDataBase.close();
-        return readProds;
     }
 
     public String[] splitBarcode(String storedbarcode) {
@@ -2951,6 +2847,129 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         }
     }
     public void insertDivisionInBulk(List<Division> body) {
+    }
+    /* get OutDoc */
+    public ArrayList<OutDocs> getOutDocNotSent(){
+        boolean dbWasOpen = false;
+        Cursor cursor = null;
+        ArrayList<OutDocs> readBoxMoves = new ArrayList<OutDocs>();
+        try {
+            if (!mDataBase.isOpen()) {
+                mDataBase = this.getReadableDatabase();
+            } else dbWasOpen = true;
+
+            String sql = "SELECT _id, number, comment, DT, Id_o, division_code, idUser" +
+                    " FROM OutDocs where ((" + COLUMN_sentToMasterDate + " IS NULL) OR (" + COLUMN_sentToMasterDate + " = ''))";
+
+            mDataBase = this.getReadableDatabase();
+            cursor = mDataBase.rawQuery(sql, null);
+
+            if ((cursor != null) & (cursor.getCount() != 0)) {
+                cursor.moveToFirst();
+
+                //Пробегаем по всем коробкам
+                while (!cursor.isAfterLast()) {
+                    OutDocs readBoxMove = new OutDocs(cursor.getString(0), cursor.getInt(4), cursor.getInt(1), cursor.getString(2),
+                            getLongDateTimeString(cursor.getLong(3)), null, cursor.getString(5), cursor.getInt(6));
+                    //Закидываем в список
+                    readBoxMoves.add(readBoxMove);
+                    //Переходим к следующеq
+                    cursor.moveToNext();
+                }
+            }
+        }finally {
+            tryCloseCursor(cursor);
+            if (!dbWasOpen) mDataBase.close();
+            return readBoxMoves;
+        }
+    }
+
+    //get all Boxes  records filtered by operation
+    public ArrayList<Boxes> getBoxes() {
+        boolean dbWasOpen = false;
+        Cursor cursor = null;
+        ArrayList<Boxes> readBoxes = new ArrayList<>();
+        try {
+            if (!mDataBase.isOpen()) {
+                mDataBase = this.getReadableDatabase();
+            } else dbWasOpen = true;
+
+            String sql = "SELECT _id,Id_m,Q_box,N_box,DT FROM Boxes where (("
+                    +Boxes.COLUMN_sentToMasterDate+" IS NULL) OR ("+Boxes.COLUMN_sentToMasterDate+" = ''))";
+            SQLiteStatement statement = mDataBase.compileStatement(sql);
+
+            mDataBase = this.getReadableDatabase();
+            cursor = mDataBase.rawQuery(sql, null);
+
+        //+ " and Id_m="+OrdId, null);
+        if ((cursor != null) & (cursor.getCount() != 0)) {
+            cursor.moveToFirst();
+
+//Пробегаем по всем коробкам
+            while (!cursor.isAfterLast()) {
+                Boxes readBox = new Boxes(cursor.getString(0), cursor.getInt(1), cursor.getInt(2),
+                        cursor.getInt(3), getLongDateTimeString((cursor.getLong(4))), null, false);
+                if ((readBox.get_id()!= "")&(((int) readBox.get_Id_m()) != 0))
+                    //Закидываем в список
+                    readBoxes.add(readBox);
+                //Переходим к следующеq
+                cursor.moveToNext();
+            }
+        }
+        }finally {
+            tryCloseCursor(cursor);
+            if (!dbWasOpen) mDataBase.close();
+            return readBoxes;
+        }
+    }
+    //get all Boxes  records filtered by operation
+    public ArrayList<BoxMoves> getBoxMoves() throws ParseException {
+        ArrayList<BoxMoves> readBoxMoves = new ArrayList<BoxMoves>();
+        mDataBase = this.getReadableDatabase();
+        Cursor cursor = mDataBase.rawQuery("SELECT bm._id,bm.Id_b,bm.Id_o,bm.DT FROM BoxMoves bm where ((bm."
+                +BoxMoves.COLUMN_sentToMasterDate+" IS NULL) OR (bm."+BoxMoves.COLUMN_sentToMasterDate+" = ''))", null);
+
+        if ((cursor != null) & (cursor.getCount() != 0)) {
+            cursor.moveToFirst();
+
+//Пробегаем по всем коробкам
+            while (!cursor.isAfterLast()) {
+                BoxMoves readBoxMove = new BoxMoves(cursor.getString(0), cursor.getString(1), cursor.getInt(2),
+                        getLongDateTimeString((cursor.getLong(3))), null);
+                //Закидываем в список
+                readBoxMoves.add(readBoxMove);
+                //Переходим к следующеq
+                cursor.moveToNext();
+            }
+        }
+        cursor.close();
+        mDataBase.close();
+        return readBoxMoves;
+    }
+    //get all Boxes  records filtered by operation
+    public ArrayList<Prods> getProds() throws ParseException {
+        ArrayList<Prods> readProds = new ArrayList<Prods>();
+        mDataBase = this.getReadableDatabase();
+        Cursor cursor = mDataBase.rawQuery("SELECT _id, Id_bm,Id_d,Id_s,RQ_box,P_date,sentToMasterDate,idOutDocs FROM Prods where (("
+                +Prods.COLUMN_sentToMasterDate+" IS NULL) OR ("+Prods.COLUMN_sentToMasterDate+" = '')) and "
+                +Prods.COLUMN_Id_bm+" in " +
+                "(SELECT bm._id FROM BoxMoves bm)", null);
+        if ((cursor != null) & (cursor.getCount() != 0)) {
+            cursor.moveToFirst();
+
+//Пробегаем по всем коробкам
+            while (!cursor.isAfterLast()) {
+                Prods readProd = new Prods(cursor.getString(0), cursor.getString(1), cursor.getInt(2), cursor.getInt(3), cursor.getInt(4),
+                        getLongDateTimeString(cursor.getLong(5)), cursor.getString(6), cursor.getString(7));
+                //Закидываем в список
+                readProds.add(readProd);
+                //Переходим к следующеq
+                cursor.moveToNext();
+            }
+        }
+        cursor.close();
+        mDataBase.close();
+        return readProds;
     }
 }
 

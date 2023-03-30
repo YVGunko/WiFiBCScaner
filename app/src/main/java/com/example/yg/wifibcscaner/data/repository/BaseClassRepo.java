@@ -38,9 +38,8 @@ public class BaseClassRepo {
     }
     /**
      * run a download sequence
-     * @param context
      */
-    public void getData(Context context) {
+    public void getData() {
 
         notificationUtils = new NotificationUtils();
         setNotificationUtils(notificationUtils);
@@ -53,7 +52,7 @@ public class BaseClassRepo {
             if (notificationUtils != null)
                 //notificationUtils.notify(context, AppController.getInstance().getResourses().getString(R.string.error_connection));
                 DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
-                    notificationUtils.notify(context,
+                    notificationUtils.notify(AppController.getInstance().getApplicationContext(),
                             AppController.getInstance().getResourses().getString(R.string.network_unawailable),
                             MY_CHANNEL_ID);
                 });
@@ -61,10 +60,10 @@ public class BaseClassRepo {
         }
 
         downloadDivision();
-        downloadDeps(context);
-        downloadOperation(context);
-        downloadUser(context);
-        downloadSotr(context);
+        downloadDeps();
+        downloadOperation();
+        downloadUser();
+        downloadSotr();
     }
 
     private void downloadDivision() {
@@ -107,9 +106,8 @@ public class BaseClassRepo {
 
     /**
      * run a download sequence
-     * @param context
      */
-    private void downloadDeps(Context context) {
+    private void downloadDeps() {
         DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
             try {
                 DataBaseHelper mDbHelper = AppController.getInstance().getDbHelper();
@@ -150,9 +148,8 @@ public class BaseClassRepo {
 
     /**
      * run a download sequence
-     * @param context
      */
-    private void downloadUser(Context context) {
+    private void downloadUser() {
         DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
             try {
                 DataBaseHelper mDbHelper = AppController.getInstance().getDbHelper();
@@ -190,7 +187,7 @@ public class BaseClassRepo {
         });
         return ;
     }
-    private void downloadOperation(Context context) {
+    private void downloadOperation() {
         DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
             try {
                 DataBaseHelper mDbHelper = AppController.getInstance().getDbHelper();
@@ -229,7 +226,7 @@ public class BaseClassRepo {
         return ;
     }
 
-    private void downloadSotr(Context context) {
+    private void downloadSotr() {
         DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
             try {
                 DataBaseHelper mDbHelper = AppController.getInstance().getDbHelper();
