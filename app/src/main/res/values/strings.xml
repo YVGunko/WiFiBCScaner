@@ -41,9 +41,15 @@
     <string name="data_exchage_went_wrong">Данные не отправлены</string>
     <string name="downloaded_succesfully">Данные загружены успешно</string>
     <string name="sotr_downloaded_succesfully">Список сотрудников загружен успешно</string>
+    <string name="sotr_download_went_wrong">Ошибка при загрузке списка сотрудников</string>
     <string name="opers_downloaded_succesfully">Список операций загружен успешно</string>
+    <string name="opers_download_went_wrong">Ошибка при загрузке списка операций</string>
     <string name="users_downloaded_succesfully">Список пользователей загружен успешно</string>
+    <string name="users_download_went_wrong">Ошибка при загрузке списка пользователей</string>
     <string name="deps_downloaded_succesfully">Список бригад загружен успешно</string>
+    <string name="deps_download_went_wrong">Ошибка при загрузке списка бригад</string>
+    <string name="divs_downloaded_succesfully">Список подразделений загружен успешно</string>
+    <string name="divs_download_went_wrong">Ошибка при загрузке списка подразделений</string>
     <string name="download_started">Загрузка данных начата...</string>
     <string name="main_channel">main channel</string>
     <string name="main_channel_description">this is Download Notification</string>

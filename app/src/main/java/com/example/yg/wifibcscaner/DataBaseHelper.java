@@ -2743,7 +2743,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
                 if (o.getDivision_code() == null) continue;
                 else
-                    statement.bindString(2, o.getDivision_code());
+                    statement.bindString(3, o.getDivision_code());
 
                 if (o.get_Opers() == null)
                     statement.bindString(2, "");

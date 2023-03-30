@@ -76,28 +76,32 @@ public class BaseClassRepo {
                     public void onResponse(Call<List<Division>> call, Response<List<Division>> response) {
                         if (response.isSuccessful()) {
                             if (response.body() != null &&
-                                    !response.body().isEmpty())
+                                    !response.body().isEmpty()) {
                                 mDbHelper.insertDivisionInBulk(response.body());
+                                Log.d(TAG, "baseClassRepo -> downloadData -> Division -> " + AppController.getInstance().getResourses().getString(R.string.divs_downloaded_succesfully));
+                                if (notificationUtils != null)
+                                    DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
+                                        notificationUtils.notify(AppController.getInstance(), AppController.getInstance().getResourses().getString(R.string.divs_downloaded_succesfully), MY_CHANNEL_ID);
+                                    });
+                            }
                         }
                     }
 
                     @Override
                     public void onFailure(Call<List<Division>> call, Throwable t) {
-                        Log.w(TAG, "baseClassRepo -> downloadData -> Division -> " + t.getMessage());
+                        Log.w(TAG, "downloadData -> Division -> " + t.getMessage());
+                        if (notificationUtils != null)
+                            DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
+                                notificationUtils.notify(AppController.getInstance(), AppController.getInstance().getResourses().getString(R.string.divs_download_went_wrong), MY_CHANNEL_ID);
+                            });
                     }
                 });
-
-                Log.d(TAG, "baseClassRepo -> downloadData -> Division -> " + AppController.getInstance().getResourses().getString(R.string.deps_downloaded_succesfully));
-                if (notificationUtils != null)
-                    DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
-                        notificationUtils.notify(AppController.getInstance(), AppController.getInstance().getResourses().getString(R.string.deps_downloaded_succesfully), MY_CHANNEL_ID);
-                    });
             } catch (Exception e) {
-                Log.e(TAG, "baseClassRepo -> downloadData ->  Division -> " + AppController.getInstance().getResourses().getString(R.string.error_something_went_wrong));
+                Log.e(TAG, "baseClassRepo -> downloadData ->  Division -> " + AppController.getInstance().getResourses().getString(R.string.divs_download_went_wrong));
                 e.printStackTrace();
                 if (notificationUtils != null)
                     DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
-                        notificationUtils.notify(AppController.getInstance(), AppController.getInstance().getResourses().getString(R.string.error_something_went_wrong), MY_CHANNEL_ID);
+                        notificationUtils.notify(AppController.getInstance(), AppController.getInstance().getResourses().getString(R.string.divs_download_went_wrong), MY_CHANNEL_ID);
                     });
             }
         });
