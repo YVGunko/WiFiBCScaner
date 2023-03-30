@@ -38,6 +38,7 @@
     <string name="dialog_db_need_replace">Очистить базу данных? Восстановление невозможно!</string>
     <string name="error_connection">server connection error</string>
     <string name="error_something_went_wrong">Something went wrong</string>
+    <string name="data_exchage_went_wrong">Данные не отправлены</string>
     <string name="downloaded_succesfully">Данные загружены успешно</string>
     <string name="sotr_downloaded_succesfully">Список сотрудников загружен успешно</string>
     <string name="opers_downloaded_succesfully">Список операций загружен успешно</string>

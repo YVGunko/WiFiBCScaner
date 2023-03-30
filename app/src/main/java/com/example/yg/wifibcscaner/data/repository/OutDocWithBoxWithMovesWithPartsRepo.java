@@ -81,13 +81,20 @@ public class OutDocWithBoxWithMovesWithPartsRepo {
                     @Override
                     public void onResponse(Call<OutDocWithBoxWithMovesWithPartsRequest> call, Response<OutDocWithBoxWithMovesWithPartsRequest> response) {
                         if (response.isSuccessful()) {
-                            if (response.body() != null)
+                            if (response.body() != null & !response.body().outDocReqList.isEmpty()) {
                                 applyResponce(response.body());
-                            Log.e(TAG, "exchangeData -> " + AppController.getInstance().getResourses().getString(R.string.downloaded_succesfully));
-                            if (notificationUtils != null)
-                                DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
-                                    notificationUtils.notify(AppController.getInstance(), AppController.getInstance().getResourses().getString(R.string.downloaded_succesfully), MY_CHANNEL_ID);
-                                });
+                                Log.d(TAG, "exchangeData -> " + AppController.getInstance().getResourses().getString(R.string.downloaded_succesfully));
+                                if (notificationUtils != null)
+                                    DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
+                                        notificationUtils.notify(AppController.getInstance(), AppController.getInstance().getResourses().getString(R.string.downloaded_succesfully), MY_CHANNEL_ID);
+                                    });
+                            }else {
+                                Log.e(TAG, "exchangeData -> " + AppController.getInstance().getResourses().getString(R.string.data_exchage_went_wrong));
+                                if (notificationUtils != null)
+                                    DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
+                                        notificationUtils.notify(AppController.getInstance(), AppController.getInstance().getResourses().getString(R.string.data_exchage_went_wrong), MY_CHANNEL_ID);
+                                    });
+                            }
                         }
                     }
 
@@ -96,7 +103,7 @@ public class OutDocWithBoxWithMovesWithPartsRepo {
                         Log.w(TAG, "exchangeData -> " + t.getMessage());
                         if (notificationUtils != null)
                             DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
-                                notificationUtils.notify(AppController.getInstance(), AppController.getInstance().getResourses().getString(R.string.error_something_went_wrong), MY_CHANNEL_ID);
+                                notificationUtils.notify(AppController.getInstance(), AppController.getInstance().getResourses().getString(R.string.data_exchage_went_wrong), MY_CHANNEL_ID);
                             });
                     }
                 });
@@ -113,6 +120,7 @@ public class OutDocWithBoxWithMovesWithPartsRepo {
     }
 
     private void applyResponce(OutDocWithBoxWithMovesWithPartsRequest body) {
+        //TODO
         DataBaseHelper mDbHelper = AppController.getInstance().getDbHelper();
     }
 
@@ -162,8 +170,13 @@ public class OutDocWithBoxWithMovesWithPartsRepo {
                 cursor.moveToFirst();
 
                 while (!cursor.isAfterLast()) {
-                    Boxes readBox = new Boxes(cursor.getString(0), cursor.getInt(1), cursor.getInt(2),
-                            cursor.getInt(3), getLongDateTimeString((cursor.getLong(4))), null, false);
+                    Boxes readBox = new Boxes(cursor.getString(0),
+                            cursor.getInt(1),
+                            cursor.getInt(2),
+                            cursor.getInt(3),
+                            getLongDateTimeString((cursor.getLong(4))),
+                            null,
+                            false);
                     if ((readBox.get_id()!= "")&(((int) readBox.get_Id_m()) != 0))
                         responce.add(readBox);
                     cursor.moveToNext();
@@ -186,8 +199,11 @@ public class OutDocWithBoxWithMovesWithPartsRepo {
             if ((cursor != null) & (cursor.getCount() != 0)) {
                 cursor.moveToFirst();
                 while (!cursor.isAfterLast()) {
-                    BoxMoves readBoxMove = new BoxMoves(cursor.getString(0), cursor.getString(1), cursor.getInt(2),
-                            getLongDateTimeString((cursor.getLong(3))), null);
+                    BoxMoves readBoxMove = new BoxMoves(cursor.getString(0),
+                            cursor.getString(1),
+                            cursor.getInt(2),
+                            getLongDateTimeString((cursor.getLong(3))),
+                            null);
                     responce.add(readBoxMove);
                     cursor.moveToNext();
                 }
@@ -211,8 +227,13 @@ public class OutDocWithBoxWithMovesWithPartsRepo {
                 cursor.moveToFirst();
 
                 while (!cursor.isAfterLast()) {
-                    Prods readProd = new Prods(cursor.getString(0), cursor.getString(1), cursor.getInt(2), cursor.getInt(3), cursor.getInt(4),
-                            getLongDateTimeString(cursor.getLong(5)), cursor.getString(6), cursor.getString(7));
+                    Prods readProd = new Prods(cursor.getString(0),
+                            cursor.getString(1), cursor.getInt(2),
+                            cursor.getInt(3),
+                            cursor.getInt(4),
+                            getLongDateTimeString(cursor.getLong(5)),
+                            null,
+                            cursor.getString(7));
                     responce.add(readProd);
                     cursor.moveToNext();
                 }
@@ -239,8 +260,14 @@ public class OutDocWithBoxWithMovesWithPartsRepo {
 
                 //Пробегаем по всем коробкам
                 while (!cursor.isAfterLast()) {
-                    OutDocs readBoxMove = new OutDocs(cursor.getString(0), cursor.getInt(4), cursor.getInt(1), cursor.getString(2),
-                            getLongDateTimeString(cursor.getLong(3)), null, cursor.getString(5), cursor.getInt(6));
+                    OutDocs readBoxMove = new OutDocs(cursor.getString(0),
+                            cursor.getInt(4),
+                            cursor.getInt(1),
+                            cursor.getString(2),
+                            getLongDateTimeString(cursor.getLong(3)),
+                            null,
+                            cursor.getString(5),
+                            cursor.getInt(6));
                     //Закидываем в список
                     responce.add(readBoxMove);
                     //Переходим к следующеq
