@@ -723,25 +723,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         mDataBase.close();
         return BoxesId;
     }
-    public boolean updateOutDocsetSentToMasterDate (OutDocs od) {
-        boolean b = false;
-        try {
-            try {
-                mDataBase = this.getWritableDatabase();
-                ContentValues values = new ContentValues();
-                values.clear();
 
-                values.put(COLUMN_sentToMasterDate, new Date().getTime());
-                b = (mDataBase.update(OutDocs.TABLE, values,OutDocs.COLUMN_Id +"='"+od.get_id()+"'",null) > 0) ;
-            } catch (SQLiteException e) {
-                // TODO: handle exception
-                return false;
-            }
-        }finally {
-            mDataBase.close();
-            return b;
-        }
-    }
 
     public int outDocsAddRec () {
         Cursor cursor = null;

@@ -1,8 +1,10 @@
 package com.example.yg.wifibcscaner.data.repository;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteStatement;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
@@ -11,6 +13,7 @@ import android.util.Log;
 import com.example.yg.wifibcscaner.DataBaseHelper;
 import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.controller.AppController;
+import com.example.yg.wifibcscaner.data.dto.OutDocWithBoxWithMovesWithPartsIdOnlyRequest;
 import com.example.yg.wifibcscaner.data.dto.OutDocWithBoxWithMovesWithPartsRequest;
 import com.example.yg.wifibcscaner.data.model.BoxMoves;
 import com.example.yg.wifibcscaner.data.model.Boxes;
@@ -25,6 +28,7 @@ import com.example.yg.wifibcscaner.utils.executors.DefaultExecutorSupplier;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,6 +37,7 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 import static com.example.yg.wifibcscaner.DataBaseHelper.COLUMN_sentToMasterDate;
+import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDateTimeLong;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getLongDateTimeString;
 import static com.example.yg.wifibcscaner.utils.DbUtils.tryCloseCursor;
 
@@ -77,11 +82,11 @@ public class OutDocWithBoxWithMovesWithPartsRepo {
                 Log.d(TAG, "exchangeData -> update date: " + SharedPreferenceManager.getInstance().getUpdateDateString());
                 DataBaseHelper mDbHelper = AppController.getInstance().getDbHelper();
 
-                ApiUtils.getOrderService(mDbHelper.defs.getUrl()).getOutDocPost(dataToSend()).enqueue(new Callback<OutDocWithBoxWithMovesWithPartsRequest>() {
+                ApiUtils.getOrderService(mDbHelper.defs.getUrl()).getOutDocPost(dataToSend()).enqueue(new Callback<OutDocWithBoxWithMovesWithPartsIdOnlyRequest>() {
                     @Override
-                    public void onResponse(Call<OutDocWithBoxWithMovesWithPartsRequest> call, Response<OutDocWithBoxWithMovesWithPartsRequest> response) {
+                    public void onResponse(Call<OutDocWithBoxWithMovesWithPartsIdOnlyRequest> call, Response<OutDocWithBoxWithMovesWithPartsIdOnlyRequest> response) {
                         if (response.isSuccessful()) {
-                            if (response.body() != null & !response.body().outDocReqList.isEmpty()) {
+                            if (response.body() != null & !response.body().getOutDocIdList().isEmpty()) {
                                 applyResponce(response.body());
                                 Log.d(TAG, "exchangeData -> " + AppController.getInstance().getResourses().getString(R.string.downloaded_succesfully));
                                 if (notificationUtils != null)
@@ -99,7 +104,7 @@ public class OutDocWithBoxWithMovesWithPartsRepo {
                     }
 
                     @Override
-                    public void onFailure(Call<OutDocWithBoxWithMovesWithPartsRequest> call, Throwable t) {
+                    public void onFailure(Call<OutDocWithBoxWithMovesWithPartsIdOnlyRequest> call, Throwable t) {
                         Log.w(TAG, "exchangeData -> " + t.getMessage());
                         if (notificationUtils != null)
                             DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
@@ -119,11 +124,6 @@ public class OutDocWithBoxWithMovesWithPartsRepo {
         return ;
     }
 
-    private void applyResponce(OutDocWithBoxWithMovesWithPartsRequest body) {
-        //TODO
-        DataBaseHelper mDbHelper = AppController.getInstance().getDbHelper();
-    }
-
     @RequiresApi(api = Build.VERSION_CODES.O)
     private OutDocWithBoxWithMovesWithPartsRequest dataToSend() {
         OutDocWithBoxWithMovesWithPartsRequest responce = new OutDocWithBoxWithMovesWithPartsRequest();
@@ -135,7 +135,7 @@ public class OutDocWithBoxWithMovesWithPartsRepo {
                 db = AppController.getInstance().getDbHelper().getReadableDatabase();
             } else dbWasOpen = true;
 
-            responce.outDocReqList.addAll(getOutDocTest(cursor, db));
+            responce.outDocReqList.addAll(getOutDocNotSent(cursor, db));
             responce.partBoxReqList.addAll(
                     getPartBox(cursor, db,
                             StringUtils.toSqlInString(responce.outDocReqList.stream()
@@ -279,7 +279,7 @@ public class OutDocWithBoxWithMovesWithPartsRepo {
             return responce;
         }
     }
-
+    // Test purpose only
     private ArrayList<OutDocs> getOutDocTest(Cursor cursor, SQLiteDatabase db){
         ArrayList<OutDocs> responce = new ArrayList<>();
         try {
@@ -304,6 +304,94 @@ public class OutDocWithBoxWithMovesWithPartsRepo {
         }finally {
             tryCloseCursor(cursor);
             return responce;
+        }
+    }
+
+
+    private void applyResponce(OutDocWithBoxWithMovesWithPartsIdOnlyRequest body) {
+        SQLiteDatabase db = AppController.getInstance().getDbHelper().getDb();
+        boolean dbWasOpen = false;
+        Cursor cursor = null;
+        try {
+            if (!db.isOpen() || db.isReadOnly()) {
+                db = AppController.getInstance().getDbHelper().getWritableDatabase();
+            } else dbWasOpen = true;
+            try {
+                db.beginTransaction();
+                String sql = "UPDATE OutDocs SET sentToMasterDate = ? " +
+                        " WHERE _id = ? ";
+
+                SQLiteStatement statement = db.compileStatement(sql);
+
+                for (String o : body.getOutDocIdList()) {
+                    statement.clearBindings();
+                    statement.bindString(1, o);
+                    statement.executeUpdateDelete();
+                }
+
+                sql = "UPDATE Boxes SET sentToMasterDate = ? " +
+                        " WHERE _id = ? ";
+
+                statement = db.compileStatement(sql);
+
+                for (String o : body.getBoxIdList()) {
+                    statement.clearBindings();
+                    statement.bindString(1, o);
+                    statement.executeUpdateDelete();
+                }
+
+                sql = "UPDATE BoxMoves SET sentToMasterDate = ? " +
+                        " WHERE _id = ? ";
+
+                statement = db.compileStatement(sql);
+
+                for (String o : body.getBoxMoveIdList()) {
+                    statement.clearBindings();
+                    statement.bindString(1, o);
+                    statement.executeUpdateDelete();
+                }
+
+                sql = "UPDATE Prods SET sentToMasterDate = ? " +
+                        " WHERE _id = ? ";
+
+                statement = db.compileStatement(sql);
+
+                for (String o : body.getBoxMoveIdList()) {
+                    statement.clearBindings();
+                    statement.bindString(1, o);
+                    statement.executeUpdateDelete();
+                }
+
+                db.setTransactionSuccessful(); // This commits the transaction if there were no exceptions
+                //db.execSQL("PRAGMA foreign_keys = 1;");
+            } catch (Exception e) {
+                Log.w(TAG, e);
+                throw new RuntimeException("To catch into upper level.");
+            } finally {
+                db.endTransaction();
+            }
+        }finally {
+            tryCloseCursor(cursor);
+            if (!dbWasOpen) db.close();
+        }
+    }
+    public boolean updateOutDocsetSentToMasterDate (SQLiteDatabase mDataBase, OutDocs od) {
+        boolean b = false;
+        try {
+            try {
+                //mDataBase = this.getWritableDatabase();
+                ContentValues values = new ContentValues();
+                values.clear();
+
+                values.put(COLUMN_sentToMasterDate, new Date().getTime());
+                b = (mDataBase.update(OutDocs.TABLE, values,OutDocs.COLUMN_Id +"='"+od.get_id()+"'",null) > 0) ;
+            } catch (SQLiteException e) {
+                // TODO: handle exception
+                return false;
+            }
+        }finally {
+            mDataBase.close();
+            return b;
         }
     }
 }

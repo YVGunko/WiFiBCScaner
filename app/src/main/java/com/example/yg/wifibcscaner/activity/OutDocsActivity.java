@@ -58,15 +58,13 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
             try {
                 ApiUtils.getOrderService(mDBHelper.defs.getUrl()).
                         addOutDoc(mDBHelper.getOutDocNotSent(),mDBHelper.defs.getDeviceId()).enqueue(new Callback<List<OutDocs>>() {
-
-                    // TODO Обработать результат. Записать поле sent... если успешно
                     @Override
                     public void onResponse(Call<List<OutDocs>> call, Response<List<OutDocs>> response) {
                         MessageUtils messageUtils = new MessageUtils();
                         Log.d("OutDoc","Ответ сервера на запрос синхронизации накладных: " + response.body().size());
                         if(response.isSuccessful()) {
                             for(OutDocs boxes : response.body())
-                                mDBHelper.updateOutDocsetSentToMasterDate(boxes);
+                                //TODO mDBHelper.updateOutDocsetSentToMasterDate(boxes);
 
                             if (response.body().size()!=0) {
                                 messageUtils.showMessage(getApplicationContext(), "Ок! Накладные выгружены!");

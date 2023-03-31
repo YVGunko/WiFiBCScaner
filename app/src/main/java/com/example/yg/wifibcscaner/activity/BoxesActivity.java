@@ -124,15 +124,13 @@ public class BoxesActivity extends AppCompatActivity {
 //                    for (int i=0; i < odList.size(); i = i + 1) {
                         ApiUtils.getOrderService(mDBHelper.defs.getUrl()).
                                 addOutDoc(mDBHelper.getOutDocNotSent(),mDBHelper.defs.getDeviceId()).enqueue(new Callback<List<OutDocs>>() {
-
-                            // TODO Обработать результат. Записать поле sent... если успешно
                             @Override
                             public void onResponse(Call<List<OutDocs>> call, Response<List<OutDocs>> response) {
                                 MessageUtils messageUtils = new MessageUtils();
                                 //Log.d("getOrderService","Ответ сервера на запрос синхронизации коробок: " + response.body());
                                 if(response.isSuccessful()) {
                                     for(OutDocs boxes : response.body())
-                                        mDBHelper.updateOutDocsetSentToMasterDate(boxes);
+                                        //TODO mDBHelper.updateOutDocsetSentToMasterDate(boxes);
 
                                     if (response.body().size()!=0) {
                                         messageUtils.showMessage(getApplicationContext(), "Ок! Накладные выгружены!");
@@ -157,7 +155,6 @@ public class BoxesActivity extends AppCompatActivity {
 
                         ApiUtils.getBoxesService(mDBHelper.defs.getUrl()).addBoxes(new PartBoxRequest(boxesList, boxMovesList, prodsList),
                                 mDBHelper.defs.get_idUser(),mDBHelper.defs.getDeviceId()).enqueue(new Callback<PartBoxRequest>() {
-                            // TODO Обработать результат. Записать поле sent... если успешно
                             @Override
                             public void onResponse(Call<PartBoxRequest> call, Response<PartBoxRequest> response) {
                                 MessageUtils messageUtils = new MessageUtils();
