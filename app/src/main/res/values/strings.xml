@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">SProject</string>
+    <string name="app_name">StilPlast+</string>
     <string name="toggle_flash">Flash</string>
     <string name="bScan">Scan!</string>
     <string name="bOk">OK!</string>
@@ -51,6 +51,7 @@
     <string name="divs_downloaded_succesfully">Список подразделений загружен успешно</string>
     <string name="divs_download_went_wrong">Ошибка при загрузке списка подразделений</string>
     <string name="download_started">Загрузка данных начата...</string>
+    <string name="download_ended">Загрузка данных закончена</string>
     <string name="main_channel">main channel</string>
     <string name="main_channel_description">this is Download Notification</string>
     <string name="show_update_date_dialog">Выберите дату</string>

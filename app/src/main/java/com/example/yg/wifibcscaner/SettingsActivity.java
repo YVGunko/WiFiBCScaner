@@ -160,7 +160,7 @@ public class SettingsActivity extends AppCompatActivity implements
                 return true;
             case R.id.action_receive_box:
                 try {
-                    orderOutDocBoxMovePartRepository.getData(getApplicationContext());
+                    orderOutDocBoxMovePartRepository.getData();
 
                 } catch (Exception e) {
 

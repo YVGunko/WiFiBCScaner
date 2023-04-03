@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
-import com.example.yg.wifibcscaner.DataBaseHelper;
 import com.example.yg.wifibcscaner.data.repository.OrderOutDocBoxMovePartRepository;
 
 
@@ -15,6 +14,6 @@ public class SyncDataBroadcastReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         Log.d(TAG, " is called");
-        new OrderOutDocBoxMovePartRepository().getData(context);
+        new OrderOutDocBoxMovePartRepository().getData();
     }
 }

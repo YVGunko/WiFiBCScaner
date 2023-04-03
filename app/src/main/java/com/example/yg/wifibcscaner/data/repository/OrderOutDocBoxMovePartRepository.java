@@ -28,7 +28,7 @@ import retrofit2.Response;
 public class OrderOutDocBoxMovePartRepository {
 
     private static final String TAG = "dataDownloadRepository";
-    private static final String MY_CHANNEL_ID = "Download Status";
+    private static final String MY_CHANNEL_ID = "Order Download Status";
 
     NotificationUtils notificationUtils;
 
@@ -39,36 +39,18 @@ public class OrderOutDocBoxMovePartRepository {
     /**
      * only this method should be used from UI
      * handles all success and fallback
-     *
-     * @param context
      */
-    public void getData(Context context) {
+    public void getData() {
 
         notificationUtils = new NotificationUtils();
         setNotificationUtils(notificationUtils);
 
-        if (notificationUtils != null)
-            Log.d(TAG, "notificationUtils -> null");
-
-        if (!AppUtils.isNetworkAvailable(AppController.getInstance())) {
-            Log.d(TAG, "isNetworkAvailable -> no");
-            if (notificationUtils != null)
-                //notificationUtils.notify(context, AppController.getInstance().getResourses().getString(R.string.error_connection));
-            DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
-                notificationUtils.notify(context,
-                        AppController.getInstance().getResourses().getString(R.string.network_unawailable),
-                        MY_CHANNEL_ID);
-            });
-            return;
-        }
-
-        downloadData(context);
+        downloadData();
     }
     /**
      * run a download sequence
-     * @param context
      */
-    public void downloadData(Context context) {
+    public void downloadData() {
         DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
             try {
                 Log.d(TAG, "downloadData -> update date: " + SharedPreferenceManager.getInstance().getUpdateDateString());
@@ -84,11 +66,6 @@ public class OrderOutDocBoxMovePartRepository {
                         .enqueue(downloadDataCallback(updateDate));
 
                 SharedPreferenceManager.getInstance().setLastUpdatedTimestamp();
-                Log.e(TAG, "downloadData -> " + AppController.getInstance().getResourses().getString(R.string.downloaded_succesfully));
-                if (notificationUtils != null)
-                    DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
-                        notificationUtils.notify(AppController.getInstance(), AppController.getInstance().getResourses().getString(R.string.downloaded_succesfully), MY_CHANNEL_ID);
-                    });
             } catch (Exception e) {
                 Log.e(TAG, "downloadData -> " + AppController.getInstance().getResourses().getString(R.string.error_something_went_wrong));
                 e.printStackTrace();
@@ -111,6 +88,10 @@ public class OrderOutDocBoxMovePartRepository {
                         //no content, so prepare environment to stop current request and prepare for next one
                         SharedPreferenceManager.getInstance().setNextPageToLoadToZero();
                         SharedPreferenceManager.getInstance().setUpdateDateNow();
+                        if (notificationUtils != null)
+                            DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
+                                notificationUtils.notify(AppController.getInstance(), AppController.getInstance().getResourses().getString(R.string.download_ended), MY_CHANNEL_ID);
+                            });
                         return ;
                     }
                     if (response.code() != 200) return ;

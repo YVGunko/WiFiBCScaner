@@ -39,16 +39,13 @@ import com.example.yg.wifibcscaner.activity.LoginActivity;
 import com.example.yg.wifibcscaner.activity.OutDocsActivity;
 import com.example.yg.wifibcscaner.activity.ProdsActivity;
 import com.example.yg.wifibcscaner.controller.AppController;
-import com.example.yg.wifibcscaner.data.dto.CurrentDocDetails;
 import com.example.yg.wifibcscaner.data.dto.OrderWithOutDocWithBoxWithMovesWithPartsResponce;
 import com.example.yg.wifibcscaner.data.model.BoxMoves;
 import com.example.yg.wifibcscaner.data.model.Boxes;
 import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.data.model.Prods;
-import com.example.yg.wifibcscaner.data.repository.BaseClassRepo;
-import com.example.yg.wifibcscaner.data.repository.OrderOutDocBoxMovePartRepository;
-import com.example.yg.wifibcscaner.data.repository.OutDocWithBoxWithMovesWithPartsRepo;
 import com.example.yg.wifibcscaner.receiver.SyncDataBroadcastReceiver;
+import com.example.yg.wifibcscaner.service.DataExchangeService;
 import com.example.yg.wifibcscaner.utils.ApiUtils;
 import com.example.yg.wifibcscaner.utils.MessageUtils;
 import com.example.yg.wifibcscaner.utils.SharedPreferenceManager;
@@ -86,8 +83,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
 
     private DataBaseHelper mDBHelper;
     TextView tVDBInfo, currentDocDetails, currentUser;
-    ListView lvCurrentDoc;
-    EditText editTextRQ, barCodeInput;
+    EditText editTextRQ;
     Button bScan;
     DataBaseHelper.foundbox fb;
     DataBaseHelper.foundorder fo;
@@ -339,9 +335,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
                 startActivity(new Intent(this,OutDocsActivity.class));
                 return true;
             case R.id.action_update:
-                new OutDocWithBoxWithMovesWithPartsRepo().call();
-                new BaseClassRepo().getData();
-                new OrderOutDocBoxMovePartRepository().getData(getApplicationContext());
+                new DataExchangeService().call();
                 return true;
 
             default:
@@ -775,8 +769,8 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
         PendingIntent pendingIntent = PendingIntent.getBroadcast(this,
                 Config.SYNC_ALARM_REQUEST_CODE, intent, PendingIntent.FLAG_UPDATE_CURRENT);
         AppController.getInstance().getAlarmManager().setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP,
-                SystemClock.elapsedRealtime() + BuildConfig.CACHE_TIMEOUT,
-                BuildConfig.CACHE_TIMEOUT,
+                SystemClock.elapsedRealtime() + BuildConfig.NEXT_DOWNLOAD_ATTEMPT_TIMOUT,
+                BuildConfig.NEXT_DOWNLOAD_ATTEMPT_TIMOUT,
                 pendingIntent);
     }
     // version 4.0.

@@ -1,26 +1,19 @@
 package com.example.yg.wifibcscaner.data.repository;
 
-import android.content.Context;
-import android.os.Build;
-import android.support.annotation.RequiresApi;
 import android.util.Log;
 
 import com.example.yg.wifibcscaner.DataBaseHelper;
 import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.controller.AppController;
-import com.example.yg.wifibcscaner.data.dto.OrderOutDocBoxMovePart;
 import com.example.yg.wifibcscaner.data.model.Deps;
 import com.example.yg.wifibcscaner.data.model.Division;
 import com.example.yg.wifibcscaner.data.model.Operation;
 import com.example.yg.wifibcscaner.data.model.Sotr;
 import com.example.yg.wifibcscaner.data.model.user;
 import com.example.yg.wifibcscaner.utils.ApiUtils;
-import com.example.yg.wifibcscaner.utils.AppUtils;
 import com.example.yg.wifibcscaner.utils.NotificationUtils;
-import com.example.yg.wifibcscaner.utils.SharedPreferenceManager;
 import com.example.yg.wifibcscaner.utils.executors.DefaultExecutorSupplier;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import retrofit2.Call;
@@ -29,7 +22,7 @@ import retrofit2.Response;
 
 public class BaseClassRepo {
     private static final String TAG = "baseClassRepo";
-    private static final String MY_CHANNEL_ID = "Download Status";
+    private static final String MY_CHANNEL_ID = "Data Download Status";
 
     NotificationUtils notificationUtils;
 
@@ -40,24 +33,8 @@ public class BaseClassRepo {
      * run a download sequence
      */
     public void getData() {
-
         notificationUtils = new NotificationUtils();
         setNotificationUtils(notificationUtils);
-
-        if (notificationUtils != null)
-            Log.d(TAG, "notificationUtils -> null");
-
-        if (!AppUtils.isNetworkAvailable(AppController.getInstance())) {
-            Log.d(TAG, "isNetworkAvailable -> no");
-            if (notificationUtils != null)
-                //notificationUtils.notify(context, AppController.getInstance().getResourses().getString(R.string.error_connection));
-                DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
-                    notificationUtils.notify(AppController.getInstance().getApplicationContext(),
-                            AppController.getInstance().getResourses().getString(R.string.network_unawailable),
-                            MY_CHANNEL_ID);
-                });
-            return;
-        }
 
         downloadDivision();
         downloadDeps();
@@ -122,8 +99,14 @@ public class BaseClassRepo {
                     public void onResponse(Call<List<Deps>> call, Response<List<Deps>> response) {
                         if (response.isSuccessful()) {
                             if (response.body() != null &&
-                                    !response.body().isEmpty())
+                                    !response.body().isEmpty()) {
                                 mDbHelper.insertDepsInBulk(response.body());
+                                Log.d(TAG, "baseClassRepo -> downloadData -> Deps -> " + AppController.getInstance().getResourses().getString(R.string.deps_downloaded_succesfully));
+                                if (notificationUtils != null)
+                                    DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
+                                        notificationUtils.notify(AppController.getInstance(), AppController.getInstance().getResourses().getString(R.string.deps_downloaded_succesfully), MY_CHANNEL_ID);
+                                    });
+                            }
                         }
                     }
 
@@ -133,11 +116,6 @@ public class BaseClassRepo {
                     }
                 });
 
-                Log.d(TAG, "baseClassRepo -> downloadData -> Deps -> " + AppController.getInstance().getResourses().getString(R.string.deps_downloaded_succesfully));
-                if (notificationUtils != null)
-                    DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
-                        notificationUtils.notify(AppController.getInstance(), AppController.getInstance().getResourses().getString(R.string.deps_downloaded_succesfully), MY_CHANNEL_ID);
-                    });
             } catch (Exception e) {
                 Log.e(TAG, "baseClassRepo -> downloadData ->  Deps -> " + AppController.getInstance().getResourses().getString(R.string.error_something_went_wrong));
                 e.printStackTrace();

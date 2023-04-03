@@ -1,7 +1,6 @@
 package com.example.yg.wifibcscaner.data.repository;
 
 import android.content.ContentValues;
-import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
@@ -20,16 +19,13 @@ import com.example.yg.wifibcscaner.data.model.Boxes;
 import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.data.model.Prods;
 import com.example.yg.wifibcscaner.utils.ApiUtils;
-import com.example.yg.wifibcscaner.utils.AppUtils;
 import com.example.yg.wifibcscaner.utils.NotificationUtils;
 import com.example.yg.wifibcscaner.utils.SharedPreferenceManager;
 import com.example.yg.wifibcscaner.utils.StringUtils;
 import com.example.yg.wifibcscaner.utils.executors.DefaultExecutorSupplier;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
-import java.util.List;
 import java.util.stream.Collectors;
 
 import retrofit2.Call;
@@ -37,13 +33,12 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 import static com.example.yg.wifibcscaner.DataBaseHelper.COLUMN_sentToMasterDate;
-import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDateTimeLong;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getLongDateTimeString;
 import static com.example.yg.wifibcscaner.utils.DbUtils.tryCloseCursor;
 
 public class OutDocWithBoxWithMovesWithPartsRepo {
     private static final String TAG = "outDocBoxMovesPartsRepo";
-    private static final String MY_CHANNEL_ID = "Download Status";
+    private static final String MY_CHANNEL_ID = "Send Box Download Status";
 
     NotificationUtils notificationUtils;
 
@@ -51,7 +46,7 @@ public class OutDocWithBoxWithMovesWithPartsRepo {
         this.notificationUtils = notificationUtils;
     }
     /**
-     * run a exchange sequence
+     * run an exchange sequence
      */
     @RequiresApi(api = Build.VERSION_CODES.O)
     public void call() {
@@ -59,20 +54,6 @@ public class OutDocWithBoxWithMovesWithPartsRepo {
         notificationUtils = new NotificationUtils();
         setNotificationUtils(notificationUtils);
 
-        if (notificationUtils != null)
-            Log.d(TAG, "notificationUtils -> null");
-
-        if (!AppUtils.isNetworkAvailable(AppController.getInstance())) {
-            Log.d(TAG, "isNetworkAvailable -> no");
-            if (notificationUtils != null)
-                //notificationUtils.notify(context, AppController.getInstance().getResourses().getString(R.string.error_connection));
-                DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
-                    notificationUtils.notify(AppController.getInstance().getApplicationContext(),
-                            AppController.getInstance().getResourses().getString(R.string.network_unawailable),
-                            MY_CHANNEL_ID);
-                });
-            return;
-        }
         exchangeData();
     }
     @RequiresApi(api = Build.VERSION_CODES.O)

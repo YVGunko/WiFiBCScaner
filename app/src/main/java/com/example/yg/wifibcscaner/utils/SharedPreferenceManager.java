@@ -12,8 +12,7 @@ import static com.example.yg.wifibcscaner.utils.DateTimeUtils.*;
 
 public class SharedPreferenceManager {
 
-    private final String KEY_CACHE_TIMOUT = "cache_timeout";
-    private final String NEXT_PAGE_TIMEOUT = "next_page_timeout";
+    private final String NEXT_DOWNLOAD_ATTEMPT_TIMOUT = "cache_timeout";
     private final String NEXT_PAGE_TO_LOAD = "next_page_number";
     private final String UPDATE_DATE = "update_date";
     final static String VERSION_CODE = "version_code";
@@ -33,12 +32,7 @@ public class SharedPreferenceManager {
 
     public void setLastUpdatedTimestamp() {
         editor = AppController.getInstance().getSharedPreferences().edit();
-        editor.putLong(KEY_CACHE_TIMOUT, System.currentTimeMillis());
-        editor.commit();
-    }
-    public void setNextPageTimestamp() {
-        editor = AppController.getInstance().getSharedPreferences().edit();
-        editor.putLong(NEXT_PAGE_TIMEOUT, System.currentTimeMillis());
+        editor.putLong(NEXT_DOWNLOAD_ATTEMPT_TIMOUT, System.currentTimeMillis());
         editor.commit();
     }
     public void setDefaults(String key, String value) {
@@ -67,9 +61,9 @@ public class SharedPreferenceManager {
      */
     public boolean isLocalDataExpired() {
         if (System.currentTimeMillis() - AppController.getInstance().getSharedPreferences().getLong(
-                KEY_CACHE_TIMOUT,
+                NEXT_DOWNLOAD_ATTEMPT_TIMOUT,
                 0
-        ) > BuildConfig.CACHE_TIMEOUT
+        ) > BuildConfig.NEXT_DOWNLOAD_ATTEMPT_TIMOUT
         ) {
             return true;
         }
