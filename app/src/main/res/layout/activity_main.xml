@@ -51,6 +51,7 @@
 
     <EditText
         android:id="@+id/editTextRQ"
+        android:textSize="@dimen/big_font"
         android:layout_width="84dp"
         android:layout_height="64dp"
         android:ems="18"

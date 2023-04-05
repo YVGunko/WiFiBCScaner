@@ -33,12 +33,13 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 import static com.example.yg.wifibcscaner.DataBaseHelper.COLUMN_sentToMasterDate;
+import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDayTimeLong;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getLongDateTimeString;
 import static com.example.yg.wifibcscaner.utils.DbUtils.tryCloseCursor;
 
 public class OutDocWithBoxWithMovesWithPartsRepo {
     private static final String TAG = "outDocBoxMovesPartsRepo";
-    private static final String MY_CHANNEL_ID = "Send Box Download Status";
+    private static final String MY_CHANNEL_ID = "Data Exchange";
 
     NotificationUtils notificationUtils;
 
@@ -60,15 +61,19 @@ public class OutDocWithBoxWithMovesWithPartsRepo {
     private void exchangeData() {
         DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
             try {
-                Log.d(TAG, "exchangeData -> update date: " + SharedPreferenceManager.getInstance().getUpdateDateString());
                 DataBaseHelper mDbHelper = AppController.getInstance().getDbHelper();
 
-                ApiUtils.getOrderService(mDbHelper.defs.getUrl()).getOutDocPost(dataToSend()).enqueue(new Callback<OutDocWithBoxWithMovesWithPartsIdOnlyRequest>() {
+                OutDocWithBoxWithMovesWithPartsRequest request = dataToSend();
+                if (request.getPartBoxReqList().isEmpty()) {
+                    Log.d(TAG, "exchangeData -> " + AppController.getInstance().getResourses().getString(R.string.no_data_to_exchange));
+                    return;
+                }
+                ApiUtils.getOrderService(mDbHelper.defs.getUrl()).getOutDocPost(request).enqueue(new Callback<OutDocWithBoxWithMovesWithPartsIdOnlyRequest>() {
                     @Override
                     public void onResponse(Call<OutDocWithBoxWithMovesWithPartsIdOnlyRequest> call, Response<OutDocWithBoxWithMovesWithPartsIdOnlyRequest> response) {
                         if (response.isSuccessful()) {
                             if (response.body() != null & !response.body().getOutDocIdList().isEmpty()) {
-                                applyResponce(response.body());
+                                applyResponce(response.body(), getDayTimeLong(new Date()));
                                 Log.d(TAG, "exchangeData -> " + AppController.getInstance().getResourses().getString(R.string.downloaded_succesfully));
                                 if (notificationUtils != null)
                                     DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
@@ -116,21 +121,26 @@ public class OutDocWithBoxWithMovesWithPartsRepo {
                 db = AppController.getInstance().getDbHelper().getReadableDatabase();
             } else dbWasOpen = true;
 
-            responce.outDocReqList.addAll(getOutDocNotSent(cursor, db));
             responce.partBoxReqList.addAll(
-                    getPartBox(cursor, db,
-                            StringUtils.toSqlInString(responce.outDocReqList.stream()
-                                    .map(OutDocs::get_id)
-                                    .collect(Collectors.toList()))));
+                    getPartBoxNotSent(cursor, db));
+
+            responce.outDocReqList.addAll(getOutDoc(cursor, db,
+                    StringUtils.toSqlInString(responce.partBoxReqList.stream()
+                            .map(Prods::get_idOutDocs)
+                            .distinct()
+                            .collect(Collectors.toList()))));
+
             responce.movesReqList.addAll(
                     getBoxMoves(cursor, db,
                             StringUtils.toSqlInString(responce.partBoxReqList.stream()
                                     .map(Prods::get_Id_bm)
+                                    .distinct()
                                     .collect(Collectors.toList()))));
             responce.boxReqList.addAll(
                     getBoxes(cursor, db,
                             StringUtils.toSqlInString(responce.movesReqList.stream()
                                     .map(BoxMoves::get_Id_b)
+                                    .distinct()
                                     .collect(Collectors.toList()))));
 
         }finally {
@@ -197,11 +207,11 @@ public class OutDocWithBoxWithMovesWithPartsRepo {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
-    private ArrayList<Prods> getPartBox(Cursor cursor, SQLiteDatabase db, String collect) {
+    private ArrayList<Prods> getPartBoxNotSent(Cursor cursor, SQLiteDatabase db) {
         ArrayList<Prods> responce = new ArrayList<>();
         try {
-            String sql = "SELECT _id, Id_bm,Id_d,Id_s,RQ_box,P_date,sentToMasterDate,idOutDocs FROM Prods where "
-                    +Prods.COLUMN_idOutDocs+" in ("+collect+")";
+            String sql = "SELECT _id, Id_bm,Id_d,Id_s,RQ_box,P_date,sentToMasterDate,idOutDocs FROM Prods where (("
+                    + COLUMN_sentToMasterDate + " IS NULL) OR (" + COLUMN_sentToMasterDate + " = ''))";
 
             cursor = db.rawQuery(sql, null);
             if ((cursor != null) & (cursor.getCount() != 0)) {
@@ -228,11 +238,12 @@ public class OutDocWithBoxWithMovesWithPartsRepo {
 
 
     /* get OutDoc */
-    private ArrayList<OutDocs> getOutDocNotSent(Cursor cursor, SQLiteDatabase db){
+    private ArrayList<OutDocs> getOutDoc(Cursor cursor, SQLiteDatabase db, String collect){
         ArrayList<OutDocs> responce = new ArrayList<>();
         try {
             String sql = "SELECT _id, number, comment, DT, Id_o, division_code, idUser" +
-                    " FROM OutDocs where _id <> '0' and ((" + COLUMN_sentToMasterDate + " IS NULL) OR (" + COLUMN_sentToMasterDate + " = ''))";
+                    " FROM OutDocs where _id <> '0' and "
+                    +OutDocs.COLUMN_Id+" in ("+collect+")";
 
             cursor = db.rawQuery(sql, null);
 
@@ -289,7 +300,7 @@ public class OutDocWithBoxWithMovesWithPartsRepo {
     }
 
 
-    private void applyResponce(OutDocWithBoxWithMovesWithPartsIdOnlyRequest body) {
+    private void applyResponce(OutDocWithBoxWithMovesWithPartsIdOnlyRequest body, Long dateToSet) {
         SQLiteDatabase db = AppController.getInstance().getDbHelper().getDb();
         boolean dbWasOpen = false;
         Cursor cursor = null;
@@ -306,8 +317,10 @@ public class OutDocWithBoxWithMovesWithPartsRepo {
 
                 for (String o : body.getOutDocIdList()) {
                     statement.clearBindings();
-                    statement.bindString(1, o);
-                    statement.executeUpdateDelete();
+                    statement.bindLong(1, dateToSet);
+                    statement.bindString(2, o);
+                    if (statement.executeUpdateDelete() == 0)
+                        Log.e(TAG, "applyResponce -> update OutDocs -> didn't save "+o);
                 }
 
                 sql = "UPDATE Boxes SET sentToMasterDate = ? " +
@@ -317,8 +330,10 @@ public class OutDocWithBoxWithMovesWithPartsRepo {
 
                 for (String o : body.getBoxIdList()) {
                     statement.clearBindings();
-                    statement.bindString(1, o);
-                    statement.executeUpdateDelete();
+                    statement.bindLong(1, dateToSet);
+                    statement.bindString(2, o);
+                    if (statement.executeUpdateDelete() == 0)
+                        Log.e(TAG, "applyResponce -> update Boxes -> didn't save "+o);
                 }
 
                 sql = "UPDATE BoxMoves SET sentToMasterDate = ? " +
@@ -328,8 +343,10 @@ public class OutDocWithBoxWithMovesWithPartsRepo {
 
                 for (String o : body.getBoxMoveIdList()) {
                     statement.clearBindings();
-                    statement.bindString(1, o);
-                    statement.executeUpdateDelete();
+                    statement.bindLong(1, dateToSet);
+                    statement.bindString(2, o);
+                    if (statement.executeUpdateDelete() == 0)
+                        Log.e(TAG, "applyResponce -> update BoxMoves -> didn't save "+o);
                 }
 
                 sql = "UPDATE Prods SET sentToMasterDate = ? " +
@@ -337,10 +354,12 @@ public class OutDocWithBoxWithMovesWithPartsRepo {
 
                 statement = db.compileStatement(sql);
 
-                for (String o : body.getBoxMoveIdList()) {
+                for (String o : body.getPartBoxIdList()) {
                     statement.clearBindings();
-                    statement.bindString(1, o);
-                    statement.executeUpdateDelete();
+                    statement.bindLong(1, dateToSet);
+                    statement.bindString(2, o);
+                    if (statement.executeUpdateDelete() == 0)
+                        Log.e(TAG, "applyResponce -> update Prods -> didn't save "+o);
                 }
 
                 db.setTransactionSuccessful(); // This commits the transaction if there were no exceptions

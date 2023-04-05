@@ -28,7 +28,7 @@ import retrofit2.Response;
 public class OrderOutDocBoxMovePartRepository {
 
     private static final String TAG = "dataDownloadRepository";
-    private static final String MY_CHANNEL_ID = "Order Download Status";
+    private static final String MY_CHANNEL_ID = "Data Exchange";
 
     NotificationUtils notificationUtils;
 

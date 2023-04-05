@@ -56,4 +56,5 @@
     <string name="main_channel_description">this is Download Notification</string>
     <string name="show_update_date_dialog">Выберите дату</string>
     <string name="network_unawailable">Нет доступа к WiFi</string>
+    <string name="no_data_to_exchange">Нет данных для обмена</string>
 </resources>

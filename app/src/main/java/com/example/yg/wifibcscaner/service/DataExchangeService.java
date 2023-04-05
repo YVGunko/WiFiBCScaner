@@ -15,7 +15,7 @@ import com.example.yg.wifibcscaner.data.repository.OutDocWithBoxWithMovesWithPar
 
 public class DataExchangeService {
     private static final String TAG = "DataExchangeService";
-    private static final String MY_CHANNEL_ID = "Download Status";
+    private static final String MY_CHANNEL_ID = "Data Exchange";
 
     NotificationUtils notificationUtils;
 

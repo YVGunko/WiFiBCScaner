@@ -22,7 +22,7 @@ import retrofit2.Response;
 
 public class BaseClassRepo {
     private static final String TAG = "baseClassRepo";
-    private static final String MY_CHANNEL_ID = "Data Download Status";
+    private static final String MY_CHANNEL_ID = "Data Exchange";
 
     NotificationUtils notificationUtils;
 

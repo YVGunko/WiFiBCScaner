@@ -769,8 +769,8 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
         PendingIntent pendingIntent = PendingIntent.getBroadcast(this,
                 Config.SYNC_ALARM_REQUEST_CODE, intent, PendingIntent.FLAG_UPDATE_CURRENT);
         AppController.getInstance().getAlarmManager().setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP,
-                SystemClock.elapsedRealtime() + BuildConfig.NEXT_DOWNLOAD_ATTEMPT_TIMOUT,
-                BuildConfig.NEXT_DOWNLOAD_ATTEMPT_TIMOUT,
+                SystemClock.elapsedRealtime() + BuildConfig.NEXT_DOWNLOAD_ATTEMPT_TIMEOUT,
+                BuildConfig.NEXT_DOWNLOAD_ATTEMPT_TIMEOUT,
                 pendingIntent);
     }
     // version 4.0.
