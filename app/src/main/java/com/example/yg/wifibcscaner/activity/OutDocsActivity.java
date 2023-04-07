@@ -4,6 +4,8 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.database.Cursor;
 import android.os.AsyncTask;
+import android.os.Build;
+import android.support.annotation.RequiresApi;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
@@ -25,6 +27,7 @@ import com.example.yg.wifibcscaner.data.dto.CurrentDocDetails;
 import com.example.yg.wifibcscaner.data.model.Defs;
 import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.data.repository.CurrentDocDetailsRepository;
+import com.example.yg.wifibcscaner.service.DataExchangeService;
 import com.example.yg.wifibcscaner.utils.ApiUtils;
 import com.example.yg.wifibcscaner.utils.MessageUtils;
 
@@ -48,67 +51,6 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
         return true;
     }
 
-    private class SyncIncoData extends AsyncTask<String, Integer, String> {
-        ProgressBar pbar;
-        Integer counter;
-
-        @Override
-        protected String doInBackground(String... urls) {
-            counter = 0;
-            try {
-                ApiUtils.getOrderService(mDBHelper.defs.getUrl()).
-                        addOutDoc(mDBHelper.getOutDocNotSent(),mDBHelper.defs.getDeviceId()).enqueue(new Callback<List<OutDocs>>() {
-                    @Override
-                    public void onResponse(Call<List<OutDocs>> call, Response<List<OutDocs>> response) {
-                        MessageUtils messageUtils = new MessageUtils();
-                        Log.d("OutDoc","Ответ сервера на запрос синхронизации накладных: " + response.body().size());
-                        if(response.isSuccessful()) {
-                            for(OutDocs boxes : response.body())
-                                //TODO mDBHelper.updateOutDocsetSentToMasterDate(boxes);
-
-                            if (response.body().size()!=0) {
-                                messageUtils.showMessage(getApplicationContext(), "Ок! Накладные выгружены!");
-                            }
-                            //Запросить синхронизацию коробок и из частей
-                        }else {
-                            messageUtils.showLongMessage(getApplicationContext(), "Ошибка при выгрузке накладных!");
-                        }
-                    }
-                    @Override
-                    public void onFailure(Call<List<OutDocs>> call, Throwable t) {
-                        MessageUtils messageUtils = new MessageUtils();
-                        messageUtils.showLongMessage(getApplicationContext(), t.getMessage() + ". Ошибка при выгрузке накладных!");
-                        Log.d("OutDoc", "OutDocs Error: " + t.getMessage());
-                    }
-                });
-            } catch (Exception e) {
-                //messageUtils.showLongMessage(getApplicationContext(), "Ошибка при приеме заказов!");
-                Log.d("OutDoc","Ответ сервера на запрос новых заказов: " + e.getMessage());
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            MessageUtils messageUtils = new MessageUtils();
-            messageUtils.showLongMessage(getApplicationContext(), "Синхронизация данных начата.");
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            MessageUtils messageUtils = new MessageUtils();
-            messageUtils.showLongMessage(getApplicationContext(), "Синхронизация данных окончена.");
-        }
-
-        @Override
-        protected void onProgressUpdate(Integer... values) {
-            //pbar = (ProgressBar) findViewById(R.id.progressBarpbar);
-
-            //pbar.setProgress(values[0]);
-            super.onProgressUpdate(values);
-        }
-    }
     @Override
     protected void onResume() {
         super.onResume();
@@ -125,8 +67,8 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
         setContentView(R.layout.activity_out_docs);
         mDBHelper = DataBaseHelper.getInstance(this);
 
-        String[] from = new String[]{OutDocs.COLUMN_number, OutDocs.COLUMN_DT, OutDocs.COLUMN_comment};
-        int[] to = new int[]{R.id.tvNumber, R.id.tvNumBox, R.id.tvText};
+        String[] from = new String[]{OutDocs.COLUMN_NUMBER, OutDocs.COLUMN_comment};
+        int[] to = new int[]{R.id.tvNumber, R.id.tvText};
 
         // создаем адаптер и настраиваем список
         scAdapter =new
@@ -207,7 +149,6 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
                     result = selectedTitle +scAdapter.getCursor().getString(1)+" "+mDBHelper.defs.descDep;
                 }
                 OutDocsActivity.this.setTitle(result);
-                new CurrentDocDetails(result);
             }
         });
         adb.show();
@@ -241,7 +182,11 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
-        scAdapter.swapCursor(cursor);
+        try {
+            scAdapter.swapCursor(cursor);
+        }catch (IllegalArgumentException e){
+            Log.e("","",e);
+        }
     }
 
     @Override
@@ -264,15 +209,13 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
         }
 
     }
+    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // получим идентификатор выбранного пункта меню
         int id = item.getItemId();
-        // Операции для выбранного пункта меню
         switch (id) {
             case R.id.action_out_docs:
-                SyncIncoData task = new SyncIncoData();
-                task.execute(new String[] { null });
+                new DataExchangeService().call();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);

@@ -1,69 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout xmlns:android="http://schemas.android.com/apk/res/android">
-    <data>
-
-        <variable
-            name="doc"
-            type="com.example.yg.wifibcscaner.data.dto.CurrentDocDetails" />
-
-    </data>
-    <android.support.constraint.ConstraintLayout
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<layout xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <android.support.constraint.ConstraintLayout
+        android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="com.example.yg.wifibcscaner.activity.OutDocsActivity"
     tools:showIn="@layout/activity_out_docs">
 
-    <ListView
-        android:id="@+id/lvData"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@+id/currentDocDetails">
-    </ListView>
-    <TextView
-        android:id="@+id/tvNumber"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_vertical"
-        android:layout_marginLeft="10dp"
-        app:layout_constraintLeft_toLeftOf="parent"
-        android:text=""
-        android:textSize="18sp">
-    </TextView>
-    <TextView
-        android:id="@+id/tvNumBox"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_vertical"
-        app:layout_constraintLeft_toRightOf="@+id/tvNumber"
-        android:layout_marginLeft="10dp"
-        android:text=""
-        android:textSize="18sp">
-    </TextView>
+        <ListView
+            android:id="@+id/lvData"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:layout_constraintTop_toBottomOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            />
 
-    <TextView
-        android:id="@+id/tvText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_vertical"
-        android:layout_marginLeft="10dp"
-        android:text=""
-        android:textSize="18sp"
-        app:layout_constraintLeft_toRightOf="@+id/tvNumBox">
+        <TextView
+            android:id="@+id/tvNumber"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="8dp"
+            android:text=""
+            android:textAlignment="viewStart"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
-    </TextView>
-    <TextView
-        android:id="@+id/currentDocDetails"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@{doc.name}"
-        android:textAlignment="center"
-        android:textSize="20sp"
-        app:layout_constraintHorizontal_bias="0.505"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        <TextView
+            android:id="@+id/tvText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="8dp"
+            android:text=""
+            android:textAlignment="viewStart"
+            android:textSize="18sp"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tvNumber" />
+
 </android.support.constraint.ConstraintLayout>
 </layout>

@@ -35,6 +35,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.yg.wifibcscaner.activity.BaseActivity;
+import com.example.yg.wifibcscaner.activity.BoxesActivity;
 import com.example.yg.wifibcscaner.activity.LoginActivity;
 import com.example.yg.wifibcscaner.activity.OutDocsActivity;
 import com.example.yg.wifibcscaner.activity.ProdsActivity;
@@ -189,8 +190,11 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
         if (mDBHelper.currentOutDoc.get_number() != 0) snum = "Накл.№"+mDBHelper.currentOutDoc.get_number();
         snum = mDBHelper.defs.descOper+", "+snum;
         android.support.v7.app.ActionBar actionBar = getSupportActionBar();
-        actionBar.setSubtitle(Html.fromHtml("<font color='#FFBF00'>"+snum+"</font>"));
-        actionBar.setTitle("Подразделение: "+mDBHelper.defs.descDivision);
+        if (actionBar != null) {
+            actionBar.setSubtitle(Html.fromHtml("<font color='#FFBF00'>"+snum+"</font>"));
+        }
+        //actionBar.setTitle("Подразделение: "+mDBHelper.defs.descDivision);
+        actionBar.setTitle(mDBHelper.defs.descDivision);
 
         //tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
        // tVDBInfo.setText(mDBHelper.lastBox());
@@ -222,7 +226,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
             //if not a superuser check for current user today's outdoc and add new one if not exist.
             return;
         }
-        if ((mDBHelper.defs.get_Id_o()==0)||(new String("0").equals(mDBHelper.defs.getDivision_code())))
+        if ((mDBHelper.defs.get_Id_o()==0)||("0".equals(mDBHelper.defs.getDivision_code())))
         {   //Операция не выбрана
             MessageUtils.showToast(MainActivity.this, "Нужно зайти в настройки и выбрать операцию, подразделение...",true);
             startActivity(new Intent(this,SettingsActivity.class));
@@ -258,13 +262,17 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
         if (mDBHelper.currentOutDoc.get_number() != 0) snum = "Накл.№"+mDBHelper.currentOutDoc.get_number();
         snum = mDBHelper.defs.descOper+", "+snum;
         android.support.v7.app.ActionBar actionBar = getSupportActionBar();
-        actionBar.setSubtitle(Html.fromHtml("<font color='#FFBF00'>"+snum+"</font>"));
-        actionBar.setTitle("Подразделение: "+mDBHelper.defs.descDivision);
+        if (actionBar != null) {
+            actionBar.setSubtitle(Html.fromHtml("<font color='#FFBF00'>" + snum + "</font>"));
+        }
+        if (actionBar != null) {
+            actionBar.setTitle("Подразделение: "+mDBHelper.defs.descDivision);
+        }
         //====this.setTitle(mDBHelper.defs.descOper+", "+snum);
 
         /* Если сканер подключен - вызывать обработчик для него*/
         final     EditText            input = (EditText) findViewById(R.id.barCodeInput);
-        if (editTextRQ.isEnabled()==true){
+        if (editTextRQ.isEnabled()){
             //input.setEnabled(false);
             ocl_bOk(v);
         }else {
@@ -300,10 +308,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
                 //showMessage("Режим работы со встроенным сканером.");
                 try {
                     barcodeReader.softwareTrigger(true);
-                } catch (ScannerNotClaimedException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                } catch (ScannerUnavailableException e) {
+                } catch (ScannerNotClaimedException | ScannerUnavailableException e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
@@ -334,6 +339,9 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
             case R.id.actOutDoc:
                 startActivity(new Intent(this,OutDocsActivity.class));
                 return true;
+            case R.id.actBox:
+                startActivity(new Intent(this, BoxesActivity.class));
+                return true;
             case R.id.action_update:
                 new DataExchangeService().call();
                 return true;
@@ -346,23 +354,18 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
         MenuItem setUpdateDate = menu.findItem(R.id.setUpdateDate);
-        setUpdateDate.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
-            @Override
-            public boolean onMenuItemClick(MenuItem item) {
-                showDatePickerDialog();
-                return false;
-            }
+        setUpdateDate.setOnMenuItemClickListener(item -> {
+            showDatePickerDialog();
+            return false;
         });
         return true;
     }
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-        if(Build.VERSION.SDK_INT > 11) {
-            boolean checkSuper= mDBHelper.checkSuperUser(mDBHelper.defs.get_idUser());
-            invalidateOptionsMenu();
-            menu.findItem(R.id.action_settings).setVisible(checkSuper);
-            //menu.findItem(R.id.action_orders).setVisible(checkSuper);
-        }
+        boolean checkSuper= mDBHelper.checkSuperUser(mDBHelper.defs.get_idUser());
+        invalidateOptionsMenu();
+        menu.findItem(R.id.action_settings).setVisible(checkSuper);
+
         return super.onPrepareOptionsMenu(menu);
     }
 
@@ -400,7 +403,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
                     fo.orderdef += fb.outDocs;
                 tVDBInfo.setText(fo.orderdef);
                 if (!fb._archive){
-                    if ((!fb._id.equals("")&&(fb._id != null))) {                                  //Коробка есть
+                    if ((fb._id != null) && !fb._id.equals("")) {                                  //Коробка есть
                         if (fb.QB == fb.RQ) {//Коробка заполнена
 
                             editTextRQ = (EditText) findViewById(R.id.editTextRQ);
@@ -412,7 +415,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
                                 MessageUtils.showToast(MainActivity.this, "Эта коробка уже отгружена!",false);
                         } else {
                             Button bScan = (Button) findViewById(R.id.bScan);
-                            bScan.setText("OK!");
+                            bScan.setText(R.string.bOk);
                             editTextRQ = (EditText) findViewById(R.id.editTextRQ);
                             editTextRQ.setText(String.valueOf(fb.QB - fb.RQ));
                             editTextRQ.setEnabled(true);
@@ -423,7 +426,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
                     } else {                                                //Коробки нет , подставить колво в поле редактирования колва и дожаться ОК.
                         if (mDBHelper.defs.get_Id_o()==mDBHelper.defs.get_idOperFirst()){ //Добавить коробку если это операция приемки baseOper = 1
                             Button bScan = (Button) findViewById(R.id.bScan);
-                            bScan.setText("OK!");
+                            bScan.setText(R.string.bOk);
                             editTextRQ = (EditText) findViewById(R.id.editTextRQ);
                             editTextRQ.setText(String.valueOf(fb.QB - fb.RQ));
                             editTextRQ.setEnabled(true);

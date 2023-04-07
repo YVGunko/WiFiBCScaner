@@ -1,5 +1,7 @@
 package com.example.yg.wifibcscaner.data.model;
 
+import com.example.yg.wifibcscaner.R;
+
 /**
  * Created by yg on 17.04.2018.
  */
@@ -18,6 +20,8 @@ public class OutDocs {
     public static final String TABLE = "OutDocs";
     public static final String COLUMN_Id = "_id";
     public static final String COLUMN_number = "number";
+
+    public static final String COLUMN_NUMBER = "numberAndDate";
     public static final String COLUMN_comment = "comment";
     public static final String COLUMN_DT = "DT";
     public static final String COLUMN_Id_o = "Id_o";
@@ -97,5 +101,9 @@ public class OutDocs {
     }
     public String get_sentToMasterDate() {
         return _sentToMasterDate;
+    }
+
+    public static String getColumnNumber() {
+        return R.string.outDocShort+COLUMN_number+" от "+COLUMN_DT;
     }
 }

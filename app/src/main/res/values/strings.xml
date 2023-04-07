@@ -8,9 +8,9 @@
     <string name="action_boxes">Коробки</string>
     <string name="setUpdateDate">Дата обновления</string>
     <string name="action_prods">Текущая смена</string>
-    <string name="action_sendboxes">Отправить коробки</string>
-    <string name="action_out_docs">Отправить накладные</string>
+    <string name="actBox">Коробки</string>
     <string name="actOutDoc">Накладные</string>
+    <string name="outDocShort">Нкл.</string>
     <string name="actLogin">Пользователь</string>
     <string name="action_update_menu_1">Сервис БД</string>
     <string name="action_receive_orders">Принять заказы</string>
@@ -26,13 +26,13 @@
     <string name="add_record">Добавить запись</string>
     <string name="delete_record">Удалить запись</string>
     <string name="title_activity_out_doc">OutDocActivity</string>
-    <string name="action_quik_sync">Синхронизировать накладные</string>
     <string name="action_update">Синхронизация</string>
     <string name="title_activity_update">Синхронизация данных.</string>
     <string name="title_home">Home</string>
     <string name="title_dashboard">Dashboard</string>
     <string name="title_notifications">Notifications</string>
     <string name="run">Запустить...</string>
+    <string name="exchange">Отправить на сервер</string>
     <string name="action_version">О программе...</string>
     <string name="action_db_need_replace">Очистить БД</string>
     <string name="dialog_db_need_replace">Очистить базу данных? Восстановление невозможно!</string>

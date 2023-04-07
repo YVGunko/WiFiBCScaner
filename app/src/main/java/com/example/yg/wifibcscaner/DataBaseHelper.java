@@ -825,7 +825,9 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 if (checkSuperUser(defs.get_idUser())) {
                     if (!mDataBase.isOpen())
                         mDataBase = this.getReadableDatabase();
-                    cursor = mDataBase.rawQuery("SELECT _id, number, comment, strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as DT, Id_o, division_code, idUser " +
+                    cursor = mDataBase.rawQuery("SELECT _id, number, comment," +
+                                    " strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as DT, Id_o, division_code, idUser," +
+                                    " ' Нкл. ' || cast(number as text) || ' от ' || strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as numberAndDate" +
                                     " FROM OutDocs where _id<>0 and division_code=? and Id_o=?" +
                                     " ORDER BY number desc",
                             new String[]{String.valueOf(defs.getDivision_code()), String.valueOf(defs.get_Id_o())});
@@ -833,7 +835,9 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 else {
                     if (!mDataBase.isOpen())
                         mDataBase = this.getReadableDatabase();
-                    cursor = mDataBase.rawQuery("SELECT _id, number, comment, strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as DT, Id_o, division_code, idUser " +
+                    cursor = mDataBase.rawQuery("SELECT _id, number, comment," +
+                                    " strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as DT, Id_o, division_code, idUser ," +
+                                    " ' Нкл. ' || cast(number as text) || ' от ' || strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as numberAndDate" +
                                     " FROM OutDocs where _id<>0 and division_code=? and Id_o=? and idUser=?" +
                                     " ORDER BY number desc",
                             new String[]{String.valueOf(defs.getDivision_code()), String.valueOf(defs.get_Id_o()), String.valueOf(defs.get_idUser())});
@@ -845,7 +849,9 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             }else {
                 Log.d(TAG, "listOutDocs cursor is NULL! " );
                 mDataBase = this.getReadableDatabase();
-                cursor = mDataBase.rawQuery("SELECT _id, number, comment, strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as DT, Id_o, division_code, idUser " +
+                cursor = mDataBase.rawQuery("SELECT _id, number, comment," +
+                                " strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as DT, Id_o, division_code, idUser ," +
+                                " ' Нкл. ' || cast(number as text) || ' от ' || strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as numberAndDate" +
                                 " FROM OutDocs where _id=0",
                         null);
             }
@@ -905,6 +911,42 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         mDataBase.close();
 
         return readBoxes;
+    }
+    //cursor all boxes
+    public Cursor getBoxAsCursor() {
+        mDataBase = this.getReadableDatabase();
+        Cursor cursor = null;
+        try {
+            if (defs.get_Id_o() == defs.get_idOperLast())
+                cursor = mDataBase.rawQuery("SELECT MasterData.Ord, MasterData.Cust, MasterData.Nomen, MasterData.Attrib, MasterData.Q_ord, " +
+                        "Boxes.Q_box, Boxes.N_box, Prods.RQ_box, Deps.Name_Deps, s.Sotr, MasterData.Ord_id, Boxes._id, bm._id, Prods._id" +
+                        " FROM Opers, Boxes, BoxMoves bm, Prods, Deps, MasterData, Sotr s Where Opers._id=" + valueOf(defs.get_Id_o()) +
+                        " and bm.Id_o=Opers._id and Boxes._id=bm.Id_b and Boxes.Id_m=MasterData._id and bm._id=Prods.Id_bm" +
+                        " and Prods.Id_d=Deps._id and Prods.Id_s=s._id and ((Prods.sentToMasterDate IS NULL) OR (Prods.sentToMasterDate=''))" +
+                        " Order by MasterData.Ord_id,  Boxes.N_box", null);
+            else
+                cursor = mDataBase.rawQuery("SELECT MasterData.Ord, MasterData.Cust, MasterData.Nomen, MasterData.Attrib, MasterData.Q_ord, " +
+                        "Boxes.Q_box, Boxes.N_box, Prods.RQ_box, Deps.Name_Deps, s.Sotr, MasterData.Ord_id, Boxes._id, bm._id, Prods._id" +
+                        " FROM Opers, Boxes, BoxMoves bm, Prods, Deps, MasterData, Sotr s Where Opers._id=" + valueOf(defs.get_Id_o()) +
+                        " and bm.Id_o=Opers._id and Boxes._id=bm.Id_b and Boxes.Id_m=MasterData._id and bm._id=Prods.Id_bm and Prods.Id_d=" + valueOf(defs.get_Id_d()) +
+                        " and Prods.Id_d=Deps._id and Prods.Id_s=s._id and ((Prods.sentToMasterDate IS NULL) OR (Prods.sentToMasterDate=''))" +
+                        " Order by MasterData.Ord_id,  Boxes.N_box", null);
+            cursor.moveToFirst();
+
+        }
+        finally{
+                if (cursor != null) {
+                    cursor.moveToFirst();
+                    Log.d(TAG, "getBoxAsCursor cursor is not null! Record count = " + cursor.getCount());
+                } else {
+                    Log.d(TAG, "getBoxAsCursor cursor is NULL! ");
+                    mDataBase = this.getReadableDatabase();
+                    cursor = mDataBase.rawQuery("SELECT _id, number, comment, strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as DT, Id_o, division_code, idUser " +
+                                    " FROM OutDocs where _id=0",
+                            null);
+                }
+                return cursor;
+            }
     }
     private String retStringFollowingCRIfNotNull (String s){
         String retString = "";

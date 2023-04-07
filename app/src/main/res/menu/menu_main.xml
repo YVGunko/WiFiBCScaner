@@ -21,21 +21,27 @@ tools:context=".MainActivity">
             android:orderInCategory="100"
             android:title="@string/actOutDoc"
             app:showAsAction="never" />
-
+        <item
+            android:id="@+id/actBox"
+            android:orderInCategory="100"
+            android:title="@string/actBox"
+            app:showAsAction="never" />
         <item
             android:id="@+id/action_prods"
             android:orderInCategory="100"
             android:title="@string/action_prods"
             app:showAsAction="never" />
+    </group>
+    <group android:id="@+id/update" >
         <item
             android:id="@+id/setUpdateDate"
             android:orderInCategory="100"
             android:title="@string/setUpdateDate"
             app:showAsAction="never" />
         <item
-        android:id="@+id/action_update"
-        android:orderInCategory="100"
-        android:title="@string/action_update"
-        app:showAsAction="never"/>
+            android:id="@+id/action_update"
+            android:orderInCategory="100"
+            android:title="@string/action_update"
+            app:showAsAction="never"/>
     </group>
 </menu>
