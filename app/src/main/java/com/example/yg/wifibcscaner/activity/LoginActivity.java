@@ -11,6 +11,7 @@ import android.widget.Spinner;
 import com.example.yg.wifibcscaner.DataBaseHelper;
 import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.data.model.Sotr;
+import com.example.yg.wifibcscaner.data.model.user;
 import com.example.yg.wifibcscaner.utils.MessageUtils;
 
 import java.util.List;
@@ -38,7 +39,7 @@ public class LoginActivity extends AppCompatActivity implements
         Spinner sp = (Spinner) parent;
         if(sp.getId() == R.id.spinnerName) {
             if (position >= 0) {
-                idUser = mDBHelper.getUserIdByName(parent.getItemAtPosition(position).toString());
+                idUser = mDBHelper.getIdByName(user.TABLE, parent.getItemAtPosition(position).toString());
                 if (idUser == 0) messageUtils.showMessage(getApplicationContext(), "Пользователь не найден! Регистрация невозможна.");
             }
         }}
@@ -51,7 +52,7 @@ public class LoginActivity extends AppCompatActivity implements
         // database handler
 
         // Spinner Drop down elements
-        List<String> labels = mDBHelper.getAllUserName();
+        List<String> labels = mDBHelper.findAllIdNotZero(user.TABLE);
 
         // Creating adapter for spinner
         ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,

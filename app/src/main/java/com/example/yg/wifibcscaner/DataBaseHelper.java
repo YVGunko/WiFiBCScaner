@@ -16,6 +16,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
 import android.os.Build;
 import android.os.Environment;
+import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
 
@@ -65,6 +66,8 @@ import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getStartOfDayLong;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getStartOfDayString;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.numberOfDaysInMonth;
 import static com.example.yg.wifibcscaner.utils.DbUtils.tryCloseCursor;
+import static com.example.yg.wifibcscaner.utils.StringUtils.makeLastBoxDef;
+import static com.example.yg.wifibcscaner.utils.StringUtils.retStringFollowingCRIfNotNull;
 import static java.lang.String.valueOf;
 
 public class DataBaseHelper extends SQLiteOpenHelper {
@@ -74,8 +77,6 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     private static String DB_PATH = "";
     private static String DB_NAME = "SQR.db";
     private static final String TABLE_MD = "MasterData";
-
-
     public static final String COLUMN_sentToMasterDate = "sentToMasterDate";
     public long serverUpdateTime;
     public String globalUpdateDate = "";
@@ -175,11 +176,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     }
     private DataBaseHelper(Context context, final int DB_VERSION, boolean mNeedUpdate) {
         super(context, DB_NAME, null, DB_VERSION);
-
-        if (android.os.Build.VERSION.SDK_INT >= 17)
-            DB_PATH = context.getApplicationInfo().dataDir + "/databases/";
-        else
-            DB_PATH = "/data/data/" + context.getPackageName() + "/databases/";
+        DB_PATH = "/data/data/" + context.getPackageName() + "/databases/";
         this.mContext = context;
 
         if (!checkDataBase()) {
@@ -948,16 +945,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 return cursor;
             }
     }
-    private String retStringFollowingCRIfNotNull (String s){
-        String retString = "";
-        try {
-            if (!((s==null)||(s.equals(""))))
-            retString = s+ "\n" ;
-        } catch (NullPointerException e){
-            e.printStackTrace();
-        }
-        return retString;
-    }
+
 
     public String[] splitBarcode(String storedbarcode) {
         String atmpBarcode[] = storedbarcode.split("[.]");  // по dot
@@ -1161,7 +1149,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 c = mDataBase.rawQuery(query, null);
                 if ((c != null) & (c.getCount() != 0)) {            //есть записи в BoxMoves и Prods
                     c.moveToFirst(); //есть boxes & prods
-                    Log.d(TAG, "Checking for order's last box = " + fo.NB + ", Box checked num =" + c.getString((int) 0));
+                    Log.d(TAG, "Checking for order last box = " + fo.NB + ", Box checked num =" + c.getString((int) 0));
                     if (fo.NB == c.getInt(0)){
                         MessageUtils.showToast(context,
                                 "Это последняя коробка из заказа!",true);
@@ -1677,42 +1665,32 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 mDataBase = this.getReadableDatabase();
             } else dbWasOpen = true;
 
-
-            cursor = mDataBase.rawQuery("SELECT max(p.ROWID) as _id FROM Boxes, BoxMoves bm, Prods p, OutDocs o Where Boxes._id=bm.Id_b and bm.Id_o=" + valueOf(defs.get_Id_o()) +
-                        " and bm._id=p.Id_bm and p.idOutDocs=o._id and o.division_code=?" , new String [] {String.valueOf(defs.getDivision_code())});
+            cursor = mDataBase.rawQuery("SELECT max(p.ROWID) as _id FROM BoxMoves bm, Prods p, OutDocs o " +
+                    "Where bm.Id_o=? " +
+                        " and bm._id=p.Id_bm and p.idOutDocs=o._id and o.division_code=?",
+                    new String [] {valueOf(defs.get_Id_o()), defs.getDivision_code()});
             if ((cursor != null) & (cursor.getCount() > 0)) {
                 Log.d(TAG, "lastbox Records count = " + cursor.getCount());
                 cursor.moveToFirst();
                 rowId = cursor.getLong(0);
-            } else {
-                rowId = 1;
             }
 
-            if (rowId!=0)
-
-            cursor = mDataBase.rawQuery("SELECT MasterData.Ord, MasterData.Cust, MasterData.Nomen, MasterData.Attrib, MasterData.Q_ord, " +
-                    "Boxes.Q_box, Boxes.N_box, Prods.RQ_box, Deps.Name_Deps, s.Sotr, o.number,  strftime('%d-%m-%Y %H:%M:%S', o.DT/1000, 'unixepoch', 'localtime') as DT" +
-                    " FROM Opers, Boxes, BoxMoves bm, Prods, Deps, MasterData, Sotr s, outDocs o Where MasterData.division_code=?" +
-                    " and Opers._id=" + valueOf(defs.get_Id_o()) + " and Prods.ROWID=" + valueOf(rowId) +
-                    " and Opers._id=bm.Id_o and Prods.Id_bm=bm._id and Boxes._id=bm.Id_b and Boxes.Id_m=MasterData._id and Prods.Id_d=Deps._id" +
-                    " and Prods.Id_s=s._id  and Prods.idOutDocs=o._id"+
-                    " Order by Prods._id desc", new String [] {String.valueOf(defs.getDivision_code())});
-            try {
-                cursor.moveToFirst();
-                product = "№ " + cursor.getString(0);
-                product += " / " + cursor.getString(1) + "\n";
-                product += "Подошва: " + cursor.getString(2) + ". ";
-                if ((cursor.getString(3)!=null)&&(!cursor.getString(3).equals("")))
-                    product += "Атрибут: " + retStringFollowingCRIfNotNull(cursor.getString(3));
-                else product += "\n";
-                product += "Заказ: " + cursor.getString(4) + ". № кор: " + cursor.getString(6) +
-                        ". Регл: " + cursor.getString(5) + " ";
-                product += "В кор: " + cursor.getString(7) + "."+ "\n";
-                product += cursor.getString(8)+", " + cursor.getString(9)+ "\n"; //Бригада
-                product += "Накл "+ cursor.getString(10)+" от " + cursor.getString(11);
-            } catch (CursorIndexOutOfBoundsException e){
-                Log.d(TAG, "lastBox CursorIndexOutOfBoundsException" + cursor.getCount());
-                return product;
+            if (rowId!=0) {
+                cursor = mDataBase.rawQuery("SELECT MasterData.Ord, MasterData.Cust, MasterData.Nomen, MasterData.Attrib, MasterData.Q_ord, " +
+                        "Boxes.Q_box, Boxes.N_box, Prods.RQ_box, Deps.Name_Deps, s.Sotr, o.number,  strftime('%d-%m-%Y %H:%M:%S', o.DT/1000, 'unixepoch', 'localtime') as DT" +
+                        " FROM Opers, Boxes, BoxMoves bm, Prods, Deps, MasterData, Sotr s, outDocs o Where MasterData.division_code=?" +
+                        " and Opers._id=? and Prods.ROWID=?"+
+                        " and Opers._id=bm.Id_o and Prods.Id_bm=bm._id and Boxes._id=bm.Id_b and Boxes.Id_m=MasterData._id and Prods.Id_d=Deps._id" +
+                        " and Prods.Id_s=s._id  and Prods.idOutDocs=o._id" +
+                        " Order by Prods._id desc",
+                            new String[]{defs.getDivision_code(), valueOf(defs.get_Id_o()), valueOf(rowId)});
+                try {
+                    cursor.moveToFirst();
+                    product = makeLastBoxDef(cursor);
+                } catch (CursorIndexOutOfBoundsException e) {
+                    Log.d(TAG, "lastBox CursorIndexOutOfBoundsException" + cursor.getCount());
+                    return product;
+                }
             }
         } catch (SQLException e) {
             Log.d(TAG, "lastBox SQLException rawQuery");
@@ -1756,8 +1734,8 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         mDataBase.close();
         return alDivisionsName;
     }
-    public List<String> getAllUserName() {
-        ArrayList<String> alUserName = new ArrayList<String>();
+    public List<String> findAllIdNotZero(@NonNull String table) {
+        ArrayList<String> all = new ArrayList<String>();
         Cursor cursor = null;
         boolean dbWasOpen = false;
         try {
@@ -1765,7 +1743,9 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 mDataBase = this.getReadableDatabase();
             } else dbWasOpen = true;
 
-            cursor = mDataBase.rawQuery("SELECT name FROM user WHERE _id<>0 order by name", null);
+            cursor = mDataBase.rawQuery("SELECT name FROM "+
+                    table+
+                    " WHERE _id<>0 order by name", null);
             if ((cursor != null) & (cursor.getCount() != 0)) {
                 cursor.moveToFirst();
                 //Закидываем в список строку с позицией 0
@@ -1773,7 +1753,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 while (!cursor.isAfterLast()) {
                     sName = new String(cursor.getString(0));
                     //Закидываем в список
-                    alUserName.add(sName);
+                    all.add(sName);
                     //Переходим к следующеq
                     cursor.moveToNext();
                 }
@@ -1781,10 +1761,10 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         } finally {
             tryCloseCursor(cursor);
             if (!dbWasOpen) mDataBase.close();
-            return alUserName;
+            return all;
         }
     }
-    public int getUserIdByName(String nm) {
+    public int getIdByName(@NonNull String table, @NonNull String nm) {
         Cursor cursor = null;
         boolean dbWasOpen = false;
         int num = 0;
@@ -1793,7 +1773,9 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 mDataBase = this.getReadableDatabase();
             } else dbWasOpen = true;
 
-            cursor = mDataBase.rawQuery("SELECT _id FROM user Where name='" + nm + "'", null);
+            cursor = mDataBase.rawQuery("SELECT _id FROM "+
+                    table +
+                    " Where name='" + nm + "'", null);
             if ((cursor != null) & (cursor.getCount() != 0)) {
                 cursor.moveToFirst();
                 num = cursor.getInt(0);
@@ -2312,82 +2294,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         mDataBase.close();
         return OrdersId;
     }
-    public ArrayList<String> getFoundOrdersId(){
-        ArrayList<String> OrdersId = new ArrayList<String>();
-        String readDep;
-        mDataBase = this.getReadableDatabase();
-        Cursor cursor = mDataBase.rawQuery("SELECT Ord_id FROM MasterData", null);
-        if ((cursor != null) & (cursor.getCount() != 0)) {
-            cursor.moveToFirst();
-            while (!cursor.isAfterLast()) {
-                readDep = new String(cursor.getString(0));
-                //Закидываем в список
-                OrdersId.add(readDep);
-                //Переходим к следующеq
-                cursor.moveToNext();
-            }
-        }
-        tryCloseCursor(cursor);
-        mDataBase.close();
-        return OrdersId;
-    }
-    public ArrayList<String> getFoundBoxesId(){
-        ArrayList<String> BoxesId = new ArrayList<String>();
-        String readDep;
-        mDataBase = this.getReadableDatabase();
-        Cursor cursor = mDataBase.rawQuery("SELECT _id FROM Boxes", null);
-        if ((cursor != null) & (cursor.getCount() != 0)) {
-            cursor.moveToFirst();
-            while (!cursor.isAfterLast()) {
-                readDep = new String(cursor.getString(0));
-                //Закидываем в список
-                BoxesId.add(readDep);
-                //Переходим к следующеq
-                cursor.moveToNext();
-            }
-        }
-        tryCloseCursor(cursor);
-        mDataBase.close();
-        return BoxesId;
-    }
-    public ArrayList<String> getFoundBMsId(){
-        ArrayList<String> BoxesId = new ArrayList<String>();
-        String readDep;
-        mDataBase = this.getReadableDatabase();
-        Cursor cursor = mDataBase.rawQuery("SELECT _id FROM BoxMoves", null);
-        if ((cursor != null) & (cursor.getCount() != 0)) {
-            cursor.moveToFirst();
-            while (!cursor.isAfterLast()) {
-                readDep = new String(cursor.getString(0));
-                //Закидываем в список
-                BoxesId.add(readDep);
-                //Переходим к следующеq
-                cursor.moveToNext();
-            }
-        }
-        tryCloseCursor(cursor);
-        mDataBase.close();
-        return BoxesId;
-    }
-    public ArrayList<String> getFoundPBsId(){
-        ArrayList<String> BoxesId = new ArrayList<String>();
-        String readDep;
-        mDataBase = this.getReadableDatabase();
-        Cursor cursor = mDataBase.rawQuery("SELECT _id FROM Prods", null);
-        if ((cursor != null) & (cursor.getCount() != 0)) {
-            cursor.moveToFirst();
-            while (!cursor.isAfterLast()) {
-                readDep = new String(cursor.getString(0));
-                //Закидываем в список
-                BoxesId.add(readDep);
-                //Переходим к следующеq
-                cursor.moveToNext();
-            }
-        }
-        tryCloseCursor(cursor);
-        mDataBase.close();
-        return BoxesId;
-    }
+
     public int getId_dByOutdoc(String idOutDocs){
         int result = 0;
         mDataBase = this.getReadableDatabase();
@@ -2403,74 +2310,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         mDataBase.close();
         return result;
     }
-    public String getProdsMinDate(){
-        String nm = dtMin;
 
-        Cursor cursor = null;
-        try {
-            mDataBase = this.getReadableDatabase();
-            cursor = mDataBase.rawQuery("SELECT min(P_date) FROM Prods", null);
-            if ((cursor != null) & (cursor.getCount() != 0)) {
-                cursor.moveToFirst();
-                nm = getLongDateTimeString(cursor.getLong(0));
-            }
-        } finally {
-            tryCloseCursor(cursor);
-            mDataBase.close();
-            return nm;
-        }
-    }
-    public Long getProdsMinDateLong(){
-        Long nm = ldtMin;
-
-        Cursor cursor = null;
-        try {
-            mDataBase = this.getReadableDatabase();
-            cursor = mDataBase.rawQuery("SELECT min(P_date) FROM Prods", null);
-            if ((cursor != null) & (cursor.getCount() != 0)) {
-                cursor.moveToFirst();
-                nm = getLongStartOfDayLong(cursor.getLong(0));
-            }
-        } finally {
-            tryCloseCursor(cursor);
-            mDataBase.close();
-            return nm;
-        }
-    }
-    public String getTableMinDate(String tableName){
-        String nm = dtMin;
-
-        Cursor cursor = null;
-        try {
-            mDataBase = this.getReadableDatabase();
-            cursor = mDataBase.rawQuery("SELECT min(DT) FROM "+tableName, null);
-            if ((cursor != null) & (cursor.getCount() != 0)) {
-                cursor.moveToFirst();
-                nm = getLongDateTimeString(cursor.getLong(0));
-            }
-        } finally {
-            tryCloseCursor(cursor);
-            mDataBase.close();
-            return nm;
-        }
-    }
-    public Long getTableMinDateLong(String tableName){
-        Long nm = ldtMin;
-
-        Cursor cursor = null;
-        try {
-            mDataBase = this.getReadableDatabase();
-            cursor = mDataBase.rawQuery("SELECT min(DT) FROM "+tableName, null);
-            if ((cursor != null) & (cursor.getCount() != 0)) {
-                cursor.moveToFirst();
-                nm = getLongStartOfDayLong(cursor.getLong(0));
-            }
-        } finally {
-            tryCloseCursor(cursor);
-            mDataBase.close();
-            return nm;
-        }
-    }
     public String getTableRecordsCount(String tableName){
         String count = "0";
 

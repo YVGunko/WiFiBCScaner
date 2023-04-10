@@ -200,6 +200,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
        // tVDBInfo.setText(mDBHelper.lastBox());
         SetVDBInfo setVDBInfo = new SetVDBInfo();
         setVDBInfo.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        Log.d(TAG, "setVDBInfo called onResume");
 
         currentDocDetails  = (TextView) findViewById(R.id.currentDocDetails);
         currentDocDetails.setText("Накл.№" +mDBHelper.currentOutDoc.get_number() + ", " + mDBHelper.selectCurrentOutDocDetails(mDBHelper.currentOutDoc.get_id()));
@@ -488,6 +489,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
 
                         SetVDBInfo setVDBInfo = new SetVDBInfo();
                         setVDBInfo.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                        Log.d(TAG, "setVDBInfo was called from ocl_bOk");
                         //TODO run in background
                         //tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
                         //tVDBInfo.setText(mDBHelper.lastBox());
@@ -506,6 +508,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
                         mDBHelper.lastBoxCheck(fo, MainActivity.this);
                         SetVDBInfo setVDBInfo = new SetVDBInfo();
                         setVDBInfo.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                        Log.d(TAG, "setVDBInfo was called from ocl_bOk");
                         //tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
                         //tVDBInfo.setText(mDBHelper.lastBox());
                         currentDocDetails  = (TextView) findViewById(R.id.currentDocDetails);
@@ -812,6 +815,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
             String datetime = "";
             try {
                 datetime = mDBHelper.lastBox();
+                Log.d(TAG, "mDBHelper.lastBox() has returned -> "+datetime);
             } catch (Exception e) {
                 this.e = e;
                 Log.e(TAG, e.getMessage());
