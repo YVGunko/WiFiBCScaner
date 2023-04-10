@@ -28,8 +28,8 @@ public class AppController extends Application {
         super.onCreate();
         mInstance = this;
         mResources = getResources();
-        mDBHelper = DataBaseHelper.getInstance(this);
         mSharedPreferences = getSharedPreferences("SharedPreferences", Context.MODE_PRIVATE);
+        mDBHelper = DataBaseHelper.getInstance(this);
         mAlarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
     }
 
@@ -45,15 +45,13 @@ public class AppController extends Application {
     public Resources getResourses() {
         return mResources;
     }
-
-    public DataBaseHelper getDbHelper() {
-        return mDBHelper;
-    }
-
     public SharedPreferences getSharedPreferences() {
         return mSharedPreferences;
     }
 
+    public DataBaseHelper getDbHelper() {
+        return mDBHelper;
+    }
     public AlarmManager getAlarmManager() {
         return mAlarmManager;
     }

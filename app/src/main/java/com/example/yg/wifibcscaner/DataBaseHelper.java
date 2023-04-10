@@ -37,6 +37,7 @@ import com.example.yg.wifibcscaner.data.model.lastUpdate;
 import com.example.yg.wifibcscaner.data.model.user;
 import com.example.yg.wifibcscaner.utils.DbUtils;
 import com.example.yg.wifibcscaner.utils.MessageUtils;
+import com.example.yg.wifibcscaner.utils.SharedPreferenceManager;
 import com.example.yg.wifibcscaner.utils.executors.DefaultExecutorSupplier;
 
 import java.io.File;
@@ -132,21 +133,40 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         // don't accidentally leak an Activity's context.
         // See this article for more information: http://bit.ly/6LRzfx
         if (sInstance == null) {
-            sInstance = new DataBaseHelper(context.getApplicationContext(), BuildConfig.VERSION_CODE, false);
+            if (checkIfDbNeedReplace())
+                sInstance = new DataBaseHelper(context.getApplicationContext(),
+                        SharedPreferenceManager.getInstance().getCodeVersion(),
+                        true);
+            else    sInstance = new DataBaseHelper(context.getApplicationContext(),
+                    BuildConfig.VERSION_CODE,
+                    false);
         }
-        return sInstance;
-    }
-    public static synchronized DataBaseHelper getInstance(Context context, final int DB_VERSION, final boolean dbNeedReplace) {
-
-        // Use the application context, which will ensure that you
-        // don't accidentally leak an Activity's context.
-        // See this article for more information: http://bit.ly/6LRzfx
-        if (sInstance == null) {
-            sInstance = new DataBaseHelper(context.getApplicationContext(), DB_VERSION, dbNeedReplace);
-        }
+        Log.d(TAG, "DataBaseHelper getInstance -> normal one. Isn't forced to replace db file");
         return sInstance;
     }
 
+    private static boolean checkIfDbNeedReplace() {
+        // Get current version code
+        int currentVersionCode = BuildConfig.VERSION_CODE;
+
+        // Get saved version code and check if Db needs to be replaced
+        int savedVersionCode = SharedPreferenceManager.getInstance().getCodeVersion();
+        boolean savedDbNeedReplace = SharedPreferenceManager.getInstance().getDbNeedReplace();
+        Log.d(TAG, "checkFirstRun -> savedDbNeedReplace -> "+savedDbNeedReplace);
+        Log.d(TAG, "checkFirstRun -> currentVersionCode == savedVersionCode -> "+(currentVersionCode == savedVersionCode));
+        // Check for first run or upgrade
+        if (!savedDbNeedReplace & currentVersionCode == savedVersionCode) {
+            // This is just a normal run
+            return false;
+
+        } else {
+            Log.d(TAG, "checkFirstRun -> here new db file should be copied ");
+            SharedPreferenceManager.getInstance().setDbNeedReplace(!savedDbNeedReplace);
+            SharedPreferenceManager.getInstance().setCodeVersion(currentVersionCode);
+
+            return true;
+        }
+    }
     public static String getUUID() {
         // Creating a random UUID (Universally unique identifier).
         UUID uuid = UUID.randomUUID();
@@ -204,12 +224,12 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     public void updateDataBase(boolean mNeedUpdate) throws IOException {
         if (mNeedUpdate) {
             File dbFile = new File(DB_PATH + DB_NAME);
-            if (dbFile.exists())
+            if (dbFile.exists()) {
                 dbFile.delete();
-
+                Log.d(TAG, "updateDataBase -> dbFile should be deleted");
+            }
             copyDataBase();
-
-            //mNeedUpdate = false;
+            Log.d(TAG, "updateDataBase -> new DB file must be placed");
         }
     }
 
@@ -603,6 +623,8 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 db.execSQL("CREATE TABLE orderNotFound (" +
                         "orderId TEXT PRIMARY KEY" +
                         ");");
+
+                db.execSQL("CREATE INDEX idx_ord_id ON MasterData (Ord_id ASC);");
 
                 db.setTransactionSuccessful();
             }

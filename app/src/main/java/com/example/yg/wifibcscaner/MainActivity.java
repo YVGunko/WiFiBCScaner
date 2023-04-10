@@ -70,6 +70,7 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 import static android.text.TextUtils.substring;
+import static com.example.yg.wifibcscaner.DataBaseHelper.*;
 
 
 public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeListener, DatePickerDialog.OnDateSetListener {
@@ -83,11 +84,10 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
 
 
     private DataBaseHelper mDBHelper;
-    TextView tVDBInfo, currentDocDetails, currentUser;
-    EditText editTextRQ;
-    Button bScan;
-    DataBaseHelper.foundbox fb;
-    DataBaseHelper.foundorder fo;
+    TextView currentUser;
+    static EditText editTextRQ;
+    foundbox fb;
+    foundorder fo;
 
     private static String getDeviceUniqueID(Activity activity){
         String device_unique_id = Settings.Secure.getString(activity.getContentResolver(),
@@ -104,18 +104,10 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
     public void onCreate(Bundle state) {
         super.onCreate(state);
 
-        if (!checkFirstRun()) mDBHelper = DataBaseHelper.getInstance(this);
+        mDBHelper = AppController.getInstance().getDbHelper();
 
         setContentView(R.layout.activity_main);
         setRequestedOrientation (ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-
-        //tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
-        //SetVDBInfo setVDBInfo = new SetVDBInfo();
-        //setVDBInfo.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-        //tVDBInfo.setText(mDBHelper.lastBox());
-
-        currentDocDetails  = (TextView) findViewById(R.id.currentDocDetails);
-        currentUser  = (TextView) findViewById(R.id.currentUser);
 
         editTextRQ = (EditText) findViewById(R.id.editTextRQ);
         editTextRQ.setEnabled(false);
@@ -144,28 +136,6 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
 
     }
 
-    private boolean checkFirstRun() {
-        // Get current version code
-        int currentCodeVersion = BuildConfig.VERSION_CODE;
-
-        // Get saved version code and check if Db needs to be replaced
-        int savedVersionCode = SharedPreferenceManager.getInstance().getCodeVersion();
-        boolean savedDbNeedReplace = SharedPreferenceManager.getInstance().getDbNeedReplace();
-
-        // Check for first run or upgrade
-        if (!savedDbNeedReplace & currentCodeVersion == savedVersionCode) {
-            // This is just a normal run
-            return false;
-
-        } else {
-            mDBHelper = DataBaseHelper.getInstance(this, currentCodeVersion, true);
-            SharedPreferenceManager.getInstance().setDbNeedReplace(!savedDbNeedReplace);
-            SharedPreferenceManager.getInstance().setCodeVersion(currentCodeVersion);
-
-            return true;
-        }
-    }
-
     @Override
     public void onStop(){
         super.onStop();
@@ -180,12 +150,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
     protected void onResume() {
         super.onResume();
 
-        //resetLoadDataTimer();
-
         String snum = "Накл.???";
-        //ViewDataBinding binding = DataBindingUtil.setContentView(this, R.layout.activity_main);
-
-        //binding.setVariable(BR.name, new CurrentDocDetails(snum));
 
         if (mDBHelper.currentOutDoc.get_number() != 0) snum = "Накл.№"+mDBHelper.currentOutDoc.get_number();
         snum = mDBHelper.defs.descOper+", "+snum;
@@ -193,17 +158,16 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
         if (actionBar != null) {
             actionBar.setSubtitle(Html.fromHtml("<font color='#FFBF00'>"+snum+"</font>"));
         }
-        //actionBar.setTitle("Подразделение: "+mDBHelper.defs.descDivision);
+
         actionBar.setTitle(mDBHelper.defs.descDivision);
 
-        //tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
-       // tVDBInfo.setText(mDBHelper.lastBox());
         SetVDBInfo setVDBInfo = new SetVDBInfo();
         setVDBInfo.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
         Log.d(TAG, "setVDBInfo called onResume");
 
-        currentDocDetails  = (TextView) findViewById(R.id.currentDocDetails);
-        currentDocDetails.setText("Накл.№" +mDBHelper.currentOutDoc.get_number() + ", " + mDBHelper.selectCurrentOutDocDetails(mDBHelper.currentOutDoc.get_id()));
+        SetCurOutDocInfo setCurOutDocInfo = new SetCurOutDocInfo();
+        setCurOutDocInfo.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        Log.d(TAG, "setCurOutDocInfo called onResume");
 
         currentUser  = (TextView) findViewById(R.id.currentUser);
         currentUser.setText("Пользователь: " +mDBHelper.getUserName(mDBHelper.defs.get_idUser()));
@@ -395,13 +359,14 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
             if (fo._id != 0) {                                      //Заказ найден, ищем коробку
                 fb = mDBHelper.searchBox(fo._id, currentbarcode);
                 //---Получаем строку данных о коробке для вывода в tVDBInfo и количество для редактирования
-                tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
+
                 if (!fb.boxdef.equals(""))
                     fo.orderdef += fb.boxdef+ "\n";
                 if (!fb.depSotr.equals(""))
                     fo.orderdef += fb.depSotr+ "\n";
                 if (!fb.outDocs.equals(""))
                     fo.orderdef += fb.outDocs;
+                TextView tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
                 tVDBInfo.setText(fo.orderdef);
                 if (!fb._archive){
                     if ((fb._id != null) && !fb._id.equals("")) {                                  //Коробка есть
@@ -441,21 +406,19 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
             } else {
                 MessageUtils.showToast(MainActivity.this, "Заказ для этой коробки не загружен! Будет загружен автоматически при подключении к WiFi.",false);
                 //TODO 1. make request to server to load the order if not save the order and load it later
-                saveOrderNotFoundAsync save = new saveOrderNotFoundAsync();
-                String response = null;
+                SaveOrderNotFoundAsync save = new SaveOrderNotFoundAsync();
                 try {
-                    response = save.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR,
-                            mDBHelper.getOrder_id(currentbarcode)).get();
-                    Toast.makeText(getApplicationContext(), "response = " + response, Toast.LENGTH_LONG).show();
+                    save.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR,
+                            AppController.getInstance().getDbHelper().getOrder_id(currentbarcode)).get();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 } catch (ExecutionException e) {
                     e.printStackTrace();
                 }
 
-                loadOrderAsync task = new loadOrderAsync();
+                LoadOrderAsync task = new LoadOrderAsync();
                 task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR,
-                        mDBHelper.getOrder_id(currentbarcode));
+                        AppController.getInstance().getDbHelper().getOrder_id(currentbarcode));
             }
         } else {
             MessageUtils.showToast(MainActivity.this, "Этот заказ уже в архиве! Никакие операции невозможны!",false);
@@ -472,7 +435,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
                 Button bScan = (Button) findViewById(R.id.bScan);
                 bScan.setText("Scan!");
                 iRQ = Integer.valueOf(_RQ);
-                tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
+
                 editTextRQ = (EditText) findViewById(R.id.editTextRQ);
                 editTextRQ.setEnabled(false);
                 if ((!fb._id.equals("")&&(fb._id != null))) {                                            //коробка есть и не полная, добавить в prods
@@ -490,11 +453,10 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
                         SetVDBInfo setVDBInfo = new SetVDBInfo();
                         setVDBInfo.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
                         Log.d(TAG, "setVDBInfo was called from ocl_bOk");
-                        //TODO run in background
-                        //tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
-                        //tVDBInfo.setText(mDBHelper.lastBox());
-                        currentDocDetails  = (TextView) findViewById(R.id.currentDocDetails);
-                        currentDocDetails.setText("Накл.№" +mDBHelper.currentOutDoc.get_number() + ", " + mDBHelper.selectCurrentOutDocDetails(mDBHelper.currentOutDoc.get_id()));
+
+                        SetCurOutDocInfo setCurOutDocInfo = new SetCurOutDocInfo();
+                        setCurOutDocInfo.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                        Log.d(TAG, "setCurOutDocInfo was called from ocl_bOk");
                     }else {
                         MessageUtils.showToast(MainActivity.this,
                                 mDBHelper.defs.descOper+". Повторный прием коробки в смену! Повторный прием возможен в другую смену.",true);
@@ -506,14 +468,14 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
                         mDBHelper.defs.descOper+". Ошибка! Коробка не добавлена в БД!",true);
                     } else {
                         mDBHelper.lastBoxCheck(fo, MainActivity.this);
+
                         SetVDBInfo setVDBInfo = new SetVDBInfo();
                         setVDBInfo.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
                         Log.d(TAG, "setVDBInfo was called from ocl_bOk");
-                        //tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
-                        //tVDBInfo.setText(mDBHelper.lastBox());
-                        currentDocDetails  = (TextView) findViewById(R.id.currentDocDetails);
-                        currentDocDetails.setText("Накл.№" +mDBHelper.currentOutDoc.get_number() + ", " + mDBHelper.selectCurrentOutDocDetails(mDBHelper.currentOutDoc.get_id()));
-                    }
+
+                        SetCurOutDocInfo setCurOutDocInfo = new SetCurOutDocInfo();
+                        setCurOutDocInfo.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                        Log.d(TAG, "setCurOutDocInfo was called from ocl_bOk");                    }
                 }
             } catch (Exception e) {
                 Log.e(TAG, mDBHelper.defs.descOper+". Ошибка при получении количества в коробке!", e);
@@ -695,7 +657,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
     }
 
     // version 3.5.22
-    private class loadOrderAsync extends AsyncTask<String, Integer, String> {
+    private class LoadOrderAsync extends AsyncTask<String, Integer, String> {
 
         @Override
         protected String doInBackground(String... strings) {
@@ -757,7 +719,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
         protected void onProgressUpdate(Integer... values) {
             super.onProgressUpdate(values);
             MessageUtils messageUtils = new MessageUtils();
-            messageUtils.showMessage(getApplicationContext(), "onProgressUpdate. "+values[0]);
+            messageUtils.showToast(getApplicationContext(), "onProgressUpdate. "+values[0], false);
         }
         @Override
         protected void onPostExecute(String result) {
@@ -780,18 +742,25 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
                 pendingIntent);
     }
     // version 4.0.
-    private class saveOrderNotFoundAsync extends AsyncTask<String, Integer, String> {
-
+    private static class SaveOrderNotFoundAsync extends AsyncTask<String, Void, String> {
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
         @Override
         protected String doInBackground(String... strings) {
             try {
-                mDBHelper.saveOrderNotFound(strings[0]);
+                AppController.getInstance().getDbHelper().saveOrderNotFound(strings[0]);
             } catch (Exception e) {
-                Log.d(TAG, "save exception : " + e.getMessage());
+                Log.d(TAG, "saveOrderNotFoundAsync : " + e.getMessage());
                 return "Ошибка при записи";
             }
 
             return "Записано успешно";
+        }
+        @Override
+        protected void onPostExecute(final String s) {
+            super.onPostExecute(s);
         }
     }
     @Override
@@ -812,15 +781,15 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
         }
 
         protected String doInBackground(Void... params) {
-            String datetime = "";
+            String result = "";
             try {
-                datetime = mDBHelper.lastBox();
-                Log.d(TAG, "mDBHelper.lastBox() has returned -> "+datetime);
+                result = AppController.getInstance().getDbHelper().lastBox();
+                Log.d(TAG, "getDbHelper().lastBox() has returned -> "+result);
             } catch (Exception e) {
                 this.e = e;
                 Log.e(TAG, e.getMessage());
             }
-            return datetime;
+            return result;
         }
 
         @Override
@@ -829,6 +798,41 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
 
             if (s != null) {
                 tVDBInfo.setText(s);
+            }
+        }
+    }
+    private class SetCurOutDocInfo extends AsyncTask<Void, Void, String> {
+
+        TextView currentDocDetails  = (TextView) findViewById(R.id.currentDocDetails);
+
+        Exception e;
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            currentDocDetails.setText("Loading...");
+        }
+
+        protected String doInBackground(Void... params) {
+            String result = "";
+            try {
+                result = AppController.getInstance().getDbHelper()
+                        .selectCurrentOutDocDetails(AppController.getInstance().getDbHelper()
+                                .currentOutDoc.get_id());
+                Log.d(TAG, "getDbHelper().selectCurrentOutDocDetails() has returned -> "+result);
+            } catch (Exception e) {
+                this.e = e;
+                Log.e(TAG, e.getMessage());
+            }
+            return result;
+        }
+
+        @Override
+        protected void onPostExecute(final String s) {
+            super.onPostExecute(s);
+
+            if (s != null) {
+                currentDocDetails.setText("Нкл.№" +AppController.getInstance().getDbHelper().currentOutDoc.get_number() + ", " +s);
             }
         }
     }
