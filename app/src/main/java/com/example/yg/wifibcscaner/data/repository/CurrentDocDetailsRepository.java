@@ -6,7 +6,6 @@ import android.util.Log;
 
 import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.controller.AppController;
-import com.example.yg.wifibcscaner.data.dto.CurrentDocDetails;
 import com.example.yg.wifibcscaner.utils.DbUtils;
 import com.example.yg.wifibcscaner.utils.executors.DefaultExecutorSupplier;
 
@@ -39,7 +38,6 @@ public class CurrentDocDetailsRepository {
             } finally {
                 DbUtils.tryCloseCursor(cursor);
                 if (!dbWasOpen) db.close();
-                new CurrentDocDetails(result);
             }
         });
     }

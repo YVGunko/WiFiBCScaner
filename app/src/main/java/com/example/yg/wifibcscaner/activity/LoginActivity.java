@@ -10,11 +10,15 @@ import android.widget.Spinner;
 
 import com.example.yg.wifibcscaner.DataBaseHelper;
 import com.example.yg.wifibcscaner.R;
+import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.Sotr;
 import com.example.yg.wifibcscaner.data.model.user;
 import com.example.yg.wifibcscaner.utils.MessageUtils;
 
 import java.util.List;
+
+import static com.example.yg.wifibcscaner.utils.StringUtils.makeOutDocDesc;
+import static com.example.yg.wifibcscaner.utils.StringUtils.makeUserDesc;
 
 public class LoginActivity extends AppCompatActivity implements
         AdapterView.OnItemSelectedListener {
@@ -72,16 +76,37 @@ public class LoginActivity extends AppCompatActivity implements
             if (mDBHelper.checkUserPswdById(idUser,ePswd.getText().toString())) { //pswd correct
                 if (mDBHelper.defs.get_idUser()!=idUser) { //another user logged
                     mDBHelper.defs.set_idUser(idUser);      //set user as default
+                    mDBHelper.defs.setDescUser(mDBHelper.getUserName(idUser));
+                    AppController.getInstance().getMainActivityViews().setUser(makeUserDesc(mDBHelper.defs.getDescUser()));
+                    messageUtils.showMessage(getApplicationContext(), "Вы вошли в систему как: "+mDBHelper.defs.getDescUser());
+
                     mDBHelper.currentOutDoc.set_id("");
                     mDBHelper.currentOutDoc.set_number(0); //clear currentOutdoc
-                    messageUtils.showMessage(getApplicationContext(), "Вы вошли в систему как: "+mDBHelper.getUserName(mDBHelper.defs.get_idUser()));
+                    AppController.getInstance().getMainActivityViews().setOutDoc(makeOutDocDesc(new String[]{null}));
+
                     if (mDBHelper.getUserId_s(idUser)!=0) { //not a superuser
-                        //select operation, division, department
+                        //select sotr(Employee), operation, division, department
                         mDBHelper.defs.set_Id_s(mDBHelper.getUserId_s(idUser)); //employee
                         Sotr sotr = mDBHelper.getSotrReq(mDBHelper.defs.get_Id_s());
-                        if (sotr.get_Id_o()!=0) mDBHelper.defs.set_Id_o(sotr.get_Id_o()); //oper
-                        if (sotr.get_Id_d()!=0) mDBHelper.defs.set_Id_d(sotr.get_Id_d()); //deps
-                        if (!sotr.getDivision_code().isEmpty()) mDBHelper.defs.setDivision_code(sotr.getDivision_code()); //oper
+                        mDBHelper.defs.setDescSotr(sotr.get_Sotr());
+                        AppController.getInstance().getMainActivityViews().setEmployee(mDBHelper.defs.getDescUser());
+
+                        if (sotr.get_Id_o()!=0) {
+                            mDBHelper.defs.set_Id_o(sotr.get_Id_o()); //oper
+                            mDBHelper.defs.setDescOper(mDBHelper.getOpers_Name_by_id(mDBHelper.defs.get_Id_o()));
+                            AppController.getInstance().getMainActivityViews().setOperation(mDBHelper.defs.getDescOper());
+                        }
+
+                        if (sotr.get_Id_d()!=0) {
+                            mDBHelper.defs.set_Id_d(sotr.get_Id_d()); //deps
+                            mDBHelper.defs.setDescDep(mDBHelper.getDeps_Name_by_id(mDBHelper.defs.get_Id_d()));
+                            AppController.getInstance().getMainActivityViews().setDepartment(mDBHelper.defs.getDescDep());
+                        }
+                        if (!sotr.getDivision_code().isEmpty()) {
+                            mDBHelper.defs.setDivision_code(sotr.getDivision_code()); //oper
+                            mDBHelper.defs.setDescDivision(mDBHelper.getDivisionsNameByCode(mDBHelper.defs.getDivision_code()));
+                            AppController.getInstance().getMainActivityViews().setDivision(mDBHelper.defs.getDescDivision());
+                        }
                     }
                     if (mDBHelper.updateDefsTable(mDBHelper.defs) == 0) {
                         messageUtils.showMessage(getApplicationContext(),"Ошибка при сохранении.");

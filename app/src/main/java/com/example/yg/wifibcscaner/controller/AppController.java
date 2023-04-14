@@ -8,6 +8,7 @@ import android.content.res.Resources;
 import android.database.sqlite.SQLiteDatabase;
 
 import com.example.yg.wifibcscaner.DataBaseHelper;
+import com.example.yg.wifibcscaner.data.dto.MainActivityViews;
 
 /**
  * Created by Shahbaz Hashmi on 2020-03-20.
@@ -19,6 +20,7 @@ public class AppController extends Application {
     private DataBaseHelper mDBHelper;
     private SharedPreferences mSharedPreferences;
     private AlarmManager mAlarmManager;
+    private MainActivityViews mMainActivityViews ;
 
     /**
      * init all required objects in onCreate
@@ -27,6 +29,7 @@ public class AppController extends Application {
     public void onCreate() {
         super.onCreate();
         mInstance = this;
+        mMainActivityViews = new MainActivityViews("","box","","div", "oper", "dep", "empl", "");
         mResources = getResources();
         mSharedPreferences = getSharedPreferences("SharedPreferences", Context.MODE_PRIVATE);
         mDBHelper = DataBaseHelper.getInstance(this);
@@ -45,6 +48,7 @@ public class AppController extends Application {
     public Resources getResourses() {
         return mResources;
     }
+    public MainActivityViews getMainActivityViews() { return mMainActivityViews; }
     public SharedPreferences getSharedPreferences() {
         return mSharedPreferences;
     }

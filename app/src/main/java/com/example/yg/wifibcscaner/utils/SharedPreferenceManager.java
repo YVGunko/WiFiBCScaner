@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
 import com.example.yg.wifibcscaner.BuildConfig;
+import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.controller.AppController;
 
 import java.util.Date;
@@ -17,6 +18,7 @@ public class SharedPreferenceManager {
     private final String UPDATE_DATE = "update_date";
     final static String VERSION_CODE = "version_code";
     final static String DB_NEED_REPLACE = "db_need_replace";
+    final static String LAST_SCANNED_BOX_DESCRIPTION = "last_scanned_box_description";
     final static int DOESNT_EXIST = -1;
 
     private static SharedPreferenceManager sharedPreferenceManager;
@@ -107,5 +109,15 @@ public class SharedPreferenceManager {
         editor = AppController.getInstance().getSharedPreferences().edit();
         editor.putLong(UPDATE_DATE, getDateTimeLong(sDate));
         editor.commit();
+    }
+
+    public void setLastScannedBoxDescription(String value) {
+        editor = AppController.getInstance().getSharedPreferences().edit();
+        editor.putString(LAST_SCANNED_BOX_DESCRIPTION, value);
+        editor.commit();
+    }
+    public String getLastScannedBoxDescription() {
+        return AppController.getInstance().getSharedPreferences().getString(LAST_SCANNED_BOX_DESCRIPTION,
+                AppController.getInstance().getResourses().getString(R.string.no_data_to_view));
     }
 }

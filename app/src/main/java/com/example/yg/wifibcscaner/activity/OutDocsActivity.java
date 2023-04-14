@@ -23,7 +23,7 @@ import android.widget.ProgressBar;
 
 import com.example.yg.wifibcscaner.DataBaseHelper;
 import com.example.yg.wifibcscaner.R;
-import com.example.yg.wifibcscaner.data.dto.CurrentDocDetails;
+import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.Defs;
 import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.data.repository.CurrentDocDetailsRepository;
@@ -86,9 +86,9 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
                                            int pos, long id) {
                 try {
                     if (scAdapter.getCount() > 0) {
-                        strTitle = "№" +scAdapter.getCursor().getString(1)+ ", "
-                                + mDBHelper.selectCurrentOutDocDetails(scAdapter.getCursor().getString(0));
+                        strTitle = mDBHelper.selectCurrentOutDocDetails(scAdapter.getCursor().getString(0));
                         OutDocsActivity.this.setTitle(strTitle);
+                        //AppController.getInstance().getMainActivityViews().setOutDoc(strTitle);
                     }
                 }catch (Exception e){
                     e.printStackTrace();

@@ -1,10 +1,17 @@
 package com.example.yg.wifibcscaner.utils;
 
 import android.database.Cursor;
+import android.database.CursorIndexOutOfBoundsException;
+import android.support.annotation.NonNull;
+import android.util.Log;
 
 import java.util.List;
 
+import static android.content.ContentValues.TAG;
+
 public class StringUtils {
+    private static final String TAG = "StringUtils";
+
     public static String retStringFollowingCRIfNotNull (String s){
         String retString = "";
         try {
@@ -34,42 +41,108 @@ public class StringUtils {
 
     public static String makeLastBoxDef(Cursor cursor) {
         StringBuilder sb = new StringBuilder();
-        sb.append("№ ");
-        sb.append(cursor.getString(0));
-        sb.append(" / ");
-        sb.append(cursor.getString(1));
-        sb.append("\n");
-        sb.append("Подошва: ");
-        sb.append(cursor.getString(2));
-        sb.append(". ");
-        if ((cursor.getString(3) != null) && (!cursor.getString(3).equals(""))) {
-            sb.append("Атрибут: ");
-            sb.append(retStringFollowingCRIfNotNull(cursor.getString(3)));
-        } else sb.append("\n");
-        sb.append("Заказ: ");
-        sb.append(cursor.getString(4));
-        sb.append(". № кор: ");
-        sb.append(cursor.getString(6));
-        sb.append(". Регл: ");
-        sb.append(cursor.getString(5));
-        sb.append(" ");
-        sb.append("В кор: ");
-        sb.append(cursor.getString(7));
-        sb.append(".");
-        sb.append("\n");
+        try {
 
-        if ((cursor.getString(8) != null) && (
-                !cursor.getString(8).equals("") || !cursor.getString(8).equals("Пусто"))) {
-            sb.append(cursor.getString(8));
-            sb.append(", ");
+            String[] order = {cursor.getString(0), cursor.getString(1), cursor.getString(2),
+                    cursor.getString(3), cursor.getString(4), cursor.getString(6)};
+
+            sb.append(makeOrderDesc(order));
+
+            sb.append(makeBoxNumber(cursor.getString(8)));
+
+            sb.append("Всего: ");
+            sb.append(cursor.getString(7));
+            sb.append(" ");
+            sb.append("В кор.: ");
             sb.append(cursor.getString(9));
-            sb.append("\n"); //Бригада
-        }
+            sb.append(".");
+            sb.append("\n");
 
-        sb.append("Накл ");
-        sb.append(cursor.getString(10));
-        sb.append(" от ");
-        sb.append(cursor.getString(11));
+            if (cursor.getInt(10) != 0) {
+                sb.append(makeSotrDesc(new String[]{cursor.getString(11), cursor.getString(13)}));
+            }
+            return sb.toString();
+        } catch (
+        CursorIndexOutOfBoundsException e) {
+            Log.e(TAG, "makeLastBoxDef -> ", e);
+            return sb.toString();
+        }
+    }
+
+    public static String makeBoxNumber(@NonNull String num) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("№ кор: ");
+        sb.append(num);
+        sb.append(" ");
         return sb.toString();
     }
+
+    public static String makeOutDocDesc(@NonNull String[] strings) {
+        StringBuilder sb = new StringBuilder ();
+        if (strings [0] != null) {
+            sb.append("Нкл. ");
+            sb.append(strings[0]);
+            if (strings [1] != null) {
+                sb.append(" от ");
+                sb.append(strings[1].substring(0, strings[1].indexOf(" ")));
+            }
+            if (strings [2] != null) {
+                sb.append(" Кор: ");
+                sb.append(strings[2]);
+            }
+            if (strings [3] != null) {
+                sb.append(" Под: ");
+                sb.append(strings[3]);
+            }
+        }else{
+            sb.append("Нкл. не выбрана");
+        }
+        return sb.toString ();
+    }
+    public static String makeSotrDesc(@NonNull String[] strings) {
+        StringBuilder sb = new StringBuilder ();
+        //sb.append ("Нкл. ");
+        sb.append (strings [0]);
+        sb.append(", ");
+        sb.append(strings [1]);
+
+        return sb.toString ();
+    }
+    public static String makeOrderDesc(@NonNull String[] strings) {
+        StringBuilder sb = new StringBuilder ();
+        sb.append ("№");
+        sb.append (strings [0]);
+        sb.append(", ");
+        sb.append(strings [1]);
+        sb.append("\n");
+        sb.append("Подошва: ");
+        sb.append(strings [2]);
+        if ((strings [3] != null) && (!strings [3].equals(""))) {
+            sb.append(", ");
+            sb.append(retStringFollowingCRIfNotNull(strings [3]));
+        } else sb.append("\n");
+        sb.append("Всего пар: ");
+        sb.append(strings [4]);
+        sb.append(", Всего кор: ");
+        sb.append(strings [5]);
+        sb.append("\n");
+        return sb.toString ();
+        /*
+        *         def += "Заказ: " + cursor.getString(6) +
+                ". Регл: " + cursor.getString(7) +
+                ". Всего кор: " + cursor.getString(8) + "\n";
+        * */
+    }
+    public static String makeUserDesc(@NonNull String name) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Пользователь: ");
+
+        if (name != null) {
+            sb.append(name);
+        }else{
+            sb.append(" не установлен");
+        }
+        return sb.toString ();
+    }
+
 }

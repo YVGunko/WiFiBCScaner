@@ -25,11 +25,53 @@ public class Defs {
     public static final String COLUMN_idOperFirst = "idOperFirst";
     public static final String COLUMN_idOperLast = "idOperLast";
     public static final String COLUMN_Division_code = "division_code";
+
     public String descOper = "Производство";
     public String descDivision = "";
     public String descDep = "";
     public String descSotr = "";
     public String descUser = "";
+
+    public String getDescOper() {
+        return descOper;
+    }
+
+    public void setDescOper(String descOper) {
+        this.descOper = descOper;
+    }
+
+    public String getDescDivision() {
+        return descDivision;
+    }
+
+    public void setDescDivision(String descDivision) {
+        this.descDivision = descDivision;
+    }
+
+    public String getDescDep() {
+        return descDep;
+    }
+
+    public void setDescDep(String descDep) {
+        this.descDep = descDep;
+    }
+
+    public String getDescSotr() {
+        return descSotr;
+    }
+
+    public void setDescSotr(String descSotr) {
+        this.descSotr = descSotr;
+    }
+
+    public String getDescUser() {
+        return descUser;
+    }
+    public void setDescUser(String descUser) {
+        this.descUser = descUser;
+    }
+
+
     private String _Host_IP;
     private String _Port;
 

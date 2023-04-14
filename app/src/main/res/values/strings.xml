@@ -57,4 +57,5 @@
     <string name="show_update_date_dialog">Выберите дату</string>
     <string name="network_unawailable">Нет доступа к WiFi</string>
     <string name="no_data_to_exchange">Нет данных для обмена</string>
+    <string name="no_data_to_view">Информация недоступна</string>
 </resources>

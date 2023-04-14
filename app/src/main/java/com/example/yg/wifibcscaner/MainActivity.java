@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.databinding.DataBindingUtil;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
 import android.os.AsyncTask;
@@ -45,6 +46,7 @@ import com.example.yg.wifibcscaner.data.model.BoxMoves;
 import com.example.yg.wifibcscaner.data.model.Boxes;
 import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.data.model.Prods;
+import com.example.yg.wifibcscaner.databinding.ActivityMainBinding;
 import com.example.yg.wifibcscaner.receiver.SyncDataBroadcastReceiver;
 import com.example.yg.wifibcscaner.service.DataExchangeService;
 import com.example.yg.wifibcscaner.utils.ApiUtils;
@@ -71,6 +73,8 @@ import retrofit2.Response;
 
 import static android.text.TextUtils.substring;
 import static com.example.yg.wifibcscaner.DataBaseHelper.*;
+import static com.example.yg.wifibcscaner.utils.StringUtils.makeUserDesc;
+import static com.example.yg.wifibcscaner.utils.StringUtils.makeOutDocDesc;
 
 
 public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeListener, DatePickerDialog.OnDateSetListener {
@@ -109,8 +113,12 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
         setContentView(R.layout.activity_main);
         setRequestedOrientation (ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
+        ActivityMainBinding binding = DataBindingUtil.setContentView(this, R.layout.activity_main);
+        binding.setMac(AppController.getInstance().getMainActivityViews());
+
         editTextRQ = (EditText) findViewById(R.id.editTextRQ);
         editTextRQ.setEnabled(false);
+
         //registerReceiver
         mUsbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
 
@@ -133,7 +141,6 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
                 barcodeReader.addBarcodeListener(MainActivity.this);
             }
         });
-
     }
 
     @Override
@@ -150,7 +157,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
     protected void onResume() {
         super.onResume();
 
-        String snum = "Накл.???";
+        /*String snum = "Накл.???";
 
         if (mDBHelper.currentOutDoc.get_number() != 0) snum = "Накл.№"+mDBHelper.currentOutDoc.get_number();
         snum = mDBHelper.defs.descOper+", "+snum;
@@ -159,19 +166,25 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
             actionBar.setSubtitle(Html.fromHtml("<font color='#FFBF00'>"+snum+"</font>"));
         }
 
-        actionBar.setTitle(mDBHelper.defs.descDivision);
+        actionBar.setTitle(mDBHelper.defs.descDivision);*/
 
-        SetVDBInfo setVDBInfo = new SetVDBInfo();
-        setVDBInfo.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-        Log.d(TAG, "setVDBInfo called onResume");
+        if (AppController.getInstance().getMainActivityViews().getOutDoc() == null ||
+                AppController.getInstance().getMainActivityViews().getOutDoc().isEmpty()) {
+            Log.d(TAG, "setCurOutDocInfo called onResume");
+            SetCurOutDocInfo setCurOutDocInfo = new SetCurOutDocInfo();
+            setCurOutDocInfo.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        }
+        if (AppController.getInstance().getMainActivityViews().getUser() == null ||
+                AppController.getInstance().getMainActivityViews().getUser().isEmpty()) {
+            Log.d(TAG, "setUser called onResume");
+            AppController.getInstance().getMainActivityViews().setUser(makeUserDesc(mDBHelper.getUserName(mDBHelper.defs.get_idUser())));
+        }
+        //AppController.getInstance().getCurrentDocDetails().setName("onResume");
 
-        SetCurOutDocInfo setCurOutDocInfo = new SetCurOutDocInfo();
-        setCurOutDocInfo.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-        Log.d(TAG, "setCurOutDocInfo called onResume");
-
-        currentUser  = (TextView) findViewById(R.id.currentUser);
-        currentUser.setText("Пользователь: " +mDBHelper.getUserName(mDBHelper.defs.get_idUser()));
-
+        /*            Log.d(TAG, "setOrderInfo called onResume");
+            SetOrderInfo setOrderInfo = new SetOrderInfo();
+            setOrderInfo.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        */
         if (barcodeReader != null) {
             try {
                 barcodeReader.claim();
@@ -181,6 +194,8 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
                 MessageUtils.showToast(MainActivity.this, "Невозможно включить встроенный сканер.",true);
             }
         }
+        Button bScan = (Button) findViewById(R.id.bScan);
+        bScan.requestFocus();
     }
 
 
@@ -222,7 +237,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
             }
             return;
         }
-
+        /*
         String snum = "Накл.???";
         if (mDBHelper.currentOutDoc.get_number() != 0) snum = "Накл.№"+mDBHelper.currentOutDoc.get_number();
         snum = mDBHelper.defs.descOper+", "+snum;
@@ -232,7 +247,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
         }
         if (actionBar != null) {
             actionBar.setTitle("Подразделение: "+mDBHelper.defs.descDivision);
-        }
+        }*/
         //====this.setTitle(mDBHelper.defs.descOper+", "+snum);
 
         /* Если сканер подключен - вызывать обработчик для него*/
@@ -346,7 +361,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
     }
     private void scanResultHandler (String currentbarcode) {
             /*---Тут нужно данные коробки вывести и дать отредактировать количество. Есть код в currentbarcode.
-            Нужно его обработать, выбрать данные новой коробки для вывода tVDBInfo и в editTextRQ
+            Нужно его обработать, выбрать данные новой коробки для вывода tOrderInfo и в editTextRQ
             * Если данные новой коробки не нашли в заказах - сообщить и ничего не выводить*/
             //поискать символ с кодом 194
         currentbarcode = filter(currentbarcode);
@@ -358,7 +373,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
         if (!fo.archive) { // архив
             if (fo._id != 0) {                                      //Заказ найден, ищем коробку
                 fb = mDBHelper.searchBox(fo._id, currentbarcode);
-                //---Получаем строку данных о коробке для вывода в tVDBInfo и количество для редактирования
+                //---Получаем строку данных о коробке для вывода в tOrderInfo и количество для редактирования
 
                 if (!fb.boxdef.equals(""))
                     fo.orderdef += fb.boxdef+ "\n";
@@ -366,8 +381,10 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
                     fo.orderdef += fb.depSotr+ "\n";
                 if (!fb.outDocs.equals(""))
                     fo.orderdef += fb.outDocs;
-                TextView tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
-                tVDBInfo.setText(fo.orderdef);
+                //TextView tOrderInfo = (TextView) findViewById(R.id.tOrderInfo);
+                //tOrderInfo.setText(fo.orderdef);
+                SharedPreferenceManager.getInstance().setLastScannedBoxDescription(fo.orderdef);
+                Log.d(TAG, "scanResultHandler has made lastbox orderdef as -> "+fo.orderdef);
                 if (!fb._archive){
                     if ((fb._id != null) && !fb._id.equals("")) {                                  //Коробка есть
                         if (fb.QB == fb.RQ) {//Коробка заполнена
@@ -385,6 +402,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
                             editTextRQ = (EditText) findViewById(R.id.editTextRQ);
                             editTextRQ.setText(String.valueOf(fb.QB - fb.RQ));
                             editTextRQ.setEnabled(true);
+                            editTextRQ.setSelection(editTextRQ.getText().length());
                             if (fb.RQ != 0) {
                                 MessageUtils.showToast(MainActivity.this, "Эта коробка ранее принималась неполной!",false);
                                 }
@@ -396,6 +414,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
                             editTextRQ = (EditText) findViewById(R.id.editTextRQ);
                             editTextRQ.setText(String.valueOf(fb.QB - fb.RQ));
                             editTextRQ.setEnabled(true);
+                            editTextRQ.setSelection(editTextRQ.getText().length());
                         }else{
                             MessageUtils.showToast(MainActivity.this, "Эта коробка не принималась на производстве!",false);
                         }
@@ -434,6 +453,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
             try {
                 Button bScan = (Button) findViewById(R.id.bScan);
                 bScan.setText("Scan!");
+                bScan.requestFocus();
                 iRQ = Integer.valueOf(_RQ);
 
                 editTextRQ = (EditText) findViewById(R.id.editTextRQ);
@@ -450,13 +470,13 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
                         }
                         mDBHelper.lastBoxCheck(fo, MainActivity.this);
 
-                        SetVDBInfo setVDBInfo = new SetVDBInfo();
-                        setVDBInfo.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-                        Log.d(TAG, "setVDBInfo was called from ocl_bOk");
+                        SetOrderInfo setOrderInfo = new SetOrderInfo();
+                        setOrderInfo.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                        Log.d(TAG, "setOrderInfo was called from ocl_bOk");
 
-                        SetCurOutDocInfo setCurOutDocInfo = new SetCurOutDocInfo();
+                        /*SetCurOutDocInfo setCurOutDocInfo = new SetCurOutDocInfo();
                         setCurOutDocInfo.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-                        Log.d(TAG, "setCurOutDocInfo was called from ocl_bOk");
+                        Log.d(TAG, "setCurOutDocInfo was called from ocl_bOk");*/
                     }else {
                         MessageUtils.showToast(MainActivity.this,
                                 mDBHelper.defs.descOper+". Повторный прием коробки в смену! Повторный прием возможен в другую смену.",true);
@@ -469,13 +489,14 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
                     } else {
                         mDBHelper.lastBoxCheck(fo, MainActivity.this);
 
-                        SetVDBInfo setVDBInfo = new SetVDBInfo();
-                        setVDBInfo.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-                        Log.d(TAG, "setVDBInfo was called from ocl_bOk");
+                        SetOrderInfo setOrderInfo = new SetOrderInfo();
+                        setOrderInfo.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                        Log.d(TAG, "setOrderInfo was called from ocl_bOk");
 
-                        SetCurOutDocInfo setCurOutDocInfo = new SetCurOutDocInfo();
+                        /*SetCurOutDocInfo setCurOutDocInfo = new SetCurOutDocInfo();
                         setCurOutDocInfo.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-                        Log.d(TAG, "setCurOutDocInfo was called from ocl_bOk");                    }
+                        Log.d(TAG, "setCurOutDocInfo was called from ocl_bOk");   */
+                    }
                 }
             } catch (Exception e) {
                 Log.e(TAG, mDBHelper.defs.descOper+". Ошибка при получении количества в коробке!", e);
@@ -612,17 +633,20 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
         quitDialog.setPositiveButton("Да!", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                Button bScan = (Button) findViewById(R.id.bScan);
-                bScan.setText("Scan!");
                 editTextRQ = (EditText) findViewById(R.id.editTextRQ);
                 editTextRQ.setEnabled(false);
+                Button bScan = (Button) findViewById(R.id.bScan);
+                bScan.setText("Scan!");
+                bScan.requestFocus();
             }
         });
 
         quitDialog.setNegativeButton("Нет.", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
+
                 editTextRQ.requestFocus();
+                editTextRQ.setSelection(editTextRQ.getText().length());
             }
         });
         quitDialog.show();
@@ -768,16 +792,13 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
         super.onPostCreate(savedInstanceState);
         setSyncRepeatingAlarm();
     }
-    private class SetVDBInfo extends AsyncTask<Void, Void, String> {
-
-        TextView tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
-
+    private class SetOrderInfo extends AsyncTask<Void, Void, String> {
         Exception e;
 
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            tVDBInfo.setText("Loading...");
+            AppController.getInstance().getMainActivityViews().setOrder("Loading...");
         }
 
         protected String doInBackground(Void... params) {
@@ -795,28 +816,24 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
         @Override
         protected void onPostExecute(final String s) {
             super.onPostExecute(s);
-
-            if (s != null) {
-                tVDBInfo.setText(s);
-            }
         }
     }
     private class SetCurOutDocInfo extends AsyncTask<Void, Void, String> {
-
-        TextView currentDocDetails  = (TextView) findViewById(R.id.currentDocDetails);
 
         Exception e;
 
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            currentDocDetails.setText("Loading...");
+            AppController.getInstance().getMainActivityViews().setOutDoc(makeOutDocDesc(new String[]{null}));
         }
 
         protected String doInBackground(Void... params) {
             String result = "";
             try {
-                result = AppController.getInstance().getDbHelper()
+                Log.d(TAG, "getDbHelper().selectCurrentOutDocDetails() id -> "+AppController.getInstance().getDbHelper()
+                        .currentOutDoc.get_id());
+                AppController.getInstance().getDbHelper()
                         .selectCurrentOutDocDetails(AppController.getInstance().getDbHelper()
                                 .currentOutDoc.get_id());
                 Log.d(TAG, "getDbHelper().selectCurrentOutDocDetails() has returned -> "+result);
@@ -830,10 +847,6 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
         @Override
         protected void onPostExecute(final String s) {
             super.onPostExecute(s);
-
-            if (s != null) {
-                currentDocDetails.setText("Нкл.№" +AppController.getInstance().getDbHelper().currentOutDoc.get_number() + ", " +s);
-            }
         }
     }
 }
