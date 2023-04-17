@@ -37,13 +37,16 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+import static com.example.yg.wifibcscaner.data.service.OutDocService.makeOutDocDesc;
+import static com.example.yg.wifibcscaner.data.repository.OutDocRepo.*;
+
 public class OutDocsActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
     //Переменная для работы с БД
-    private DataBaseHelper mDBHelper;
+    private DataBaseHelper mDBHelper = AppController.getInstance().getDbHelper();
     ListView lvData;
     SimpleCursorAdapter scAdapter;
     String strTitle= "Выберите накладную";
-    String selectedTitle = "Выбрана Накл.№";
+    //String selectedTitle = "Выбрана Накл.№";
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -65,7 +68,6 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_out_docs);
-        mDBHelper = DataBaseHelper.getInstance(this);
 
         String[] from = new String[]{OutDocs.COLUMN_NUMBER, OutDocs.COLUMN_comment};
         int[] to = new int[]{R.id.tvNumber, R.id.tvText};
@@ -86,9 +88,9 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
                                            int pos, long id) {
                 try {
                     if (scAdapter.getCount() > 0) {
-                        strTitle = mDBHelper.selectCurrentOutDocDetails(scAdapter.getCursor().getString(0));
+                        strTitle = makeOutDocDesc(scAdapter.getCursor().getString(1),scAdapter.getCursor().getString(3),
+                                selectOutDocById(scAdapter.getCursor().getString(0)));
                         OutDocsActivity.this.setTitle(strTitle);
-                        //AppController.getInstance().getMainActivityViews().setOutDoc(strTitle);
                     }
                 }catch (Exception e){
                     e.printStackTrace();
@@ -128,27 +130,28 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
                     mDBHelper.currentOutDoc.setIdUser(scAdapter.getCursor().getInt(6));
                 }
 
-                result = selectedTitle +scAdapter.getCursor().getString(1);
+                result = makeOutDocDesc(new String[]{scAdapter.getCursor().getString(1)});
 
                 if ((mDBHelper.defs.get_Id_o()==mDBHelper.defs.get_idOperFirst())&&(mDBHelper.defs.getDivision_code().equals(mDBHelper.puDivision))){
                     //Если прием производства и ПУ - установить бригаду из строки таблицы Prods c выбранной накладной
                     int iDep = mDBHelper.getId_dByOutdoc(mDBHelper.currentOutDoc.get_id());
                     if ((iDep != 0)&&(iDep!=mDBHelper.defs.get_Id_d())){
-                        MessageUtils messageUtils = new MessageUtils();
+
                         mDBHelper.defs.set_Id_d(iDep);
                         Defs defs = new Defs(iDep, mDBHelper.defs.get_Id_o(), mDBHelper.defs.get_Id_s(),
                                 mDBHelper.defs.get_Host_IP(), mDBHelper.defs.get_Port(),
                                 mDBHelper.defs.getDivision_code(),  mDBHelper.defs.get_idUser(), mDBHelper.defs.getDeviceId());
                         if (mDBHelper.updateDefsTable(defs) != 0) {
                             mDBHelper.selectDefsTable();
-                            messageUtils.showMessage(getApplicationContext(),"Сохранено."+mDBHelper.defs.descDep);
+                            MessageUtils.showToast(getApplicationContext(),"Сохранено."+mDBHelper.defs.descDep, false);
                         } else {
-                            messageUtils.showMessage(getApplicationContext(),"Ошибка при сохранении.");
+                            MessageUtils.showToast(getApplicationContext(),"Ошибка при сохранении.",false);
                         }
                     }
-                    result = selectedTitle +scAdapter.getCursor().getString(1)+" "+mDBHelper.defs.descDep;
+                    result = makeOutDocDesc(new String[]{scAdapter.getCursor().getString(1)+" "+mDBHelper.defs.descDep});
                 }
                 OutDocsActivity.this.setTitle(result);
+                AppController.getInstance().getMainActivityViews().setOutDoc(result);
             }
         });
         adb.show();
@@ -163,13 +166,13 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
     }
     // обработка нажатия кнопки
     public void onButtonClick(View view) {
-        int docNum = mDBHelper.outDocsAddRec();
+        int docNum = outDocsAddRec();
         // добавляем запись
         if (docNum!=0) {
             // получаем новый курсор с данными
             getSupportLoaderManager().getLoader(0).forceLoad();
 
-            OutDocsActivity.this.setTitle(selectedTitle +String.valueOf(docNum));
+            OutDocsActivity.this.setTitle(makeOutDocDesc(new String[]{String.valueOf(docNum)}));
         } else {
             MessageUtils messageUtils = new MessageUtils();
             messageUtils.showMessage(getApplicationContext(),"Ошибка при добавлении записи.");

@@ -73,8 +73,10 @@ import retrofit2.Response;
 
 import static android.text.TextUtils.substring;
 import static com.example.yg.wifibcscaner.DataBaseHelper.*;
+import static com.example.yg.wifibcscaner.data.service.OutDocService.makeOutDocDesc;
+import static com.example.yg.wifibcscaner.utils.StringUtils.makeOrderDesc;
 import static com.example.yg.wifibcscaner.utils.StringUtils.makeUserDesc;
-import static com.example.yg.wifibcscaner.utils.StringUtils.makeOutDocDesc;
+import static com.example.yg.wifibcscaner.utils.StringUtils.filter;
 
 
 public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeListener, DatePickerDialog.OnDateSetListener {
@@ -168,6 +170,18 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
 
         actionBar.setTitle(mDBHelper.defs.descDivision);*/
 
+        if (AppController.getInstance().getMainActivityViews().getOrder() == null ||
+                AppController.getInstance().getMainActivityViews().getOrder().isEmpty()) {
+            if (SharedPreferenceManager.getInstance().getLastScannedBoxDescription()
+                    .equals(AppController.getInstance().getResourses().getString(R.string.no_data_to_view))){
+                Log.d(TAG, "SetOrderInfo called onResume");
+                SetOrderInfo setOrderInfo = new SetOrderInfo();
+                setOrderInfo.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+            }else {
+                Log.d(TAG, "Last order info fetched from sharedPrefs");
+                AppController.getInstance().getMainActivityViews().setOrder(SharedPreferenceManager.getInstance().getLastScannedBoxDescription());
+            }
+        }
         if (AppController.getInstance().getMainActivityViews().getOutDoc() == null ||
                 AppController.getInstance().getMainActivityViews().getOutDoc().isEmpty()) {
             Log.d(TAG, "setCurOutDocInfo called onResume");
@@ -349,16 +363,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
         return super.onPrepareOptionsMenu(menu);
     }
 
-    private static String filter (String str){
-            StringBuilder filtered = new StringBuilder(str.length());
-            for (int i = 0; i < str.length(); i++) {
-                char current = str.charAt(i);
-                if (current >= 0x2E && current <= 0x39) {
-                    filtered.append(current);
-                }
-            }
-            return filtered.toString();
-    }
+
     private void scanResultHandler (String currentbarcode) {
             /*---Тут нужно данные коробки вывести и дать отредактировать количество. Есть код в currentbarcode.
             Нужно его обработать, выбрать данные новой коробки для вывода tOrderInfo и в editTextRQ
@@ -681,7 +686,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
     }
 
     // version 3.5.22
-    private class LoadOrderAsync extends AsyncTask<String, Integer, String> {
+    private class LoadOrderAsync extends AsyncTask<String, Void, String> {
 
         @Override
         protected String doInBackground(String... strings) {
@@ -719,6 +724,15 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
                                             //delete from orderNotFound
                                             if (mDBHelper.deleteFromOrderNotFound(s))
                                                 Log.d("loadOrderAsync", "OrderNotFound Record deleted: " + s);
+                                            MessageUtils.showToast(getApplicationContext(),
+                                                    "Заказ "+makeOrderDesc(new String[] {response.body().getOrder().get_Ord(),
+                                                            response.body().getOrder().get_Cust(),
+                                                            response.body().getOrder().get_Nomen(),
+                                                            response.body().getOrder().get_Attrib(),
+                                                            String.valueOf(response.body().getOrder().get_Q_ord()),
+                                                            String.valueOf(response.body().getOrder().get_Q_box())})+
+                                                    " загружен. Отсканируйте коробку еще раз.",
+                                                    true);
                                         }
                                     }
                                 }
@@ -740,16 +754,8 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
             return null;
         }
         @Override
-        protected void onProgressUpdate(Integer... values) {
-            super.onProgressUpdate(values);
-            MessageUtils messageUtils = new MessageUtils();
-            messageUtils.showToast(getApplicationContext(), "onProgressUpdate. "+values[0], false);
-        }
-        @Override
         protected void onPostExecute(String result) {
             super.onPostExecute(result);
-            MessageUtils messageUtils = new MessageUtils();
-            messageUtils.showMessage(getApplicationContext(), "onPostExecute.  "+result);
         }
     }
 
@@ -798,7 +804,6 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            AppController.getInstance().getMainActivityViews().setOrder("Loading...");
         }
 
         protected String doInBackground(Void... params) {
@@ -833,9 +838,8 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
             try {
                 Log.d(TAG, "getDbHelper().selectCurrentOutDocDetails() id -> "+AppController.getInstance().getDbHelper()
                         .currentOutDoc.get_id());
-                AppController.getInstance().getDbHelper()
-                        .selectCurrentOutDocDetails(AppController.getInstance().getDbHelper()
-                                .currentOutDoc.get_id());
+                AppController.getInstance().getMainActivityViews().setOutDoc(AppController.getInstance().getDbHelper()
+                        .selectCurrentOutDocDetails());
                 Log.d(TAG, "getDbHelper().selectCurrentOutDocDetails() has returned -> "+result);
             } catch (Exception e) {
                 this.e = e;

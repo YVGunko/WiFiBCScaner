@@ -15,7 +15,6 @@ import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
 import android.os.Build;
-import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
@@ -35,18 +34,15 @@ import com.example.yg.wifibcscaner.data.model.Prods;
 import com.example.yg.wifibcscaner.data.model.Sotr;
 import com.example.yg.wifibcscaner.data.model.lastUpdate;
 import com.example.yg.wifibcscaner.data.model.user;
-import com.example.yg.wifibcscaner.utils.DbUtils;
 import com.example.yg.wifibcscaner.utils.MessageUtils;
 import com.example.yg.wifibcscaner.utils.SharedPreferenceManager;
 import com.example.yg.wifibcscaner.utils.executors.DefaultExecutorSupplier;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.channels.FileChannel;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -54,25 +50,26 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static android.text.TextUtils.substring;
+import static com.example.yg.wifibcscaner.data.service.OutDocService.makeOutDocDesc;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.addDays;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDateLong;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDateTimeLong;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDayTimeString;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getLongDateTimeString;
-import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getLongStartOfDayLong;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getStartOfDayLong;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getStartOfDayString;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.numberOfDaysInMonth;
 import static com.example.yg.wifibcscaner.utils.DbUtils.tryCloseCursor;
+import static com.example.yg.wifibcscaner.utils.StringUtils.getUUID;
 import static com.example.yg.wifibcscaner.utils.StringUtils.makeBoxNumber;
 import static com.example.yg.wifibcscaner.utils.StringUtils.makeLastBoxDef;
 import static com.example.yg.wifibcscaner.utils.StringUtils.makeSotrDesc;
 import static com.example.yg.wifibcscaner.utils.StringUtils.retStringFollowingCRIfNotNull;
 import static com.example.yg.wifibcscaner.utils.StringUtils.makeOrderDesc;
-import static com.example.yg.wifibcscaner.utils.StringUtils.makeOutDocDesc;
+
 import static java.lang.String.valueOf;
 
 public class DataBaseHelper extends SQLiteOpenHelper {
@@ -87,10 +84,72 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     public static final String puDivision = "00-000002";
 
     private SQLiteDatabase mDataBase;
-    private final Context mContext;
+    private AtomicInteger mOpenCounter;
 
-    private static DataBaseHelper sInstance;
+    private static DataBaseHelper instance = null;
+    /*private constructor to avoid direct instantiation by other classes*/
+    private DataBaseHelper(final int DB_VERSION){
+        super(AppController.getInstance().getApplicationContext(), DB_NAME, null, DB_VERSION);
+    }
+    /*synchronized method to ensure only 1 instance of LocalDBHelper exists*/
+    public static synchronized DataBaseHelper getInstance(){
+        if(instance == null){
+            if (checkIfDbNeedReplace()) {
+                instance = new DataBaseHelper(SharedPreferenceManager.getInstance().getCodeVersion(), true);
+                Log.d(TAG, "DataBaseHelper getInstance -> it was forced to replace db file");
+            }else {
+                instance = new DataBaseHelper(BuildConfig.VERSION_CODE, false);
+                Log.d(TAG, "DataBaseHelper getInstance -> it was ordinary one");
+            }
+        }
+        return instance;
+    }
 
+    private DataBaseHelper(final int DB_VERSION, boolean mNeedUpdate) {
+        super(AppController.getInstance().getApplicationContext(), DB_NAME, null, DB_VERSION);
+        DB_PATH = AppController.getInstance().getApplicationContext().getFilesDir().getPath() +
+                AppController.getInstance().getApplicationContext().getPackageName() +
+                "/databases/";
+
+        if (!checkDataBase()) {
+            mNeedUpdate = true;
+        }
+        try {
+            this.updateDataBase(mNeedUpdate);
+        } catch (IOException mIOException) {
+            throw new Error("UnableToUpdateDatabase");
+        }
+        try {
+            AppController.getInstance().getDbHelper().openDataBase();
+            Log.d(TAG, "checkFirstRun -> savedDbNeedReplace -> "+mNeedUpdate);
+        } catch (SQLException mSQLException) {
+            throw mSQLException;
+        }
+        selectDefsTable();
+        //division = new Division(defs.getDivision_code(),getDivisionsName(defs.getDivision_code()));
+        currentOutDoc = new OutDocs(null, 0, 0,null,null,
+                null, defs.getDivision_code(), defs.get_idUser());
+
+    }
+    public synchronized SQLiteDatabase openDataBase() {
+        //mOpenCounter.incrementAndGet();
+        if(mOpenCounter.incrementAndGet() == 1) {
+            Log.d(TAG, "DataBaseHelper openDataBase -> incrementAndGet == 1");
+            // Opening new database
+            return DataBaseHelper.getInstance().getWritableDatabase();
+        }
+        return mDataBase;
+    }
+
+    public synchronized void closeDataBase() {
+        //mOpenCounter--;
+        if(mOpenCounter.decrementAndGet() == 0) {
+            Log.d(TAG, "DataBaseHelper openDataBase -> decrementAndGet == 0");
+            // Closing database
+            DataBaseHelper.getInstance().close();
+
+        }
+    }
     public static final Long ldtMin = getStartOfDayLong(addDays(new Date(), -numberOfDaysInMonth(new Date())));
     public static final String dtMin = getStartOfDayString(getStartOfDayLong(addDays(new Date(), -numberOfDaysInMonth(new Date()))));
 
@@ -126,26 +185,6 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         boolean archive;
     }
 
-    public SQLiteDatabase getDb() {
-        return mDataBase;
-    }
-    public static synchronized DataBaseHelper getInstance(Context context) {
-
-        // Use the application context, which will ensure that you
-        // don't accidentally leak an Activity's context.
-        // See this article for more information: http://bit.ly/6LRzfx
-        if (sInstance == null) {
-            if (checkIfDbNeedReplace())
-                sInstance = new DataBaseHelper(context.getApplicationContext(),
-                        SharedPreferenceManager.getInstance().getCodeVersion(),
-                        true);
-            else    sInstance = new DataBaseHelper(context.getApplicationContext(),
-                    BuildConfig.VERSION_CODE,
-                    false);
-        }
-        Log.d(TAG, "DataBaseHelper getInstance -> normal one. Isn't forced to replace db file");
-        return sInstance;
-    }
 
     private static boolean checkIfDbNeedReplace() {
         // Get current version code
@@ -169,61 +208,10 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             return true;
         }
     }
-    public static String getUUID() {
-        // Creating a random UUID (Universally unique identifier).
-        UUID uuid = UUID.randomUUID();
-        return uuid.toString();
-    }
 
-    public void BackUpDB() {
-        try {
-            File sd = Environment.getExternalStorageDirectory();
-            if (sd.canWrite()) {
-                String currentDBPath = "/data/data/" + mContext.getPackageName() + "/databases/" + DB_NAME;
-                String backupDBPath = "backup" + DB_NAME;
-                File currentDB = new File(currentDBPath);
-                File backupDB = new File(sd, backupDBPath);
-                if (currentDB.exists()) {
-                    FileChannel src = new FileInputStream(currentDB).getChannel();
 
-                    FileChannel dst = new FileOutputStream(backupDB).getChannel();
-                    dst.transferFrom(src, 0, src.size());
-                    src.close();
-                    dst.close();
-                }
-            }
-        } catch (Exception e) {
 
-        }
-    }
-    private DataBaseHelper(Context context, final int DB_VERSION, boolean mNeedUpdate) {
-        super(context, DB_NAME, null, DB_VERSION);
-        DB_PATH = "/data/data/" + context.getPackageName() + "/databases/";
-        this.mContext = context;
-
-        if (!checkDataBase()) {
-            mNeedUpdate = true;
-        }
-        try {
-            this.updateDataBase(mNeedUpdate);
-        } catch (IOException mIOException) {
-            throw new Error("UnableToUpdateDatabase");
-        }
-        try {
-            mDataBase = this.getWritableDatabase();
-            //mDataBase.setForeignKeyConstraintsEnabled(true);
-            this.close();
-        } catch (SQLException mSQLException) {
-            throw mSQLException;
-        }
-        selectDefsTable();
-        //division = new Division(defs.getDivision_code(),getDivisionsName(defs.getDivision_code()));
-        currentOutDoc = new OutDocs(null, 0, 0,null,null,
-                null, defs.getDivision_code(), defs.get_idUser());
-
-    }
-
-    public void updateDataBase(boolean mNeedUpdate) throws IOException {
+    private void updateDataBase(boolean mNeedUpdate) throws IOException {
         if (mNeedUpdate) {
             File dbFile = new File(DB_PATH + DB_NAME);
             if (dbFile.exists()) {
@@ -253,7 +241,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     }
 
     private void copyDBFile() throws IOException {
-        InputStream mInput = mContext.getAssets().open(DB_NAME);
+        InputStream mInput = AppController.getInstance().getApplicationContext().getAssets().open(DB_NAME);
         //InputStream mInput = mContext.getResources().openRawResource(R.raw.info);
         OutputStream mOutput = new FileOutputStream(DB_PATH + DB_NAME);
         byte[] mBuffer = new byte[1024];
@@ -267,24 +255,25 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
     @Override
     public synchronized void close() {
-        if (mDataBase != null)
-            mDataBase.close();
+        Log.d(TAG, "on DB close ");
         super.close();
     }
 
     @Override
     public void onCreate(SQLiteDatabase db) {
         //db.setForeignKeyConstraintsEnabled(true);
-
+        Log.d(TAG, "onCreate ");
     }
 
     @Override
     public void onOpen(SQLiteDatabase db) {
         //db.setForeignKeyConstraintsEnabled(true);
+        Log.d(TAG, "onOpen ");
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        Log.d(TAG, "onUpgrade ");
         if ((newVersion>oldVersion)&(newVersion == 16))
         try {
             db.execSQL("PRAGMA foreign_keys = 0;");
@@ -636,38 +625,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             }
     }
 
-    //list all boxes
-    public ArrayList<HashMap<String, String>> listorders() {
-        ArrayList<HashMap<String, String>> readOrders = new ArrayList<HashMap<String, String>>();
-//        Cursor cursor = mDb.rawQuery("SELECT MasterData.Ord, MasterData.Cust, MasterData.Nomen, MasterData.Attrib, MasterData.Q_ord,MasterData.Q_box, Boxes.N_box, sum (Prods.RQ_box)" +
-//                " FROM Boxes, Prods, Deps, MasterData Where Boxes.Id_o=1 and Boxes.Id_m=MasterData._id and Boxes._id=Prods.Id_b and Prods.Id_d=Deps._id", null);
-        mDataBase = this.getReadableDatabase();
-        Cursor cursor = mDataBase.rawQuery("SELECT MasterData.Ord, MasterData.Cust, MasterData.Nomen, MasterData.Attrib, MasterData.Q_ord,MasterData.Q_box, " +
-                "MasterData.N_box, MasterData.DT " +
-                "FROM MasterData WHERE division_code=? ORDER BY MasterData._id DESC", new String [] {String.valueOf(defs.getDivision_code())});
-        cursor.moveToFirst();
 
-//Пробегаем по всем коробкам
-        while (!cursor.isAfterLast()) {
-            HashMap readOrder = new HashMap<String, String>();
-            //Заполняем
-            readOrder.put("Ord", cursor.getString(0) + ". " + cursor.getString(1));
-            readOrder.put("Cust", cursor.getString(2) + "\n" + retStringFollowingCRIfNotNull(cursor.getString(3)) +
-                    "Заказ: " + cursor.getString(4) + ". Коробок" +
-                    ": " + cursor.getString(6) + ". Регл: " + cursor.getString(5) + "\n" +
-                    " Загружен: " + getLongDateTimeString(cursor.getLong(7)));
-
-            //Закидываем в список
-            readOrders.add(readOrder);
-
-            //Переходим к следующеq
-            cursor.moveToNext();
-        }
-        cursor.close();
-        mDataBase.close();
-
-        return readOrders;
-    }
 
     //list all boxes
     public ArrayList<HashMap<String, String>> listprods() {
@@ -700,156 +658,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
         return readBoxes;
     }
-    public long insertOrUpdateOutDocs(OutDocs outdocs) {
-        long l = 0;
-        try {
-            try {
-                mDataBase = this.getWritableDatabase();
-                ContentValues values = new ContentValues();
-                values.clear();
-                values.put(OutDocs.COLUMN_Id, outdocs.get_id());
-                values.put(OutDocs.COLUMN_Id_o, outdocs.get_Id_o());
-                values.put(OutDocs.COLUMN_number, outdocs.get_number());
-                values.put(OutDocs.COLUMN_comment, outdocs.get_comment());
-                values.put(OutDocs.COLUMN_DT, getDateTimeLong(outdocs.get_DT()));
-                values.put(COLUMN_sentToMasterDate, new Date().getTime());
-                values.put(OutDocs.COLUMN_Division_code, outdocs.getDivision_code());
-                values.put(OutDocs.COLUMN_idUser, outdocs.getIdUser());
-                l = mDataBase.insertWithOnConflict(OutDocs.TABLE, null, values, 5);
-            } catch (SQLException e) {
-                // TODO: handle exception
-                throw e;
-            }
-        }finally {
-            mDataBase.close();
-            return l;
-        }
-    }
 
-
-    public int outDocsAddRec () {
-        Cursor cursor = null;
-        boolean dbWasOpen = false;
-        int docNum;
-        int result = 0;
-        try {
-            try{
-                if (!mDataBase.isOpen()) {
-                    mDataBase = this.getReadableDatabase();
-                } else dbWasOpen = true;
-                if (checkSuperUser(defs.get_idUser())){
-                    String query = "SELECT max(number) FROM OutDocs where division_code=? and Id_o=?";
-                    cursor = mDataBase.rawQuery(query,
-                            new String [] {String.valueOf(defs.getDivision_code()), String.valueOf(defs.get_Id_o())});
-                }
-                else {
-                    String query = "SELECT max(number) FROM OutDocs where division_code=? and Id_o=? and idUser=?";
-                    cursor = mDataBase.rawQuery(query,
-                            new String [] {String.valueOf(defs.getDivision_code()), String.valueOf(defs.get_Id_o()), String.valueOf(defs.get_idUser())});
-                }
-                if ((cursor != null) & (cursor.getCount() != 0)) {
-                    cursor.moveToFirst(); //есть boxes & prods
-                    docNum = cursor.getInt(0);
-                    ContentValues values = new ContentValues();
-                    values.clear();
-                    String uuid = getUUID();
-                    Long date = new Date().getTime();
-                    values.put(OutDocs.COLUMN_Id, uuid);
-                    values.put(OutDocs.COLUMN_number, docNum+1);
-                    values.put(OutDocs.COLUMN_comment, defs.descDep+", "+defs.descUser);
-                    values.put(OutDocs.COLUMN_DT, date);
-                    values.put(OutDocs.COLUMN_Id_o, defs.get_Id_o());
-                    values.put(OutDocs.COLUMN_Division_code, defs.getDivision_code());
-                    values.put(OutDocs.COLUMN_idUser, defs.get_idUser());
-                    if (mDataBase.insertOrThrow(OutDocs.TABLE, null, values)>0) {
-                        result = docNum+1;
-                        currentOutDoc.set_id(uuid);
-                        currentOutDoc.set_number(docNum+1);
-                        currentOutDoc.set_comment(defs.descDep+", "+defs.descUser);
-                        currentOutDoc.set_DT(getLongDateTimeString(date));
-                        currentOutDoc.set_Id_o(defs.get_Id_o());
-                        currentOutDoc.setDivision_code(defs.getDivision_code());
-                        currentOutDoc.setIdUser(defs.get_idUser());
-                    }
-                }
-            }catch (Exception e) {
-                // TODO: handle exception
-                throw e;
-            }
-        }  finally {
-            tryCloseCursor(cursor);
-            if (!dbWasOpen) mDataBase.close();
-            return result;
-        }
-    }
-
-    public String selectCurrentOutDocDetails (String id){
-        Cursor cursor = null;
-        boolean dbWasOpen = false;
-        String result = "Кор.:0, Подошвы:0";
-        try {
-            if (!mDataBase.isOpen()) {
-                mDataBase = this.getReadableDatabase();
-                //mDataBase.beginTransaction();
-            } else dbWasOpen = true;
-            cursor = mDataBase.rawQuery("select p.idOutDocs, count(p.Id_bm) as boxNumber, sum(p.RQ_box) as RQ_box" +
-                            " FROM Prods p" +
-                            " where p.idOutDocs='"+id+"' "+
-                            " group by p.idOutDocs", null);
-            if ((cursor != null) & (cursor.getCount() != 0)) {
-                cursor.moveToFirst();
-                result = makeOutDocDesc(new String[]{valueOf(AppController.getInstance().getDbHelper()
-                        .currentOutDoc.get_number()), AppController.getInstance().getDbHelper()
-                        .currentOutDoc.get_DT(), cursor.getString(1), cursor.getString(2)});
-                AppController.getInstance().getMainActivityViews().setOutDoc(result);
-            }else {
-                Log.d(TAG, "selectCurrentOutDocDetails rawQuery result is null!" );
-            }
-        } finally {
-            tryCloseCursor(cursor);
-            //if (!dbWasOpen) mDataBase.close();
-            return result;
-        }
-    }
-    public Cursor listOutDocs() {
-        Cursor cursor = null;
-        try {
-                if (checkSuperUser(defs.get_idUser())) {
-                    if (!mDataBase.isOpen())
-                        mDataBase = this.getReadableDatabase();
-                    cursor = mDataBase.rawQuery("SELECT _id, number, comment," +
-                                    " strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as DT, Id_o, division_code, idUser," +
-                                    " 'Нкл. ' || cast(number as text) || ' от ' || strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as numberAndDate" +
-                                    " FROM OutDocs where _id<>0 and division_code=? and Id_o=?" +
-                                    " ORDER BY number desc",
-                            new String[]{String.valueOf(defs.getDivision_code()), String.valueOf(defs.get_Id_o())});
-                }
-                else {
-                    if (!mDataBase.isOpen())
-                        mDataBase = this.getReadableDatabase();
-                    cursor = mDataBase.rawQuery("SELECT _id, number, comment," +
-                                    " strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as DT, Id_o, division_code, idUser ," +
-                                    " 'Нкл. ' || cast(number as text) || ' от ' || strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as numberAndDate" +
-                                    " FROM OutDocs where _id<>0 and division_code=? and Id_o=? and idUser=?" +
-                                    " ORDER BY number desc",
-                            new String[]{String.valueOf(defs.getDivision_code()), String.valueOf(defs.get_Id_o()), String.valueOf(defs.get_idUser())});
-                }
-        } finally {
-            if (cursor != null) {
-                cursor.moveToFirst();
-                Log.d(TAG, "listOutDocs cursor is not null! Record count = " + cursor.getCount() );
-            }else {
-                Log.d(TAG, "listOutDocs cursor is NULL! " );
-                mDataBase = this.getReadableDatabase();
-                cursor = mDataBase.rawQuery("SELECT _id, number, comment," +
-                                " strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as DT, Id_o, division_code, idUser ," +
-                                " 'Нкл. ' || cast(number as text) || ' от ' || strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as numberAndDate" +
-                                " FROM OutDocs where _id=0",
-                        null);
-            }
-            return cursor;
-        }
-    }
 
 /*
 *             return mDataBase.rawQuery("SELECT o.number, o.comment, count(bm.Id_b) as numbox, sum(p.RQ_box) as quantitybox " +

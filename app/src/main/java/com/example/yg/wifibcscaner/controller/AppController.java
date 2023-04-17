@@ -32,7 +32,7 @@ public class AppController extends Application {
         mMainActivityViews = new MainActivityViews("","box","","div", "oper", "dep", "empl", "");
         mResources = getResources();
         mSharedPreferences = getSharedPreferences("SharedPreferences", Context.MODE_PRIVATE);
-        mDBHelper = DataBaseHelper.getInstance(this);
+        mDBHelper = DataBaseHelper.getInstance();
         mAlarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
     }
 

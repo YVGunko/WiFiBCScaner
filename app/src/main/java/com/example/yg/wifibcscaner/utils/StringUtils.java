@@ -6,11 +6,28 @@ import android.support.annotation.NonNull;
 import android.util.Log;
 
 import java.util.List;
+import java.util.UUID;
 
 import static android.content.ContentValues.TAG;
 
 public class StringUtils {
     private static final String TAG = "StringUtils";
+
+    public static String getUUID() {
+        // Creating a random UUID (Universally unique identifier).
+        UUID uuid = UUID.randomUUID();
+        return uuid.toString();
+    }
+    public static String filter(String str){
+        StringBuilder filtered = new StringBuilder(str.length());
+        for (int i = 0; i < str.length(); i++) {
+            char current = str.charAt(i);
+            if (current >= 0x2E && current <= 0x39) {
+                filtered.append(current);
+            }
+        }
+        return filtered.toString();
+    }
 
     public static String retStringFollowingCRIfNotNull (String s){
         String retString = "";
@@ -77,28 +94,7 @@ public class StringUtils {
         return sb.toString();
     }
 
-    public static String makeOutDocDesc(@NonNull String[] strings) {
-        StringBuilder sb = new StringBuilder ();
-        if (strings [0] != null) {
-            sb.append("Нкл. ");
-            sb.append(strings[0]);
-            if (strings [1] != null) {
-                sb.append(" от ");
-                sb.append(strings[1].substring(0, strings[1].indexOf(" ")));
-            }
-            if (strings [2] != null) {
-                sb.append(" Кор: ");
-                sb.append(strings[2]);
-            }
-            if (strings [3] != null) {
-                sb.append(" Под: ");
-                sb.append(strings[3]);
-            }
-        }else{
-            sb.append("Нкл. не выбрана");
-        }
-        return sb.toString ();
-    }
+
     public static String makeSotrDesc(@NonNull String[] strings) {
         StringBuilder sb = new StringBuilder ();
         //sb.append ("Нкл. ");
@@ -111,20 +107,20 @@ public class StringUtils {
     public static String makeOrderDesc(@NonNull String[] strings) {
         StringBuilder sb = new StringBuilder ();
         sb.append ("№");
-        sb.append (strings [0]);
+        sb.append (strings [0]); //number
         sb.append(", ");
-        sb.append(strings [1]);
+        sb.append(strings [1]); //customer
         sb.append("\n");
         sb.append("Подошва: ");
-        sb.append(strings [2]);
+        sb.append(strings [2]);//nomenklature
         if ((strings [3] != null) && (!strings [3].equals(""))) {
             sb.append(", ");
-            sb.append(retStringFollowingCRIfNotNull(strings [3]));
+            sb.append(retStringFollowingCRIfNotNull(strings [3]));//attribut
         } else sb.append("\n");
         sb.append("Всего пар: ");
-        sb.append(strings [4]);
+        sb.append(strings [4]);// total ordered number of nomeklature - Q_ord
         sb.append(", Всего кор: ");
-        sb.append(strings [5]);
+        sb.append(strings [5]);// total number of boxes - Q_box
         sb.append("\n");
         return sb.toString ();
         /*

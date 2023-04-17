@@ -113,7 +113,7 @@ public class OutDocWithBoxWithMovesWithPartsRepo {
     @RequiresApi(api = Build.VERSION_CODES.O)
     private OutDocWithBoxWithMovesWithPartsRequest dataToSend() {
         OutDocWithBoxWithMovesWithPartsRequest responce = new OutDocWithBoxWithMovesWithPartsRequest();
-        SQLiteDatabase db = AppController.getInstance().getDbHelper().getDb();
+        SQLiteDatabase db = AppController.getInstance().getDbHelper().openDataBase(true);
         boolean dbWasOpen = false;
         Cursor cursor = null;
         try {
@@ -301,7 +301,7 @@ public class OutDocWithBoxWithMovesWithPartsRepo {
 
 
     private void applyResponce(OutDocWithBoxWithMovesWithPartsIdOnlyRequest body, Long dateToSet) {
-        SQLiteDatabase db = AppController.getInstance().getDbHelper().getDb();
+        SQLiteDatabase db = AppController.getInstance().getDbHelper().openDataBase(true);
         boolean dbWasOpen = false;
         Cursor cursor = null;
         try {
