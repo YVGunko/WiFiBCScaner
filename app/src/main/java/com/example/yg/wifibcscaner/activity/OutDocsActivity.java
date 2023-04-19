@@ -27,9 +27,12 @@ import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.Defs;
 import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.data.repository.CurrentDocDetailsRepository;
+import com.example.yg.wifibcscaner.data.repository.OutDocRepo;
+import com.example.yg.wifibcscaner.data.service.OutDocService;
 import com.example.yg.wifibcscaner.service.DataExchangeService;
 import com.example.yg.wifibcscaner.utils.ApiUtils;
 import com.example.yg.wifibcscaner.utils.MessageUtils;
+import com.example.yg.wifibcscaner.utils.StringUtils;
 
 import java.util.List;
 
@@ -41,7 +44,11 @@ import static com.example.yg.wifibcscaner.data.service.OutDocService.makeOutDocD
 import static com.example.yg.wifibcscaner.data.repository.OutDocRepo.*;
 
 public class OutDocsActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
-    //Переменная для работы с БД
+
+    OutDocService outDocService ;
+    StringUtils stringUtils ;
+    OutDocRepo outDocRepo = new OutDocRepo();
+
     private DataBaseHelper mDBHelper = AppController.getInstance().getDbHelper();
     ListView lvData;
     SimpleCursorAdapter scAdapter;
@@ -88,8 +95,8 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
                                            int pos, long id) {
                 try {
                     if (scAdapter.getCount() > 0) {
-                        strTitle = makeOutDocDesc(scAdapter.getCursor().getString(1),scAdapter.getCursor().getString(3),
-                                selectOutDocById(scAdapter.getCursor().getString(0)));
+                        strTitle = outDocService.makeOutDocDesc(scAdapter.getCursor().getString(1),scAdapter.getCursor().getString(3),
+                                outDocRepo.selectOutDocById(scAdapter.getCursor().getString(0)));
                         OutDocsActivity.this.setTitle(strTitle);
                     }
                 }catch (Exception e){
@@ -106,13 +113,14 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
         scAdapter.getCursor().getString(0);
 
         AlertDialog.Builder adb = new AlertDialog.Builder(OutDocsActivity.this);
+
+            final String[] outDocDesc = {outDocService.makeOutDocNumAndDateDesc(scAdapter.getCursor().getString(1), scAdapter.getCursor().getString(3))};
+
         adb.setTitle("Выбор накладной...");
-        adb.setMessage("Выбираем накладную №" + scAdapter.getCursor().getString(1) + " от " + scAdapter.getCursor().getString(3));
+        adb.setMessage("Выбираем накладную: " + outDocDesc[0]);
         adb.setNegativeButton("Нет", null);
         adb.setPositiveButton("Да", new AlertDialog.OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
-
-                String result = "";
 
                 if (mDBHelper.currentOutDoc == null) {
                     mDBHelper.currentOutDoc = new OutDocs(scAdapter.getCursor().getString(0), scAdapter.getCursor().getInt(4),
@@ -130,7 +138,6 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
                     mDBHelper.currentOutDoc.setIdUser(scAdapter.getCursor().getInt(6));
                 }
 
-                result = makeOutDocDesc(new String[]{scAdapter.getCursor().getString(1)});
 
                 if ((mDBHelper.defs.get_Id_o()==mDBHelper.defs.get_idOperFirst())&&(mDBHelper.defs.getDivision_code().equals(mDBHelper.puDivision))){
                     //Если прием производства и ПУ - установить бригаду из строки таблицы Prods c выбранной накладной
@@ -148,10 +155,36 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
                             MessageUtils.showToast(getApplicationContext(),"Ошибка при сохранении.",false);
                         }
                     }
-                    result = makeOutDocDesc(new String[]{scAdapter.getCursor().getString(1)+" "+mDBHelper.defs.descDep});
+                    //outDocDesc[0] = outDocDesc[0] +" "+mDBHelper.defs.descDep+" "+mDBHelper.defs.descSotr;
                 }
-                OutDocsActivity.this.setTitle(result);
-                AppController.getInstance().getMainActivityViews().setOutDoc(result);
+
+                if (!(mDBHelper.defs.get_Id_o()==mDBHelper.defs.get_idOperFirst() || mDBHelper.defs.get_Id_o()==mDBHelper.defs.get_idOperLast())
+                        && mDBHelper.defs.getDivision_code().equals(mDBHelper.tepDivision)) {
+                    //Если не производство и ТЭП - установить бригаду из строки таблицы Prods c выбранной накладной
+                    final int iDep = mDBHelper.getId_dByOutdoc(mDBHelper.currentOutDoc.get_id());
+                    if ((iDep != 0)&&(iDep!=mDBHelper.defs.get_Id_d())){
+                        mDBHelper.defs.set_Id_d(iDep);
+
+                        final int iSotr = mDBHelper.getId_sByOutdoc(mDBHelper.currentOutDoc.get_id());
+                        if ((iSotr != 0)&&(iSotr!=mDBHelper.defs.get_Id_d())) {
+                            mDBHelper.defs.set_Id_s(iSotr);
+                            Defs defs = new Defs(iDep, mDBHelper.defs.get_Id_o(), mDBHelper.defs.get_Id_s(),
+                                    mDBHelper.defs.get_Host_IP(), mDBHelper.defs.get_Port(),
+                                    mDBHelper.defs.getDivision_code(), mDBHelper.defs.get_idUser(), mDBHelper.defs.getDeviceId());
+                            if (mDBHelper.updateDefsTable(defs) != 0) {
+                                mDBHelper.selectDefsTable();
+                                MessageUtils.showToast(getApplicationContext(), "Сохранено." + mDBHelper.defs.descDep, false);
+                            } else {
+                                MessageUtils.showToast(getApplicationContext(), "Ошибка при сохранении.", false);
+                            }
+                        }
+                    }
+                    //outDocDesc[0] = makeOutDocDesc(new String[]{scAdapter.getCursor().getString(1)+" "+mDBHelper.defs.descDep});
+                }
+                OutDocsActivity.this.setTitle(outDocDesc[0]);
+                AppController.getInstance().getMainActivityViews().setDepartment(mDBHelper.getDeps_Name_by_id(mDBHelper.defs.get_Id_d()));
+                AppController.getInstance().getMainActivityViews().setEmployee(mDBHelper.getSotr_Name_by_id(mDBHelper.defs.get_Id_s()));
+                AppController.getInstance().getMainActivityViews().setOutDoc(outDocDesc[0]);
             }
         });
         adb.show();
@@ -166,7 +199,7 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
     }
     // обработка нажатия кнопки
     public void onButtonClick(View view) {
-        int docNum = outDocsAddRec();
+        int docNum = outDocRepo.outDocsAddRec();
         // добавляем запись
         if (docNum!=0) {
             // получаем новый курсор с данными
@@ -180,7 +213,7 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
     }
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle bndl) {
-        return new OutDocsActivity.MyCursorLoader(this, mDBHelper);
+        return new OutDocsActivity.MyCursorLoader(this, outDocRepo);
     }
 
     @Override
@@ -198,16 +231,16 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
     }
     static class MyCursorLoader extends CursorLoader {
 
-        private DataBaseHelper db;
+        private OutDocRepo outDocRepo;
 
-        public MyCursorLoader(Context context, DataBaseHelper db) {
+        public MyCursorLoader(Context context, OutDocRepo outDocRepo) {
             super(context);
-            this.db = db;
+            this.outDocRepo = outDocRepo;
         }
 
         @Override
         public Cursor loadInBackground() {
-            Cursor cursor = db.listOutDocs();
+            Cursor cursor = outDocRepo.listOutDocs();
             return cursor;
         }
 

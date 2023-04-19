@@ -34,6 +34,7 @@ import com.example.yg.wifibcscaner.data.model.Prods;
 import com.example.yg.wifibcscaner.data.model.Sotr;
 import com.example.yg.wifibcscaner.data.model.lastUpdate;
 import com.example.yg.wifibcscaner.data.model.user;
+import com.example.yg.wifibcscaner.data.repository.BoxRepository;
 import com.example.yg.wifibcscaner.utils.MessageUtils;
 import com.example.yg.wifibcscaner.utils.SharedPreferenceManager;
 import com.example.yg.wifibcscaner.utils.executors.DefaultExecutorSupplier;
@@ -64,7 +65,6 @@ import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getStartOfDayStrin
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.numberOfDaysInMonth;
 import static com.example.yg.wifibcscaner.utils.DbUtils.tryCloseCursor;
 import static com.example.yg.wifibcscaner.utils.StringUtils.getUUID;
-import static com.example.yg.wifibcscaner.utils.StringUtils.makeBoxNumber;
 import static com.example.yg.wifibcscaner.utils.StringUtils.makeLastBoxDef;
 import static com.example.yg.wifibcscaner.utils.StringUtils.makeSotrDesc;
 import static com.example.yg.wifibcscaner.utils.StringUtils.retStringFollowingCRIfNotNull;
@@ -82,9 +82,10 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     public static final String COLUMN_sentToMasterDate = "sentToMasterDate";
     public String globalUpdateDate = "";
     public static final String puDivision = "00-000002";
+    public static final String tepDivision = "00-000025";
 
     private SQLiteDatabase mDataBase;
-    private AtomicInteger mOpenCounter;
+    private AtomicInteger mOpenCounter = new AtomicInteger();
 
     private static DataBaseHelper instance = null;
     /*private constructor to avoid direct instantiation by other classes*/
@@ -107,7 +108,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
     private DataBaseHelper(final int DB_VERSION, boolean mNeedUpdate) {
         super(AppController.getInstance().getApplicationContext(), DB_NAME, null, DB_VERSION);
-        DB_PATH = AppController.getInstance().getApplicationContext().getFilesDir().getPath() +
+        DB_PATH = "/data/data/" +
                 AppController.getInstance().getApplicationContext().getPackageName() +
                 "/databases/";
 
@@ -119,6 +120,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         } catch (IOException mIOException) {
             throw new Error("UnableToUpdateDatabase");
         }
+        /*
         try {
             AppController.getInstance().getDbHelper().openDataBase();
             Log.d(TAG, "checkFirstRun -> savedDbNeedReplace -> "+mNeedUpdate);
@@ -128,7 +130,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         selectDefsTable();
         //division = new Division(defs.getDivision_code(),getDivisionsName(defs.getDivision_code()));
         currentOutDoc = new OutDocs(null, 0, 0,null,null,
-                null, defs.getDivision_code(), defs.get_idUser());
+                null, defs.getDivision_code(), defs.get_idUser());*/
 
     }
     public synchronized SQLiteDatabase openDataBase() {
@@ -136,7 +138,14 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         if(mOpenCounter.incrementAndGet() == 1) {
             Log.d(TAG, "DataBaseHelper openDataBase -> incrementAndGet == 1");
             // Opening new database
-            return DataBaseHelper.getInstance().getWritableDatabase();
+            mDataBase = DataBaseHelper.getInstance().getWritableDatabase();
+
+            selectDefsTable();
+            //division = new Division(defs.getDivision_code(),getDivisionsName(defs.getDivision_code()));
+            currentOutDoc = new OutDocs(null, 0, 0,null,null,
+                    null, defs.getDivision_code(), defs.get_idUser());
+
+            return mDataBase;
         }
         return mDataBase;
     }
@@ -230,8 +239,8 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
     private void copyDataBase() {
         if (!checkDataBase()) {
-            this.getReadableDatabase();
-            this.close();
+            this.openDataBase();
+            this.closeDataBase();
             try {
                 copyDBFile();
             } catch (IOException mIOException) {
@@ -630,7 +639,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     //list all boxes
     public ArrayList<HashMap<String, String>> listprods() {
         ArrayList<HashMap<String, String>> readBoxes = new ArrayList<HashMap<String, String>>();
-        mDataBase = this.getReadableDatabase();
+        mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         Cursor cursor = mDataBase.rawQuery("select d.Name_Deps, count(bm.Id_b), sum(RQ_box)" +
                 " from Prods p , BoxMoves bm, Deps d where bm.Id_o="+String.valueOf(defs.get_Id_o())+" and bm._id=p.Id_bm and p.Id_d=d._id"+
                 " and (p.sentToMasterDate is null)"+
@@ -654,7 +663,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             cursor.moveToNext();
         }
         cursor.close();
-        mDataBase.close();
+        ////mDataBase.close();
 
         return readBoxes;
     }
@@ -669,7 +678,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     //list all boxes
     public ArrayList<HashMap<String, Integer>> listboxes() {
         ArrayList<HashMap<String, Integer>> readBoxes = new ArrayList<HashMap<String, Integer>>();
-        mDataBase = this.getReadableDatabase();
+        mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         Cursor cursor = null;
         if (defs.get_Id_o()== defs.get_idOperLast())
             cursor = mDataBase.rawQuery("SELECT MasterData.Ord, MasterData.Cust, MasterData.Nomen, MasterData.Attrib, MasterData.Q_ord, " +
@@ -709,13 +718,13 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             cursor.moveToNext();
         }
         cursor.close();
-        mDataBase.close();
+        //mDataBase.close();
 
         return readBoxes;
     }
     //cursor all boxes
     public Cursor getBoxAsCursor() {
-        mDataBase = this.getReadableDatabase();
+        mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         Cursor cursor = null;
         try {
             if (defs.get_Id_o() == defs.get_idOperLast())
@@ -741,7 +750,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                     Log.d(TAG, "getBoxAsCursor cursor is not null! Record count = " + cursor.getCount());
                 } else {
                     Log.d(TAG, "getBoxAsCursor cursor is NULL! ");
-                    mDataBase = this.getReadableDatabase();
+                    mDataBase = AppController.getInstance().getDbHelper().openDataBase();
                     cursor = mDataBase.rawQuery("SELECT _id, number, comment, strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as DT, Id_o, division_code, idUser " +
                                     " FROM OutDocs where _id=0",
                             null);
@@ -810,7 +819,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     public void saveOrderNotFound(String storedbarcode) {
         try {
             try {
-                mDataBase = this.getWritableDatabase();
+                mDataBase = AppController.getInstance().getDbHelper().openDataBase();
                 ContentValues values = new ContentValues();
                 values.clear();
                 values.put("orderId", storedbarcode);
@@ -822,7 +831,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 Log.e(TAG, "saveOrderNotFound. save record error: ", e);
             }
         }finally {
-            mDataBase.close();
+            //mDataBase.close();
         }
     }
 
@@ -831,33 +840,37 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         fo._id = 0;
         String Order_Id = getOrder_id(storedbarcode);  // по dot
         if (!Order_Id.equals("")) {
-            SQLiteDatabase db = getReadableDatabase();
-            String query = "SELECT _id,Ord_id,Ord,Cust,Nomen,Attrib,Q_ord,Q_box,N_box,DT,archive FROM " + TABLE_MD + " WHERE Ord_id = '" + Order_Id + "'";
+            SQLiteDatabase db = AppController.getInstance().getDbHelper().openDataBase();
+            String query = "SELECT _id,Ord_id,Ord,Cust,Nomen,Attrib,Q_ord,Q_box,N_box,DT,archive,division_code FROM " + TABLE_MD + " WHERE Ord_id = '" + Order_Id + "'";
             Cursor c = db.rawQuery(query, null);
-            try {
-                c.moveToFirst();
-                fo._id = c.getInt(0);
-                fo.QO = c.getInt(6);
-                fo.QB = c.getInt(7);
-                fo.NB = c.getInt(8);
-                fo.DT = getLongDateTimeString(c.getLong(9));
-                //Ord, Cust,Nomen,Attrib,N_box,Q_box,
-                fo.orderdef = makeOrderDesc(new String[]{c.getString(2),
-                        c.getString(3),
-                        c.getString(4),
-                        c.getString(5),
-                        valueOf(c.getInt(6)),
-                        valueOf(c.getInt(8))});
-                fo.barcode = storedbarcode;
-                fo.archive = (c.getInt(c.getColumnIndex("archive")) != 0);
-                AppController.getInstance().getMainActivityViews().setOrder(fo.orderdef);
-            } catch (Exception e) {
-                e.printStackTrace();
+            if ((c != null) & (c.getCount() != 0)) {
+                try {
+                    c.moveToFirst();
+                    fo._id = c.getInt(0);
+                    fo.QO = c.getInt(6);
+                    fo.QB = c.getInt(7);
+                    fo.NB = c.getInt(8);
+                    fo.DT = getLongDateTimeString(c.getLong(9));
+                    //Ord, Cust,Nomen,Attrib,N_box,Q_box,
+                    fo.orderdef = makeOrderDesc(new String[]{c.getString(2),
+                            c.getString(3),
+                            c.getString(4),
+                            c.getString(5),
+                            valueOf(c.getInt(6)),
+                            valueOf(c.getInt(8))});
+                    fo.barcode = storedbarcode;
+                    fo.archive = (c.getInt(c.getColumnIndex("archive")) != 0);
+                    fo.division_code = c.getString(c.getColumnIndex("division_code"));
+
+                    AppController.getInstance().getMainActivityViews().setOrder(fo.orderdef);
+                    SharedPreferenceManager.getInstance().setLastScannedOrderDescription(fo.orderdef);
+
+                } catch (Exception e) {
+                    Log.e(TAG,"searchOrder exception processing barcode -> "+storedbarcode,e);
+                }finally {
+                    tryCloseCursor(c);
+                }
             }
-            if (!c.isClosed()) {
-                c.close();
-            }
-            db.close();
         }
         return fo;
     }
@@ -878,30 +891,37 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         spBarcode spb = new spBarcode(storedbarcode);
         fb.QB = Integer.valueOf(spb.getQ_box());
         fb.NB = Integer.valueOf(spb.getN_box());
-        fb.boxdef = makeBoxNumber (spb.getN_box());
+        fb.boxdef = BoxRepository.makeBoxNumber (spb.getN_box());
         try {
-            mDataBase = this.getReadableDatabase();
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             String query = "SELECT Boxes._id, archive FROM Boxes Where Boxes.Id_m=" + String.valueOf(Order_id) + " and Boxes.N_box=" + spb.getN_box();
             c = mDataBase.rawQuery(query, null);
+
             if ((c != null) & (c.getCount() != 0)) {
                 c.moveToFirst(); //есть boxes & prods
                 fb._id = c.getString(0);
-                Log.d(TAG, "searchBox Record count = " + c.getCount() + ", _id =" + c.getString((int) 0));
+                fb._archive = (c.getInt(c.getColumnIndex("archive")) != 0);
+
+                if (c.getCount() > 1) {
+                    Log.e(TAG, "searchBox Record count = " + c.getCount() + ", processing barcode = " + storedbarcode);
+                }
 
                 if (!fb._archive) {
-                    if ((!fb._id.equals("") && (fb._id != null))) {
+                    if (fb._id != null  && !fb._id.equals("")) {
                         if (defs.get_Id_o() != defs.get_idOperFirst()) {//нет записи в BoxMoves и Prods. Другая операция. Определить принятое колво
                             tryCloseCursor(c);
                             query = "SELECT sum(Prods.RQ_box) as RQ_box FROM BoxMoves bm, Prods " + "" +
                                     "Where bm.Id_b='" + fb._id + "' and bm.Id_o=" + valueOf(defs.get_idOperFirst()) +
                                     " and bm._id=Prods.Id_bm Group by Prods.Id_bm";
                             c = mDataBase.rawQuery(query, null);
+
                             if ((c != null) & (c.getCount() != 0)) { //есть записи в BoxMoves и Prods для базовой операции
                                 c.moveToFirst(); //есть boxes & prods
-                                Log.d(TAG, "searchBox's baseOper RQ select record count = " + c.getCount() + ", _id =" + c.getString((int) 0));
                                 fb.QB = c.getInt(0);
+                                Log.d(TAG, "searchBox's baseOper RQ select record count = " + c.getCount() + ", _id =" + c.getString((int) 0));
                             } else {
                                 fb.QB = 0;
+                                Log.e(TAG, "searchBox exception situation. Box found but baseOper quantity is null, processing barcode = " + storedbarcode);
                             }                          //коробка есть, по базовой операции принято 0. Ошибочная ситуация.
                             fb.boxdef += defs.descOper + ": " + fb.QB + ". ";
                         }
@@ -933,8 +953,9 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         }finally {
             fb.boxdef += "Принято: " + String.valueOf(fb.RQ);
             AppController.getInstance().getMainActivityViews().setBox(fb.boxdef);
+            SharedPreferenceManager.getInstance().setLastScannedBoxDescription(fb.boxdef);
             tryCloseCursor(c);
-            mDataBase.close();
+            //mDataBase.close();
             return fb;
         }
     }
@@ -943,7 +964,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             Cursor c = null;
             try {
                 Log.d(TAG, "lastBoxCheck in background entered");
-                mDataBase = this.getWritableDatabase();
+                mDataBase = AppController.getInstance().getDbHelper().openDataBase();
                 String query;
                 query = "SELECT count(b._id) as N_box FROM Boxes b, BoxMoves bm Where Id_m=" + fo._id+" and b._id=bm.Id_b and bm.Id_o="+defs.get_Id_o();
                 c = mDataBase.rawQuery(query, null);
@@ -959,7 +980,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 Log.e(TAG, "lastBoxCheck -> " + AppController.getInstance().getResourses().getString(R.string.error_something_went_wrong));
                 e.printStackTrace();
             }finally {
-                //mDataBase.close();
+                ////mDataBase.close();
                 tryCloseCursor(c);
             }
         });
@@ -970,7 +991,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         long l = 0;
         try {
             try {
-                mDataBase = this.getWritableDatabase();
+                mDataBase = AppController.getInstance().getDbHelper().openDataBase();
                 ContentValues values = new ContentValues();
                 values.clear();
                 values.put(user.COLUMN_id, user.get_id());
@@ -987,14 +1008,14 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 return 0;
             }
         }finally {
-            mDataBase.close();
+            //mDataBase.close();
         }
     }
     public long insertSotr(Sotr sotr) {
         long l = 0;
         try {
             try {
-                mDataBase = this.getWritableDatabase();
+                mDataBase = AppController.getInstance().getDbHelper().openDataBase();
                 ContentValues values = new ContentValues();
                 values.clear();
                 values.put(Sotr.COLUMN_id, sotr.get_id());
@@ -1012,14 +1033,14 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 return 0;
             }
         }finally {
-            mDataBase.close();
+            //mDataBase.close();
         }
     }
     public long insertDeps(Deps deps) {
         long l = 0;
         try {
             try {
-                mDataBase = this.getWritableDatabase();
+                mDataBase = AppController.getInstance().getDbHelper().openDataBase();
                 ContentValues values = new ContentValues();
                 values.clear();
                 values.put(Deps.COLUMN_id, deps.get_id());
@@ -1036,14 +1057,14 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 return 0;
             }
         }finally {
-            mDataBase.close();
+            //mDataBase.close();
         }
     }
     public long insertOpers(Operation opers) {
         long l = 0;
         try {
             try {
-                mDataBase = this.getWritableDatabase();
+                mDataBase = AppController.getInstance().getDbHelper().openDataBase();
                 ContentValues values = new ContentValues();
                 values.clear();
                 values.put(Operation.COLUMN_id, opers.get_id());
@@ -1058,14 +1079,14 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 return 0;
             }
         }finally {
-            mDataBase.close();
+            //mDataBase.close();
         }
     }
     public long insertOrder(Orders order) {
         long l = 0;
         try {
             try {
-                mDataBase = this.getWritableDatabase();
+                mDataBase = AppController.getInstance().getDbHelper().openDataBase();
                 ContentValues values = new ContentValues();
                 values.clear();
                 values.put(Orders.COLUMN_ID, order.get_id());
@@ -1086,7 +1107,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 throw e;
             }
         }finally {
-            mDataBase.close();
+            //mDataBase.close();
             return l;
         }
     }
@@ -1095,7 +1116,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         if (lU.getUpdateStart()==0) return l;
         try {
             try {
-                mDataBase = this.getWritableDatabase();
+                mDataBase = AppController.getInstance().getDbHelper().openDataBase();
                 ContentValues values = new ContentValues();
                 values.clear();
                 values.put(lastUpdate.COLUMN_tableName, lU.getTableName());
@@ -1108,7 +1129,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 throw e;
             }
         }finally {
-            mDataBase.close();
+            //mDataBase.close();
             return l;
         }
     }
@@ -1123,11 +1144,11 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         }
     }
 
-    public boolean insertProds(Prods prods) {
+    boolean insertProds(Prods prods) {
         boolean b = false;
         try {
             try {
-                mDataBase = this.getWritableDatabase();
+                mDataBase = AppController.getInstance().getDbHelper().openDataBase();
                 ContentValues values = new ContentValues();
                 values.clear();
                 values.put(Prods.COLUMN_ID, prods.get_id());
@@ -1145,7 +1166,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 throw e;
             }
         }finally {
-            mDataBase.close();
+            //mDataBase.close();
             return b;
         }
     }
@@ -1163,10 +1184,24 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                     else {
                         prods = new Prods(getUUID(), bm.get_id(), defs.get_Id_d(), defs.get_Id_s(), fb.RQ, getStartOfDayString(new Date()), null,currentOutDoc.get_id());
                     }
-                    b = insertProds(prods);
+                    if (insertProds(prods)) {
+                        b = true; //only succesful
+                        if (fb.RQ != 0) {
+                            MessageUtils.showToast(AppController.getInstance().getApplicationContext(),
+                                    defs.descOper + ". В коробку добавлено " + fb.RQ, false);                                           //новая операция по существующей коробке
+                        }
+                    }else{
+                        MessageUtils.showToast(AppController.getInstance().getApplicationContext(),
+                                defs.descOper+". Повторный прием коробки в смену! Повторный прием возможен в другую смену.",true);
+                    }
+                }else {
+                    MessageUtils.showToast(AppController.getInstance().getApplicationContext(),
+                            defs.descOper+R.string.error_something_went_wrong,true);
                 }
             } catch (Exception ex) {
                 ex.printStackTrace();
+                MessageUtils.showToast(AppController.getInstance().getApplicationContext(),
+                        defs.descOper+R.string.error_something_went_wrong,true);
             }
         }finally {
             return  b;
@@ -1176,7 +1211,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         boolean b = false;
         try {
             try {
-                mDataBase = this.getWritableDatabase();
+                mDataBase = AppController.getInstance().getDbHelper().openDataBase();
                 ContentValues values = new ContentValues();
                 values.clear();
                 values.put(Prods.COLUMN_sentToMasterDate, getDateTimeLong(prods.get_sentToMasterDate()));
@@ -1186,7 +1221,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 return false;
             }
         }finally {
-            mDataBase.close();
+            //mDataBase.close();
             return b;
         }
     }
@@ -1194,7 +1229,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         boolean b = false;
         try {
             try {
-                mDataBase = this.getWritableDatabase();
+                mDataBase = AppController.getInstance().getDbHelper().openDataBase();
                 ContentValues values = new ContentValues();
                 values.clear();
 
@@ -1205,7 +1240,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 return false;
             }
         }finally {
-            mDataBase.close();
+            //mDataBase.close();
             return b;
         }
     }
@@ -1213,14 +1248,14 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         boolean b = false;
         try {
             try {
-                mDataBase = this.getWritableDatabase();
+                mDataBase = AppController.getInstance().getDbHelper().openDataBase();
                 b = (mDataBase.delete(TABLE, COLUMN+"='"+Value+"' and sentToMasterDate is null",null) > 0) ;
             } catch (SQLiteException e) {
                 // TODO: handle exception
                 return false;
             }
         }finally {
-            mDataBase.close();
+            //mDataBase.close();
             return b;
         }
     }
@@ -1228,14 +1263,14 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         boolean b = false;
         try {
             try {
-                mDataBase = this.getWritableDatabase();
+                mDataBase = AppController.getInstance().getDbHelper().openDataBase();
                 b = (mDataBase.delete(TABLE, COLUMN, Value) > 0) ;
             } catch (SQLiteException e) {
                 // TODO: handle exception
                 return false;
             }
         }finally {
-            mDataBase.close();
+            //mDataBase.close();
             return b;
         }
     }
@@ -1243,14 +1278,14 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         boolean b = false;
         try {
             try {
-                mDataBase = this.getWritableDatabase();
+                mDataBase = AppController.getInstance().getDbHelper().openDataBase();
                 b = (mDataBase.delete(TABLE_MD, "Ord_id='"+orderId+"'",null) > 0) ;
             } catch (SQLiteException e) {
                 // TODO: handle exception
                 return false;
             }
         }finally {
-            mDataBase.close();
+            //mDataBase.close();
             return b;
         }
     }
@@ -1258,14 +1293,14 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         boolean b = false;
         try {
             try {
-                mDataBase = this.getWritableDatabase();
+                mDataBase = AppController.getInstance().getDbHelper().openDataBase();
                 b = (mDataBase.delete(OrderNotFound.TABLE, "orderId='"+orderId+"'",null) > 0) ;
             } catch (SQLiteException e) {
                 // TODO: handle exception
                 return false;
             }
         }finally {
-            mDataBase.close();
+            //mDataBase.close();
             return b;
         }
     }
@@ -1273,7 +1308,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         boolean b = false;
         try {
             try {
-                mDataBase = this.getWritableDatabase();
+                mDataBase = AppController.getInstance().getDbHelper().openDataBase();
                 ContentValues values = new ContentValues();
                 values.clear();
 
@@ -1284,7 +1319,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 return false;
             }
         }finally {
-            mDataBase.close();
+            //mDataBase.close();
             return b;
         }
     }
@@ -1292,7 +1327,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         boolean b = false;
         try {
             try {
-                mDataBase = this.getWritableDatabase();
+                mDataBase = AppController.getInstance().getDbHelper().openDataBase();
                 ContentValues values = new ContentValues();
                 values.clear();
 
@@ -1304,18 +1339,18 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 return false;
             }
         }finally {
-            mDataBase.close();
+            //mDataBase.close();
             return b;
         }
     }
 
-    public boolean insertBoxes(Boxes boxes) {
+    boolean insertBoxes(Boxes boxes) {
         Cursor cursor = null;
         boolean b = false;
         long l;
         try {
             try {
-                mDataBase = this.getWritableDatabase();
+                mDataBase = AppController.getInstance().getDbHelper().openDataBase();
                 ContentValues values = new ContentValues();
                 values.clear();
                 values.put(Boxes.COLUMN_ID, boxes.get_id());
@@ -1338,7 +1373,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             }
         }finally {
             tryCloseCursor(cursor);
-            mDataBase.close();
+            //mDataBase.close();
             return b;
         }
     }
@@ -1351,7 +1386,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             cursor = mDataBase.rawQuery("SELECT ROWID FROM Boxes b Where b._id='" + boxes.get_id() +"'", null);
             if ((cursor == null) || (cursor.getCount() <= 0)) {
                 try {
-                    mDataBase = this.getWritableDatabase();
+                    mDataBase = AppController.getInstance().getDbHelper().openDataBase();
                     ContentValues values = new ContentValues();
                     values.clear();
                     values.put(Boxes.COLUMN_ID, boxes.get_id());
@@ -1367,7 +1402,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             }else b = true;
         }finally {
             tryCloseCursor(cursor);
-            mDataBase.close();
+            //mDataBase.close();
             return b;
         }
     }
@@ -1377,7 +1412,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         boolean b = false;
         try {
             try {
-                mDataBase = this.getWritableDatabase();
+                mDataBase = AppController.getInstance().getDbHelper().openDataBase();
                     ContentValues values = new ContentValues();
                     values.clear();
                     values.put(BoxMoves.COLUMN_ID, bm.get_id());
@@ -1391,7 +1426,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             }
         } finally {
             tryCloseCursor(cursor);
-            mDataBase.close();
+            //mDataBase.close();
             return b;
         }
     }
@@ -1400,7 +1435,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         boolean b = false;
         try {
             try {
-                mDataBase = this.getWritableDatabase();
+                mDataBase = AppController.getInstance().getDbHelper().openDataBase();
                 cursor = mDataBase.rawQuery("SELECT bm._id as _id FROM BoxMoves bm Where bm.Id_o=" + valueOf(bm.get_Id_o()) + " and bm.Id_b='" + bm.get_Id_b()+"'", null);
                 if ((cursor != null) & (cursor.getCount() > 0)) {
                     //Log.d(LOG_TAG, "insertBoxMoves Records count = " + cursor.getCount());
@@ -1428,46 +1463,49 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             }
         } finally {
             tryCloseCursor(cursor);
-            mDataBase.close();
+            //mDataBase.close();
             return b;
         }
     }
-    public boolean addBoxes(foundorder fo, int iRQ) {
+    void addBoxes(foundorder fo, int iRQ, foundbox fb) {
         boolean b = false;
-        long l = 0;
         try {
-            try {
-                foundbox fb = new foundbox();
-                fb._id = "";
+            if (fb._id == null || fb._id.equals("")) {
                 String sDate = getDayTimeString(new Date());
                 Boxes boxes = new Boxes(getUUID(), fo._id, getBarcodeQ_box(fo.barcode), getBarcodeN_box(fo.barcode), sDate, null, false);
-                 //Дату DT пишем прямо в insertBoxes
+             //Дату DT пишем прямо в insertBoxes
                 if (insertBoxes(boxes)) {
                     fb._id = boxes.get_id();
-                    fb.RQ = iRQ;
-                    b = addProds(fb);
                 }
-            } catch (Exception ex) {
-                ex.printStackTrace();
             }
-        }finally {
-            return b;
+            if (!(fb._id == null || fb._id.equals(""))){
+                fb.RQ = iRQ;
+                if (addProds(fb)) {
+                    AppController.getInstance().getMainActivityViews().setBox(BoxRepository.makeBoxDesc(valueOf(fb.NB), valueOf(fb.RQ)));
+                    SharedPreferenceManager.getInstance().setLastScannedBoxDescription(BoxRepository.makeBoxDesc(valueOf(fb.NB), valueOf(fb.RQ)));
+                    lastBoxCheck(fo, AppController.getInstance().getApplicationContext());
+                }
+            }else {
+                MessageUtils.showToast(AppController.getInstance().getApplicationContext(),
+                        defs.descOper+". Ошибка! Коробка не добавлена в БД!",true);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.e(TAG, "addBoxes exception -> ", e);
         }
     }
 
-    public String lastBox() {
-        boolean dbWasOpen = false;
+    void lastBox() {
         long rowId = 0;
         String product = AppController.getInstance().getResourses().getString(R.string.no_data_to_view);
         Cursor cursor = null;
         try {
             if (!mDataBase.isOpen()) {
-                mDataBase = this.getReadableDatabase();
-            } else dbWasOpen = true;
+                mDataBase = AppController.getInstance().getDbHelper().openDataBase();
+            }
 
             cursor = mDataBase.rawQuery("SELECT max(p.ROWID) as _id FROM BoxMoves bm, Prods p, OutDocs o " +
-                    "Where bm.Id_o=? " +
-                        " and bm._id=p.Id_bm and p.idOutDocs=o._id and o.division_code=?",
+                    "Where bm.Id_o=? and bm._id=p.Id_bm and p.idOutDocs=o._id and o.division_code=?",
                     new String [] {valueOf(defs.get_Id_o()), defs.getDivision_code()});
             if ((cursor != null) & (cursor.getCount() > 0)) {
                 Log.d(TAG, "lastbox Records count = " + cursor.getCount());
@@ -1487,22 +1525,22 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                         " Order by Prods._id desc",
                             new String[]{defs.getDivision_code(), valueOf(defs.get_Id_o()), valueOf(rowId)});
                 try {
-                    cursor.moveToFirst();
-                    Log.d(TAG, "lastBox -> Order description select return rows number -> " + cursor.getCount());
-                    product = makeLastBoxDef(cursor);
-                    AppController.getInstance().getMainActivityViews().setBox(product);
+                    if ((cursor != null) & (cursor.getCount() > 0)) {
+                        cursor.moveToFirst();
+                        Log.d(TAG, "lastBox -> Order description select return rows number -> " + cursor.getCount());
+                        product = makeLastBoxDef(cursor);
+                    }else{
+                        Log.d(TAG, "lastBox -> select from masterdata return empty cursor");
+                    }
                 } catch (CursorIndexOutOfBoundsException e) {
                     Log.e(TAG, "lastBox CursorIndexOutOfBoundsException", e);
-                    return product;
                 }
             }
         } catch (SQLException e) {
             Log.e(TAG, "lastBox SQLException rawQuery -> ", e);
-            return product;
         } finally {
+            AppController.getInstance().getMainActivityViews().setOrder(product);
             tryCloseCursor(cursor);
-            //if (!dbWasOpen) mDataBase.close();
-            return product;
         }
     }
     public foundbox getnewbox(String storedbarcode) {
@@ -1518,7 +1556,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     }
     public List<String> getAllDivisionsName() {
         ArrayList<String> alDivisionsName = new ArrayList<String>();
-        mDataBase = this.getReadableDatabase();
+        mDataBase = AppController.getInstance().getDbHelper().openDataBase();
 
         Cursor cursor = mDataBase.rawQuery("SELECT name FROM Division", null);
         if ((cursor != null) & (cursor.getCount() != 0)) {
@@ -1535,7 +1573,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             }
         }
         cursor.close();
-        mDataBase.close();
+        //mDataBase.close();
         return alDivisionsName;
     }
     public List<String> findAllIdNotZero(@NonNull String table) {
@@ -1544,7 +1582,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         boolean dbWasOpen = false;
         try {
             if (!mDataBase.isOpen()) {
-                mDataBase = this.getReadableDatabase();
+                mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             } else dbWasOpen = true;
 
             cursor = mDataBase.rawQuery("SELECT name FROM "+
@@ -1564,7 +1602,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             }
         } finally {
             tryCloseCursor(cursor);
-            if (!dbWasOpen) mDataBase.close();
+            //if (!dbWasOpen) //mDataBase.close();
             return all;
         }
     }
@@ -1574,7 +1612,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         int num = 0;
         try {
             if (!mDataBase.isOpen()) {
-                mDataBase = this.getReadableDatabase();
+                mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             } else dbWasOpen = true;
 
             cursor = mDataBase.rawQuery("SELECT _id FROM "+
@@ -1586,7 +1624,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             }
         } finally {
             tryCloseCursor(cursor);
-            if (!dbWasOpen) mDataBase.close();
+            // if (!dbWasOpen) mDataBase.close();
             return num;
         }
     }
@@ -1596,7 +1634,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         boolean dbWasOpen = false;
         try {
             if(!mDataBase.isOpen()) {
-                mDataBase = this.getReadableDatabase();
+                mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             } else dbWasOpen = true;
 
             cursor = mDataBase.rawQuery("SELECT _id FROM user Where _id=? and pswd=?",
@@ -1607,7 +1645,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             }
         } finally {
             tryCloseCursor(cursor);
-            if (!dbWasOpen) mDataBase.close();
+            //if (!dbWasOpen) //mDataBase.close();
             return ret;
         }
     }
@@ -1617,7 +1655,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         boolean dbWasOpen = false;
         try {
             if(!mDataBase.isOpen()) {
-                mDataBase = this.getReadableDatabase();
+                mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             } else dbWasOpen = true;
 
             cursor = mDataBase.rawQuery("SELECT superUser FROM user Where _id=?",
@@ -1628,7 +1666,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             }
         } finally {
             tryCloseCursor(cursor);
-            if (!dbWasOpen) mDataBase.close();
+            //if (!dbWasOpen) //mDataBase.close();
             return ret;
         }
     }
@@ -1638,7 +1676,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         boolean dbWasOpen = false;
         try {
             if(!mDataBase.isOpen()) {
-                mDataBase = this.getReadableDatabase();
+                mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             } else dbWasOpen = true;
 
             cursor = mDataBase.rawQuery("SELECT count(*) FROM user Where _id<>0",
@@ -1649,12 +1687,12 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             }
         } finally {
             tryCloseCursor(cursor);
-            if (!dbWasOpen) mDataBase.close();
+            //if (!dbWasOpen) //mDataBase.close();
             return ret;
         }
     }
     public String getDivisionsNameByCode(String code){
-        mDataBase = this.getReadableDatabase();
+        mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         String nm = "";
         Cursor cursor = mDataBase.rawQuery("SELECT name FROM Division Where code=?", new String [] {String.valueOf(code)});
         if ((cursor != null) & (cursor.getCount() != 0)) {
@@ -1662,11 +1700,11 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             nm = cursor.getString(0);
         }
         cursor.close();
-        mDataBase.close();
+        //mDataBase.close();
         return nm;
     }
     public String getDivisionsCodeByName(String name){
-        mDataBase = this.getReadableDatabase();
+        mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         String code = "";
         Cursor cursor = mDataBase.rawQuery("SELECT code FROM Division Where name=?", new String [] {String.valueOf(name)});
         if ((cursor != null) & (cursor.getCount() != 0)) {
@@ -1674,12 +1712,12 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             code = cursor.getString(0);
         }
         cursor.close();
-        mDataBase.close();
+        //mDataBase.close();
         return code;
     }
     public List<String> getAllnameDeps(String code, int iD) {
         ArrayList<String> nameDeps = new ArrayList<String>();
-        mDataBase = this.getReadableDatabase();
+        mDataBase = AppController.getInstance().getDbHelper().openDataBase();
 
         Cursor cursor = mDataBase.rawQuery("SELECT _id,Id_deps,Name_Deps,division_code,Id_o FROM Deps " +
                 "where (((division_code=?)or(division_code=0)) AND ((Id_o=?)or(Id_o=0))) Order by _id", new String [] {String.valueOf(code), String.valueOf(iD)});
@@ -1699,11 +1737,11 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             }
         }
         cursor.close();
-        mDataBase.close();
+        //mDataBase.close();
         return nameDeps;
     }
     public String getDeps_Name_by_id(int iD){
-        mDataBase = this.getReadableDatabase();
+        mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         String nm = "";
         Cursor cursor = mDataBase.rawQuery("SELECT Name_Deps FROM Deps Where _id="+String.valueOf(iD), null);
         if ((cursor != null) & (cursor.getCount() != 0)) {
@@ -1711,11 +1749,11 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             nm = cursor.getString(0);
         }
         cursor.close();
-        mDataBase.close();
+        //mDataBase.close();
         return nm;
     }
     public int getDeps_id_by_Name(String nm){
-        mDataBase = this.getReadableDatabase();
+        mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         int num = 0;
         Cursor cursor = mDataBase.rawQuery("SELECT _id FROM Deps Where Name_Deps='"+nm+"'", null);
         if ((cursor != null) & (cursor.getCount() != 0)) {
@@ -1723,12 +1761,12 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             num = cursor.getInt(0);
         }
         cursor.close();
-        mDataBase.close();
+        ////mDataBase.close();
         return num;
     }
     public List<String> getAllnameOpers(String division_code) {
         ArrayList<String> nameDeps = new ArrayList<String>();
-        mDataBase = this.getReadableDatabase();
+        mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         Cursor cursor = mDataBase.rawQuery("SELECT _id,Opers FROM Opers"+
                 " Where (division_code=?)or(division_code=0) Order by _id", new String [] {String.valueOf(division_code)});
 
@@ -1746,11 +1784,11 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             }
         }
         cursor.close();
-        mDataBase.close();
+        //mDataBase.close();
         return nameDeps;
     }
     public String getOpers_Name_by_id(int iD){
-        mDataBase = this.getReadableDatabase();
+        mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         String nm = "";
         Cursor cursor = mDataBase.rawQuery("SELECT Opers FROM Opers Where _id="+String.valueOf(iD), null);
         if ((cursor != null) & (cursor.getCount() != 0)) {
@@ -1758,11 +1796,11 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             nm = cursor.getString(0);
         }
         cursor.close();
-        mDataBase.close();
+        ////mDataBase.close();
         return nm;
     }
     public int getOpers_id_by_Name(String nm){
-        mDataBase = this.getReadableDatabase();
+        mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         int num = 0;
         Cursor cursor = mDataBase.rawQuery("SELECT _id FROM Opers Where Opers='"+nm+"'", null);
         if ((cursor != null) & (cursor.getCount() != 0)) {
@@ -1770,13 +1808,13 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             num = cursor.getInt(0);
         }
         cursor.close();
-        mDataBase.close();
+        ////mDataBase.close();
         return num;
     }
     public long updateDefsTable(Defs defs){
         try {
             long l;
-            mDataBase = this.getWritableDatabase();
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             ContentValues values = new ContentValues();
             values.clear();
             values.put(Defs.COLUMN_Id_d, defs.get_Id_d());
@@ -1789,7 +1827,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             values.put(Defs.COLUMN_DeviceId, defs.getDeviceId());
             String strFilter = "_id=1" ;
             l = mDataBase.update(Defs.table_Defs, values,strFilter, null);
-            mDataBase.close();
+            ////mDataBase.close();
             return l;
         } catch (SQLException e) {
             return 0;
@@ -1797,7 +1835,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     }
     public int selectDefsTable(){
         try {
-            mDataBase = this.getReadableDatabase();
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             Cursor cursor = mDataBase.rawQuery("SELECT Id_d,Id_o,Id_s,Host_IP,Port,idOperFirst,idOperLast,division_code,idUser,DeviceId  FROM Defs ", null);
             if ((cursor != null) & (cursor.getCount() != 0)) {
                 cursor.moveToFirst();
@@ -1811,14 +1849,14 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 defs.descUser = getUserName(defs.get_idUser());
             }
             tryCloseCursor(cursor);
-            mDataBase.close();
+            ////mDataBase.close();
             return 1;
         } catch (SQLException e) {
             return 0;
         }
     }
     public String getDivisionsName(String code){
-        mDataBase = this.getReadableDatabase();
+        mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         String nm = "";
         Cursor cursor = mDataBase.rawQuery("SELECT name FROM Division Where code=?", new String [] {String.valueOf(code)});
         if ((cursor != null) & (cursor.getCount() != 0)) {
@@ -1826,7 +1864,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             nm = String.format("%s", cursor.getString(0));
         }
         tryCloseCursor(cursor);
-        mDataBase.close();
+        ////mDataBase.close();
         return nm;
     }
     public String getUserName(int code){
@@ -1835,9 +1873,8 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         boolean dbWasOpen = false;
         try {
             if (!mDataBase.isOpen()) {
-                mDataBase = this.getReadableDatabase();
+                mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             } else dbWasOpen = true;
-            mDataBase = this.getReadableDatabase();
 
             cursor = mDataBase.rawQuery("SELECT name FROM user Where _id=?", new String[]{String.valueOf(code)});
             if ((cursor != null) & (cursor.getCount() != 0)) {
@@ -1846,12 +1883,12 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             }
         }finally {
             tryCloseCursor(cursor);
-            if (!dbWasOpen) mDataBase.close();
+            //if (!dbWasOpen) //mDataBase.close();
             return nm;
         }
     }
     public int getUserId_s(int _id){
-        mDataBase = this.getReadableDatabase();
+        mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         int nm = 0;
         Cursor cursor = mDataBase.rawQuery("SELECT Id_s FROM user Where _id=?", new String [] {String.valueOf(_id)});
         if ((cursor != null) & (cursor.getCount() != 0)) {
@@ -1859,13 +1896,13 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             nm = cursor.getInt(0);
         }
         tryCloseCursor(cursor);
-        mDataBase.close();
+        ////mDataBase.close();
         return nm;
     }
 
     public List<String> getAllnameSotr(String code, int department_id, int operation_id) {
         ArrayList<String> nameDeps = new ArrayList<String>();
-        mDataBase = this.getReadableDatabase();
+        mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         Cursor cursor = mDataBase.rawQuery("SELECT _id,tn_Sotr,Sotr FROM Sotr " +
                 //"Where ((division_code=?) and (Id_o=?) and (Id_d=?)) Order by _id",
                 "Where ((division_code=?) and (Id_o=?) and (Id_d=?))or(_id=0) Order by _id",
@@ -1884,11 +1921,11 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             }
         }
         tryCloseCursor(cursor);
-        mDataBase.close();
+        ////mDataBase.close();
         return nameDeps;
     }
     public Sotr getSotrReq(int Id_s){
-        mDataBase = this.getReadableDatabase();
+        mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         Sotr sotr = new Sotr(Id_s, "0",0,0);
         Cursor cursor = null;
         try {
@@ -1900,15 +1937,15 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 sotr.setDivision_code(cursor.getString(2));
             }
             tryCloseCursor(cursor);
-            mDataBase.close();
+            //mDataBase.close();
         } finally {
             tryCloseCursor(cursor);
-            mDataBase.close();
+            ////mDataBase.close();
             return sotr;
         }
     }
     public int getSotr_id_by_Name(String nm){
-        mDataBase = this.getReadableDatabase();
+        mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         int num = 0;
         if( nm.indexOf(" ") > 0) {
             nm = substring(nm, nm.indexOf("0"), nm.length());
@@ -1918,12 +1955,12 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 num = cursor.getInt(0);
             }
             tryCloseCursor(cursor);
-            mDataBase.close();
+            ////mDataBase.close();
         }
         return num;
     }
     public String getSotr_Name_by_id(int iD){
-        mDataBase = this.getReadableDatabase();
+        mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         String nm = "";
         Cursor cursor = mDataBase.rawQuery("SELECT tn_Sotr, Sotr FROM Sotr Where _id="+String.valueOf(iD), null);
         if ((cursor != null) & (cursor.getCount() != 0)) {
@@ -1931,7 +1968,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             nm = String.format("%s %s", cursor.getString(1), cursor.getString(0));
         }
         tryCloseCursor(cursor);
-        mDataBase.close();
+        ////mDataBase.close();
         return nm;
     }
     public String getMaxOutDocsDate(){
@@ -1941,7 +1978,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         Cursor cursor = null;
 
         try {
-            mDataBase = this.getReadableDatabase();
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             cursor = mDataBase.rawQuery("SELECT updateStart, updateEnd, updateSuccess FROM lastUpdate WHERE tableName=?",
                     new String [] {OutDocs.TABLE});
             if ((cursor != null) & (cursor.getCount() != 0)) {
@@ -1951,7 +1988,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             }
         } finally {
             tryCloseCursor(cursor);
-            mDataBase.close();
+            ////mDataBase.close();
             return nm;
         }
     }
@@ -1961,7 +1998,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
         Cursor cursor = null;
         try {
-            mDataBase = this.getReadableDatabase();
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             cursor = mDataBase.rawQuery("SELECT updateStart, updateEnd, updateSuccess FROM lastUpdate WHERE tableName=?", new String [] {Orders.TABLE_orders});
             if ((cursor != null) & (cursor.getCount() != 0)) {
                 cursor.moveToFirst();
@@ -1970,7 +2007,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             }
         } finally {
             tryCloseCursor(cursor);
-            mDataBase.close();
+            ////mDataBase.close();
             return nm;
         }
     }
@@ -1979,7 +2016,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
         Cursor cursor = null;
         try {
-            mDataBase = this.getReadableDatabase();
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             cursor = mDataBase.rawQuery("SELECT updateStart, updateEnd, updateSuccess FROM lastUpdate WHERE tableName=?", new String [] {Orders.TABLE_orders});
             if ((cursor != null) & (cursor.getCount() != 0)) {
                 cursor.moveToFirst();
@@ -1988,7 +2025,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             }
         } finally {
             tryCloseCursor(cursor);
-            mDataBase.close();
+            ////mDataBase.close();
             return result;
         }
     }
@@ -1997,7 +2034,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
         Cursor cursor = null;
         try {
-            mDataBase = this.getReadableDatabase();
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             cursor = mDataBase.rawQuery("SELECT updateStart, updateEnd, updateSuccess FROM lastUpdate WHERE tableName=?", new String [] {Table});
             if ((cursor != null) & (cursor.getCount() != 0)) {
                 cursor.moveToFirst();
@@ -2005,7 +2042,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             }
         } finally {
             tryCloseCursor(cursor);
-            mDataBase.close();
+            ////mDataBase.close();
             return nm;
         }
     }
@@ -2016,7 +2053,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
         Cursor cursor = null;
         try {
-            mDataBase = this.getReadableDatabase();
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             cursor = mDataBase.rawQuery("SELECT max(DT) FROM user", null);
             if ((cursor != null) & (cursor.getCount() != 0)) {
                 cursor.moveToFirst();
@@ -2024,7 +2061,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             }
         } finally {
             tryCloseCursor(cursor);
-            mDataBase.close();
+            ////mDataBase.close();
             return nm;
         }
     }
@@ -2035,7 +2072,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
         Cursor cursor = null;
         try {
-            mDataBase = this.getReadableDatabase();
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             cursor = mDataBase.rawQuery("SELECT max(DT) FROM Sotr", null);
             if ((cursor != null) & (cursor.getCount() != 0)) {
                 cursor.moveToFirst();
@@ -2043,7 +2080,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             }
         } finally {
             tryCloseCursor(cursor);
-            mDataBase.close();
+            ////mDataBase.close();
             return nm;
         }
     }
@@ -2053,7 +2090,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
         Cursor cursor = null;
         try {
-            mDataBase = this.getReadableDatabase();
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             cursor = mDataBase.rawQuery("SELECT max(DT) FROM Deps", null);
             if ((cursor != null) & (cursor.getCount() != 0)) {
                 cursor.moveToFirst();
@@ -2061,7 +2098,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             }
         } finally {
             tryCloseCursor(cursor);
-            mDataBase.close();
+            ////mDataBase.close();
             return nm;
         }
     }
@@ -2071,7 +2108,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
         Cursor cursor = null;
         try {
-            mDataBase = this.getReadableDatabase();
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             cursor = mDataBase.rawQuery("SELECT max(DT) FROM Opers", null);
             if ((cursor != null) & (cursor.getCount() != 0)) {
                 cursor.moveToFirst();
@@ -2079,13 +2116,13 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             }
         } finally {
             tryCloseCursor(cursor);
-            mDataBase.close();
+            ////mDataBase.close();
             return nm;
         }
     }
     public ArrayList<String> getOrdersNotFound(){
         ArrayList<String> OrdersId = new ArrayList<String>();
-        mDataBase = this.getReadableDatabase();
+        mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         Cursor cursor = mDataBase.rawQuery("SELECT orderId FROM orderNotFound", null);
         if ((cursor != null) & (cursor.getCount() != 0)) {
             cursor.moveToFirst();
@@ -2095,13 +2132,13 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             }
         }
         tryCloseCursor(cursor);
-        mDataBase.close();
+        ////mDataBase.close();
         return OrdersId;
     }
 
     public int getId_dByOutdoc(String idOutDocs){
         int result = 0;
-        mDataBase = this.getReadableDatabase();
+        mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         Cursor cursor = mDataBase.rawQuery("SELECT distinct(Id_d) FROM Prods Where idOutDocs='" + idOutDocs + "'", null);
         if ((cursor != null) & (cursor.getCount() != 0)) {
             cursor.moveToFirst();
@@ -2111,7 +2148,22 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             }
         }
         tryCloseCursor(cursor);
-        mDataBase.close();
+        ////mDataBase.close();
+        return result;
+    }
+    public int getId_sByOutdoc(String idOutDocs){
+        int result = 0;
+        mDataBase = AppController.getInstance().getDbHelper().openDataBase();
+        Cursor cursor = mDataBase.rawQuery("SELECT distinct(Id_s) FROM Prods Where idOutDocs='" + idOutDocs + "'", null);
+        if ((cursor != null) & (cursor.getCount() != 0)) {
+            cursor.moveToFirst();
+            while (!cursor.isAfterLast()) {
+                result = cursor.getInt(0);
+                cursor.moveToNext();
+            }
+        }
+        tryCloseCursor(cursor);
+        ////mDataBase.close();
         return result;
     }
 
@@ -2120,7 +2172,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
         Cursor cursor = null;
         try {
-            mDataBase = this.getReadableDatabase();
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             cursor = mDataBase.rawQuery("SELECT COUNT(*) FROM "+tableName, null);
             if ((cursor != null) & (cursor.getCount() != 0)) {
                 cursor.moveToFirst();
@@ -2128,13 +2180,13 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             }
         } finally {
             tryCloseCursor(cursor);
-            mDataBase.close();
+            ////mDataBase.close();
             return count;
         }
     }
 //Insert in Bulk
     public void insertOrdersInBulk(List<Orders> list){
-        SQLiteDatabase db = getWritableDatabase();
+        SQLiteDatabase db = AppController.getInstance().getDbHelper().openDataBase();
         try {
 
             db.execSQL("PRAGMA foreign_keys = 0;");
@@ -2178,7 +2230,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         }
     }
     public void insertOutDocInBulk(List<OutDocs> list){
-        SQLiteDatabase db = getWritableDatabase();
+        SQLiteDatabase db = AppController.getInstance().getDbHelper().openDataBase();
         try {
 
             db.execSQL("PRAGMA foreign_keys = 0;");
@@ -2220,7 +2272,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         }
     }
     public void insertBoxInBulk(List<Boxes> list){
-        SQLiteDatabase db = getWritableDatabase();
+        SQLiteDatabase db = AppController.getInstance().getDbHelper().openDataBase();
         try {
 
             db.execSQL("PRAGMA foreign_keys = 0;");
@@ -2258,7 +2310,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     }
 
     public void insertBoxMoveInBulk(List<BoxMoves> list) {
-        SQLiteDatabase db = getWritableDatabase();
+        SQLiteDatabase db = AppController.getInstance().getDbHelper().openDataBase();
         try {
 
             db.execSQL("PRAGMA foreign_keys = 0;");
@@ -2294,7 +2346,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     }
 
     public void insertProdInBulk(List<Prods> list) {
-        SQLiteDatabase db = getWritableDatabase();
+        SQLiteDatabase db = AppController.getInstance().getDbHelper().openDataBase();
         try {
 
             db.execSQL("PRAGMA foreign_keys = 0;");
@@ -2361,7 +2413,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     }
 
     public void insertUserInBulk(List<user> list){
-        SQLiteDatabase db = getWritableDatabase();
+        SQLiteDatabase db = AppController.getInstance().getDbHelper().openDataBase();
         try {
 
             db.execSQL("PRAGMA foreign_keys = 0;");
@@ -2397,7 +2449,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     }
 
     public void insertOperationInBulk(List<Operation> list){
-        SQLiteDatabase db = getWritableDatabase();
+        SQLiteDatabase db = AppController.getInstance().getDbHelper().openDataBase();
         try {
             db.beginTransaction();
             String sql = "INSERT OR REPLACE INTO "+Operation.TABLE+" (_id, opers, division_code, DT) " +
@@ -2433,7 +2485,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         }
     }
     public void insertDepsInBulk(List<Deps> list) {
-        SQLiteDatabase db = getWritableDatabase();
+        SQLiteDatabase db = AppController.getInstance().getDbHelper().openDataBase();
         try {
             db.beginTransaction();
             //String _Id_deps, String _Name_Deps, String _DT, String Division_code, int Id_o
@@ -2475,7 +2527,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     }
     public void insertSotrInBulk(List<Sotr> list) {
         //int _id, String tn_Sotr, String Sotr, String DT, String division_code, int Id_d, int Id_o
-        SQLiteDatabase db = getWritableDatabase();
+        SQLiteDatabase db = AppController.getInstance().getDbHelper().openDataBase();
         try {
             db.beginTransaction();
             String sql = "INSERT OR REPLACE INTO "+Sotr.TABLE+" (_id, division_code, Id_o, Id_d, tn_Sotr, Sotr, DT) " +
@@ -2515,7 +2567,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         }
     }
     public void insertDivisionInBulk(List<Division> list) {
-        SQLiteDatabase db = getWritableDatabase();
+        SQLiteDatabase db = AppController.getInstance().getDbHelper().openDataBase();
         try {
             db.beginTransaction();
             String sql = "INSERT OR REPLACE INTO "+Division.TABLE+" (code, name) " +
@@ -2545,13 +2597,13 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         ArrayList<OutDocs> readBoxMoves = new ArrayList<OutDocs>();
         try {
             if (!mDataBase.isOpen()) {
-                mDataBase = this.getReadableDatabase();
+                mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             } else dbWasOpen = true;
 
             String sql = "SELECT _id, number, comment, DT, Id_o, division_code, idUser" +
                     " FROM OutDocs where ((" + COLUMN_sentToMasterDate + " IS NULL) OR (" + COLUMN_sentToMasterDate + " = ''))";
 
-            mDataBase = this.getReadableDatabase();
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             cursor = mDataBase.rawQuery(sql, null);
 
             if ((cursor != null) & (cursor.getCount() != 0)) {
@@ -2569,7 +2621,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             }
         }finally {
             tryCloseCursor(cursor);
-            if (!dbWasOpen) mDataBase.close();
+            //if (!dbWasOpen) //mDataBase.close();
             return readBoxMoves;
         }
     }
@@ -2581,14 +2633,14 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         ArrayList<Boxes> readBoxes = new ArrayList<>();
         try {
             if (!mDataBase.isOpen()) {
-                mDataBase = this.getReadableDatabase();
+                mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             } else dbWasOpen = true;
 
             String sql = "SELECT _id,Id_m,Q_box,N_box,DT FROM Boxes where (("
                     +Boxes.COLUMN_sentToMasterDate+" IS NULL) OR ("+Boxes.COLUMN_sentToMasterDate+" = ''))";
             SQLiteStatement statement = mDataBase.compileStatement(sql);
 
-            mDataBase = this.getReadableDatabase();
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             cursor = mDataBase.rawQuery(sql, null);
 
         //+ " and Id_m="+OrdId, null);
@@ -2608,14 +2660,14 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         }
         }finally {
             tryCloseCursor(cursor);
-            if (!dbWasOpen) mDataBase.close();
+            //if (!dbWasOpen) //mDataBase.close();
             return readBoxes;
         }
     }
     //get all Boxes  records filtered by operation
     public ArrayList<BoxMoves> getBoxMoves() throws ParseException {
         ArrayList<BoxMoves> readBoxMoves = new ArrayList<BoxMoves>();
-        mDataBase = this.getReadableDatabase();
+        mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         Cursor cursor = mDataBase.rawQuery("SELECT bm._id,bm.Id_b,bm.Id_o,bm.DT FROM BoxMoves bm where ((bm."
                 +BoxMoves.COLUMN_sentToMasterDate+" IS NULL) OR (bm."+BoxMoves.COLUMN_sentToMasterDate+" = ''))", null);
 
@@ -2633,13 +2685,13 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             }
         }
         cursor.close();
-        mDataBase.close();
+        ////mDataBase.close();
         return readBoxMoves;
     }
     //get all Boxes  records filtered by operation
     public ArrayList<Prods> getProds() throws ParseException {
         ArrayList<Prods> readProds = new ArrayList<Prods>();
-        mDataBase = this.getReadableDatabase();
+        mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         Cursor cursor = mDataBase.rawQuery("SELECT _id, Id_bm,Id_d,Id_s,RQ_box,P_date,sentToMasterDate,idOutDocs FROM Prods where (("
                 +Prods.COLUMN_sentToMasterDate+" IS NULL) OR ("+Prods.COLUMN_sentToMasterDate+" = '')) and "
                 +Prods.COLUMN_Id_bm+" in " +
@@ -2658,7 +2710,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             }
         }
         cursor.close();
-        mDataBase.close();
+        ////mDataBase.close();
         return readProds;
     }
 }

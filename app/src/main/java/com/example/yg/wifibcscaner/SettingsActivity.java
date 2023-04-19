@@ -82,7 +82,7 @@ public class SettingsActivity extends AppCompatActivity implements
 
         orderOutDocBoxMovePartRepository = new OrderOutDocBoxMovePartRepository();
 
-        mDBHelper = DataBaseHelper.getInstance(this);
+        mDBHelper = AppController.getInstance().getDbHelper();
         host_v=(EditText) findViewById(R.id.host);
 
         String devId = "Unknown";
@@ -286,8 +286,6 @@ public class SettingsActivity extends AppCompatActivity implements
         opers_spinner.setAdapter(dataAdapter);
     }
     private void loadSpinnerDivisionData() {
-        // database handler
-
         // Spinner Drop down elements
         List<String> lables = mDBHelper.getAllDivisionsName();
 
@@ -349,24 +347,31 @@ public class SettingsActivity extends AppCompatActivity implements
                 ido=idd=ids=-1;
                 labelDivision2 = (TextView) findViewById(R.id.labelDivision2);
                 labelDivision2.setText(label);
+                AppController.getInstance().getMainActivityViews().setDivision(label);
                 try {
                     loadOpers_spinnerData();
                     opers_select_label = (TextView) findViewById(R.id.select_label);
-                    opers_select_label.setText(spinner.getItemAtPosition(0).toString());}
+                    opers_select_label.setText(spinner.getItemAtPosition(0).toString());
+                    AppController.getInstance().getMainActivityViews().setOperation(spinner.getItemAtPosition(0).toString());
+                }
                 catch (Exception e){
                     Log.d(TAG, "Error : " + e.getMessage());
                 }
                 try {
                     loadSpinnerData();
                     select_label = (TextView) findViewById(R.id.select_label);
-                    select_label.setText(spinner.getItemAtPosition(0).toString());}
+                    select_label.setText(spinner.getItemAtPosition(0).toString());
+                    AppController.getInstance().getMainActivityViews().setDepartment(spinner.getItemAtPosition(0).toString());
+                }
                 catch (Exception e){
                     Log.d(TAG, "Error : " + e.getMessage());
                 }
                 try {
                     loadSpinnerSotrData();
                     labelSotr = (TextView) findViewById(R.id.labelSotr);
-                    labelSotr.setText(spinnerSotr.getItemAtPosition(0).toString());}
+                    labelSotr.setText(spinnerSotr.getItemAtPosition(0).toString());
+                    AppController.getInstance().getMainActivityViews().setEmployee(spinnerSotr.getItemAtPosition(0).toString());
+                }
                 catch (Exception e){
                     Log.d(TAG, "Error : " + e.getMessage());
                 }
@@ -381,19 +386,24 @@ public class SettingsActivity extends AppCompatActivity implements
                 ido = mDBHelper.getOpers_id_by_Name(label);
                 opers_select_label = (TextView) findViewById(R.id.opers_select_label);
                 opers_select_label.setText(label);
+                AppController.getInstance().getMainActivityViews().setOperation(label);
                // Showing selected spinner item
                 messageUtils.showMessage(getApplicationContext(),"Вы выбрали: " + label);
                 try {
                     loadSpinnerData();
                     select_label = (TextView) findViewById(R.id.select_label);
-                    select_label.setText(spinner.getItemAtPosition(0).toString());}
+                    select_label.setText(spinner.getItemAtPosition(0).toString());
+                    AppController.getInstance().getMainActivityViews().setDepartment(spinner.getItemAtPosition(0).toString());
+                }
                 catch (Exception e){
                     Log.d(TAG, "Error : " + e.getMessage());
                 }
                 try {
                     loadSpinnerSotrData();
                     labelSotr = (TextView) findViewById(R.id.labelSotr);
-                    labelSotr.setText(spinnerSotr.getItemAtPosition(0).toString());}
+                    labelSotr.setText(spinnerSotr.getItemAtPosition(0).toString());
+                    AppController.getInstance().getMainActivityViews().setEmployee(spinnerSotr.getItemAtPosition(0).toString());
+                }
                 catch (Exception e){
                     Log.d(TAG, "Error : " + e.getMessage());
                 }
@@ -402,26 +412,28 @@ public class SettingsActivity extends AppCompatActivity implements
 
         if(sp.getId() == R.id.spinner) {
             if (position != 0) {
-               String mlabel = parent.getItemAtPosition(position).toString();
+               final String mlabel = parent.getItemAtPosition(position).toString();
 //Выбрать _id Deps и записать в Defs;
                 idd = mDBHelper.getDeps_id_by_Name(mlabel);
                 select_label = (TextView) findViewById(R.id.select_label);
                 select_label.setText(mlabel);
+                AppController.getInstance().getMainActivityViews().setDepartment(mlabel);
                // Showing selected spinner item
                 messageUtils.showMessage(getApplicationContext(), "Вы выбрали: " + mlabel);
                 ids=-1;
                 try {
                     loadSpinnerSotrData();
                     labelSotr = (TextView) findViewById(R.id.labelSotr);
-                    labelSotr.setText(spinnerSotr.getItemAtPosition(0).toString());}
-                catch (Exception e){
+                    labelSotr.setText(spinnerSotr.getItemAtPosition(0).toString());
+                    AppController.getInstance().getMainActivityViews().setEmployee(spinnerSotr.getItemAtPosition(0).toString());
+                }catch (Exception e){
                     Log.d(TAG, "Error : " + e.getMessage());
                 }
             }
         }
         if(sp.getId() == R.id.spinnerSotr) {
             if (position != 0) {
-                String slabel = parent.getItemAtPosition(position).toString();
+                final String slabel = parent.getItemAtPosition(position).toString();
                 //Выбрать _id Sotr и записать в Defs;
                 ids = mDBHelper.getSotr_id_by_Name(slabel);
                 if (ids != 0) {
@@ -429,7 +441,7 @@ public class SettingsActivity extends AppCompatActivity implements
                     labelSotr.setText(slabel);
                     // Showing selected spinner item
                     messageUtils.showMessage(getApplicationContext(),"Вы выбрали: " + slabel);
-                    //mDBHelper.defs.descSotr = slabel;
+                    AppController.getInstance().getMainActivityViews().setEmployee(slabel);
                 }else{
                     messageUtils.showMessage(getApplicationContext(),"Ошибка при поиске ID выбранного сотрудника!");
                 }
@@ -445,7 +457,7 @@ public class SettingsActivity extends AppCompatActivity implements
                             labelSotr.setText(slabel);
                             // Showing selected spinner item
                             messageUtils.showMessage(getApplicationContext(),"Вы выбрали: " + slabel);
-                            //mDBHelper.defs.descSotr = slabel;
+                            AppController.getInstance().getMainActivityViews().setEmployee(slabel);
                         }else{
                             messageUtils.showMessage(getApplicationContext(),"Ошибка при поиске ID выбранного сотрудника!");
                         }
@@ -479,9 +491,8 @@ public class SettingsActivity extends AppCompatActivity implements
                 mDBHelper.currentOutDoc.setIdUser(0);
             }
         }
-        MessageUtils messageUtils = new MessageUtils();
 
-        if ((division_code == null)||(new String("0").equals(division_code))) {
+        if ((division_code == null)||(division_code.equals("0"))) {
             //division_code=mDBHelper.defs.getDivision_code();
             division_code="0";
             idd = 0; ids = 0; ido = 0;
@@ -497,9 +508,9 @@ public class SettingsActivity extends AppCompatActivity implements
 
         Defs defs = new Defs(idd, ido, ids, ip, "4242",division_code,mDBHelper.defs.getDeviceId());
         if (mDBHelper.updateDefsTable(defs) != 0) {
-            messageUtils.showMessage(getApplicationContext(),"Сохранено.");
+            MessageUtils.showToast(getApplicationContext(),"Сохранено.", false);
         } else {
-            messageUtils.showMessage(getApplicationContext(),"Ошибка при сохранении.");
+            MessageUtils.showToast(getApplicationContext(),"Ошибка при сохранении.", true);
         }
         mDBHelper.selectDefsTable();
         //loadSpinnerData();
@@ -507,59 +518,4 @@ public class SettingsActivity extends AppCompatActivity implements
         checkConnection();
     }
 
-    private class SyncIncoData extends AsyncTask<String, Integer, String> {
-        @Override
-        protected String doInBackground(String... urls) {
-            try {
-                ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getOrdersId(null, mDBHelper.defs.getDivision_code()).enqueue(new Callback<List<String>>() {
-                    // TODO Обработать результат. Записать поле sent... если успешно
-                    @Override
-                    public void onResponse(Call<List<String>> call, Response<List<String>> response) {
-
-                        if (response.isSuccessful()) {
-                            assert response.body() != null;
-                            publishProgress(response.body().size());
-                            int totalChunks = (int)Math.ceil((double)response.body().size()/10);
-                            int index = 0;
-                            for (String o : response.body()) {
-
-                                mDBHelper.saveOrderNotFound(o);
-                                index +=1;
-
-                                if ((index % totalChunks) == 0) publishProgress(index * 10 / totalChunks );
-                            }
-                            if (response.body().size() != 0)
-                                Log.d("UpdateActivity", "Ок! Список заказов принят!");
-                        }
-
-                    }
-
-                    @Override
-                    public void onFailure(Call<List<String>> call, Throwable t) {
-                        Log.d(TAG, "Ответ сервера на запрос новых операций: " + t.getMessage());
-                    }
-                });
-            } catch (Exception e) {
-                Log.e(TAG, "Error : " + e.getMessage());
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            super.onPostExecute(result);
-        }
-
-        @Override
-        protected void onProgressUpdate(Integer... values) {
-            super.onProgressUpdate(values);
-            MessageUtils messageUtils = new MessageUtils();
-            messageUtils.showLongMessage(getApplicationContext(), "Обновление продолжается... Выполнено "+values[0]+"%");
-        }
-    }
 }

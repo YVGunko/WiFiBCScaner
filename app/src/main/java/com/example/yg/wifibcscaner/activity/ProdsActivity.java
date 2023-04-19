@@ -7,6 +7,7 @@ import android.widget.SimpleAdapter;
 
 import com.example.yg.wifibcscaner.DataBaseHelper;
 import com.example.yg.wifibcscaner.R;
+import com.example.yg.wifibcscaner.controller.AppController;
 
 public class ProdsActivity extends AppCompatActivity {
     //Переменная для работы с БД
@@ -15,7 +16,7 @@ public class ProdsActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_prods);
-        mDBHelper = DataBaseHelper.getInstance(this);
+        mDBHelper = AppController.getInstance().getDbHelper();
 
         String[] from = { "Ord", "Cust"};
         int[] to = { R.id.textView, R.id.textView2};

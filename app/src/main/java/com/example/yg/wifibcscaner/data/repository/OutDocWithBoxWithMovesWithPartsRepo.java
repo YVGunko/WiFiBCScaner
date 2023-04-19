@@ -113,7 +113,7 @@ public class OutDocWithBoxWithMovesWithPartsRepo {
     @RequiresApi(api = Build.VERSION_CODES.O)
     private OutDocWithBoxWithMovesWithPartsRequest dataToSend() {
         OutDocWithBoxWithMovesWithPartsRequest responce = new OutDocWithBoxWithMovesWithPartsRequest();
-        SQLiteDatabase db = AppController.getInstance().getDbHelper().openDataBase(true);
+        SQLiteDatabase db = AppController.getInstance().getDbHelper().openDataBase();
         boolean dbWasOpen = false;
         Cursor cursor = null;
         try {
@@ -145,7 +145,7 @@ public class OutDocWithBoxWithMovesWithPartsRepo {
 
         }finally {
             tryCloseCursor(cursor);
-            if (!dbWasOpen) db.close();
+            //if (!dbWasOpen) db.close();
             return responce;
         }
     }
@@ -301,12 +301,12 @@ public class OutDocWithBoxWithMovesWithPartsRepo {
 
 
     private void applyResponce(OutDocWithBoxWithMovesWithPartsIdOnlyRequest body, Long dateToSet) {
-        SQLiteDatabase db = AppController.getInstance().getDbHelper().openDataBase(true);
+        SQLiteDatabase db = AppController.getInstance().getDbHelper().openDataBase();
         boolean dbWasOpen = false;
         Cursor cursor = null;
         try {
             if (!db.isOpen() || db.isReadOnly()) {
-                db = AppController.getInstance().getDbHelper().getWritableDatabase();
+                db = AppController.getInstance().getDbHelper().openDataBase();
             } else dbWasOpen = true;
             try {
                 db.beginTransaction();
@@ -372,7 +372,7 @@ public class OutDocWithBoxWithMovesWithPartsRepo {
             }
         }finally {
             tryCloseCursor(cursor);
-            if (!dbWasOpen) db.close();
+            //if (!dbWasOpen) db.close();
         }
     }
     public boolean updateOutDocsetSentToMasterDate (SQLiteDatabase mDataBase, OutDocs od) {
@@ -390,7 +390,7 @@ public class OutDocWithBoxWithMovesWithPartsRepo {
                 return false;
             }
         }finally {
-            mDataBase.close();
+            //mDataBase.close();
             return b;
         }
     }

@@ -21,7 +21,6 @@ import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
 import android.support.v7.app.AlertDialog;
 import android.text.Editable;
-import android.text.Html;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -31,9 +30,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
-import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.example.yg.wifibcscaner.activity.BaseActivity;
 import com.example.yg.wifibcscaner.activity.BoxesActivity;
@@ -46,6 +43,8 @@ import com.example.yg.wifibcscaner.data.model.BoxMoves;
 import com.example.yg.wifibcscaner.data.model.Boxes;
 import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.data.model.Prods;
+import com.example.yg.wifibcscaner.data.repository.OutDocRepo;
+import com.example.yg.wifibcscaner.data.service.OutDocService;
 import com.example.yg.wifibcscaner.databinding.ActivityMainBinding;
 import com.example.yg.wifibcscaner.receiver.SyncDataBroadcastReceiver;
 import com.example.yg.wifibcscaner.service.DataExchangeService;
@@ -81,7 +80,8 @@ import static com.example.yg.wifibcscaner.utils.StringUtils.filter;
 
 public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeListener, DatePickerDialog.OnDateSetListener {
     private static final String TAG = "MainActivity";
-
+    OutDocService outDocService = new OutDocService();
+    OutDocRepo outDocRepo = new OutDocRepo();
     private static BarcodeReader barcodeReader; //honeywell
     private AidcManager manager;
     boolean bCancelFlag;
@@ -109,7 +109,9 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
     @Override
     public void onCreate(Bundle state) {
         super.onCreate(state);
+        Log.d(TAG, " OnCreate()");
 
+        AppController.getInstance().getDbHelper().openDataBase();
         mDBHelper = AppController.getInstance().getDbHelper();
 
         setContentView(R.layout.activity_main);
@@ -159,27 +161,17 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
     protected void onResume() {
         super.onResume();
 
-        /*String snum = "Накл.???";
-
-        if (mDBHelper.currentOutDoc.get_number() != 0) snum = "Накл.№"+mDBHelper.currentOutDoc.get_number();
-        snum = mDBHelper.defs.descOper+", "+snum;
-        android.support.v7.app.ActionBar actionBar = getSupportActionBar();
-        if (actionBar != null) {
-            actionBar.setSubtitle(Html.fromHtml("<font color='#FFBF00'>"+snum+"</font>"));
-        }
-
-        actionBar.setTitle(mDBHelper.defs.descDivision);*/
-
         if (AppController.getInstance().getMainActivityViews().getOrder() == null ||
                 AppController.getInstance().getMainActivityViews().getOrder().isEmpty()) {
-            if (SharedPreferenceManager.getInstance().getLastScannedBoxDescription()
+            if (SharedPreferenceManager.getInstance().getLastScannedOrderDescription()
                     .equals(AppController.getInstance().getResourses().getString(R.string.no_data_to_view))){
                 Log.d(TAG, "SetOrderInfo called onResume");
                 SetOrderInfo setOrderInfo = new SetOrderInfo();
                 setOrderInfo.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
             }else {
                 Log.d(TAG, "Last order info fetched from sharedPrefs");
-                AppController.getInstance().getMainActivityViews().setOrder(SharedPreferenceManager.getInstance().getLastScannedBoxDescription());
+                AppController.getInstance().getMainActivityViews().setOrder(SharedPreferenceManager.getInstance().getLastScannedOrderDescription());
+                AppController.getInstance().getMainActivityViews().setBox(SharedPreferenceManager.getInstance().getLastScannedBoxDescription());
             }
         }
         if (AppController.getInstance().getMainActivityViews().getOutDoc() == null ||
@@ -193,12 +185,6 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
             Log.d(TAG, "setUser called onResume");
             AppController.getInstance().getMainActivityViews().setUser(makeUserDesc(mDBHelper.getUserName(mDBHelper.defs.get_idUser())));
         }
-        //AppController.getInstance().getCurrentDocDetails().setName("onResume");
-
-        /*            Log.d(TAG, "setOrderInfo called onResume");
-            SetOrderInfo setOrderInfo = new SetOrderInfo();
-            setOrderInfo.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-        */
         if (barcodeReader != null) {
             try {
                 barcodeReader.claim();
@@ -251,18 +237,6 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
             }
             return;
         }
-        /*
-        String snum = "Накл.???";
-        if (mDBHelper.currentOutDoc.get_number() != 0) snum = "Накл.№"+mDBHelper.currentOutDoc.get_number();
-        snum = mDBHelper.defs.descOper+", "+snum;
-        android.support.v7.app.ActionBar actionBar = getSupportActionBar();
-        if (actionBar != null) {
-            actionBar.setSubtitle(Html.fromHtml("<font color='#FFBF00'>" + snum + "</font>"));
-        }
-        if (actionBar != null) {
-            actionBar.setTitle("Подразделение: "+mDBHelper.defs.descDivision);
-        }*/
-        //====this.setTitle(mDBHelper.defs.descOper+", "+snum);
 
         /* Если сканер подключен - вызывать обработчик для него*/
         final     EditText            input = (EditText) findViewById(R.id.barCodeInput);
@@ -371,10 +345,16 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
             //поискать символ с кодом 194
         currentbarcode = filter(currentbarcode);
         if ((currentbarcode.length()<20)&&(StringUtils.countMatches(currentbarcode,'.')!=5)) {
-            MessageUtils.showToast(MainActivity.this, "QR-код не распознан.",true);
+            Log.d(TAG, "scanResultHandler -> barcode mismatch -> return");
+            MessageUtils.showToast(MainActivity.this, getString(R.string.QR_invalid),true);
             return;
         }
         fo = mDBHelper.searchOrder(currentbarcode);
+        if (!fo.division_code.equals(mDBHelper.defs.getDivision_code())) {
+            Log.d(TAG, "scanResultHandler -> division mismatch -> return");
+            MessageUtils.showToast(MainActivity.this, getString(R.string.wrong_division_order),true);
+            return;
+        }
         if (!fo.archive) { // архив
             if (fo._id != 0) {                                      //Заказ найден, ищем коробку
                 fb = mDBHelper.searchBox(fo._id, currentbarcode);
@@ -386,9 +366,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
                     fo.orderdef += fb.depSotr+ "\n";
                 if (!fb.outDocs.equals(""))
                     fo.orderdef += fb.outDocs;
-                //TextView tOrderInfo = (TextView) findViewById(R.id.tOrderInfo);
-                //tOrderInfo.setText(fo.orderdef);
-                SharedPreferenceManager.getInstance().setLastScannedBoxDescription(fo.orderdef);
+
                 Log.d(TAG, "scanResultHandler has made lastbox orderdef as -> "+fo.orderdef);
                 if (!fb._archive){
                     if ((fb._id != null) && !fb._id.equals("")) {                                  //Коробка есть
@@ -450,8 +428,6 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
     }
 
     public void ocl_bOk(View v) { //Вызов активности Сканирования
-        int iRQ = 0;
-        boolean newBM = false;
 
         final String _RQ = editTextRQ.getText().toString();
         if ((!TextUtils.isEmpty(_RQ))&(Integer.valueOf(_RQ)<=(fb.QB - fb.RQ))) {//колво  не пустое
@@ -459,50 +435,19 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
                 Button bScan = (Button) findViewById(R.id.bScan);
                 bScan.setText("Scan!");
                 bScan.requestFocus();
-                iRQ = Integer.valueOf(_RQ);
 
                 editTextRQ = (EditText) findViewById(R.id.editTextRQ);
                 editTextRQ.setEnabled(false);
-                if ((!fb._id.equals("")&&(fb._id != null))) {                                            //коробка есть и не полная, добавить в prods
-                    if (fb.RQ == 0) {
-                        newBM = true;                                           //новая операция по существующей коробке
-                    }
-                    fb.RQ = iRQ;
-                    if (mDBHelper.addProds(fb)) {
-                        if (!newBM) {
-                            MessageUtils.showToast(MainActivity.this,
-                                    mDBHelper.defs.descOper+". В коробку добавлено "+ iRQ,false);
-                        }
-                        mDBHelper.lastBoxCheck(fo, MainActivity.this);
 
-                        SetOrderInfo setOrderInfo = new SetOrderInfo();
-                        setOrderInfo.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-                        Log.d(TAG, "setOrderInfo was called from ocl_bOk");
+                mDBHelper.addBoxes(fo,Integer.valueOf(_RQ),fb);
 
-                        /*SetCurOutDocInfo setCurOutDocInfo = new SetCurOutDocInfo();
-                        setCurOutDocInfo.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-                        Log.d(TAG, "setCurOutDocInfo was called from ocl_bOk");*/
-                    }else {
-                        MessageUtils.showToast(MainActivity.this,
-                                mDBHelper.defs.descOper+". Повторный прием коробки в смену! Повторный прием возможен в другую смену.",true);
-                    }
+                SetOrderInfo setOrderInfo = new SetOrderInfo();
+                setOrderInfo.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                Log.d(TAG, "setOrderInfo was called from ocl_bOk");
 
-                }else {
-                    if (!mDBHelper.addBoxes(fo,iRQ)) {            //---Вызов метода добавления коробки и продс
-                        MessageUtils.showToast(MainActivity.this,
-                        mDBHelper.defs.descOper+". Ошибка! Коробка не добавлена в БД!",true);
-                    } else {
-                        mDBHelper.lastBoxCheck(fo, MainActivity.this);
-
-                        SetOrderInfo setOrderInfo = new SetOrderInfo();
-                        setOrderInfo.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-                        Log.d(TAG, "setOrderInfo was called from ocl_bOk");
-
-                        /*SetCurOutDocInfo setCurOutDocInfo = new SetCurOutDocInfo();
-                        setCurOutDocInfo.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-                        Log.d(TAG, "setCurOutDocInfo was called from ocl_bOk");   */
-                    }
-                }
+                SetCurOutDocInfo setCurOutDocInfo = new SetCurOutDocInfo();
+                setCurOutDocInfo.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                Log.d(TAG, "setCurOutDocInfo was called from ocl_bOk");
             } catch (Exception e) {
                 Log.e(TAG, mDBHelper.defs.descOper+". Ошибка при получении количества в коробке!", e);
                 MessageUtils.showToast(MainActivity.this,
@@ -694,6 +639,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
                 ArrayList<String> OrdersId = new ArrayList<String>();
                 bCancelFlag = false;
                 Log.i(TAG, " bCancelFlag was set to: "+bCancelFlag);
+                //TODO check if server is available
                 if (strings !=null && strings.length != 0)
                     OrdersId.add(strings[0]);
                 else
@@ -713,7 +659,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
                                         if (response.body().getOrder() != null) {
                                             mDBHelper.insertOrder(response.body().getOrder());
                                             for (OutDocs od : response.body().getOutDocReqList())
-                                                mDBHelper.insertOrUpdateOutDocs(od);
+                                                outDocRepo.insertOrUpdateOutDocs(od);
                                             for (Boxes boxes : response.body().getBoxReqList())
                                                 mDBHelper.insertBoxes(boxes);
                                             for (BoxMoves bm : response.body().getMovesReqList())
@@ -798,29 +744,18 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
         super.onPostCreate(savedInstanceState);
         setSyncRepeatingAlarm();
     }
-    private class SetOrderInfo extends AsyncTask<Void, Void, String> {
+    private class SetOrderInfo extends AsyncTask<Void, Void, Void> {
         Exception e;
 
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-        }
-
-        protected String doInBackground(Void... params) {
-            String result = "";
+        protected Void doInBackground(Void... params) {
             try {
-                result = AppController.getInstance().getDbHelper().lastBox();
-                Log.d(TAG, "getDbHelper().lastBox() has returned -> "+result);
+                AppController.getInstance().getDbHelper().lastBox();
+                Log.d(TAG, "getDbHelper().lastBox() has returned called ");
             } catch (Exception e) {
                 this.e = e;
                 Log.e(TAG, e.getMessage());
             }
-            return result;
-        }
-
-        @Override
-        protected void onPostExecute(final String s) {
-            super.onPostExecute(s);
+            return null;
         }
     }
     private class SetCurOutDocInfo extends AsyncTask<Void, Void, String> {
@@ -838,8 +773,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
             try {
                 Log.d(TAG, "getDbHelper().selectCurrentOutDocDetails() id -> "+AppController.getInstance().getDbHelper()
                         .currentOutDoc.get_id());
-                AppController.getInstance().getMainActivityViews().setOutDoc(AppController.getInstance().getDbHelper()
-                        .selectCurrentOutDocDetails());
+                AppController.getInstance().getMainActivityViews().setOutDoc(outDocRepo.selectCurrentOutDocDetails());
                 Log.d(TAG, "getDbHelper().selectCurrentOutDocDetails() has returned -> "+result);
             } catch (Exception e) {
                 this.e = e;

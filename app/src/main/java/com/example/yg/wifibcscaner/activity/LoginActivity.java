@@ -13,15 +13,17 @@ import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.Sotr;
 import com.example.yg.wifibcscaner.data.model.user;
+import com.example.yg.wifibcscaner.data.service.OutDocService;
 import com.example.yg.wifibcscaner.utils.MessageUtils;
 
 import java.util.List;
 
-import static com.example.yg.wifibcscaner.utils.StringUtils.makeOutDocDesc;
 import static com.example.yg.wifibcscaner.utils.StringUtils.makeUserDesc;
 
 public class LoginActivity extends AppCompatActivity implements
         AdapterView.OnItemSelectedListener {
+
+    OutDocService outDocService;
     private DataBaseHelper mDBHelper;
     private int idUser;
     Spinner spinnerName;
@@ -30,7 +32,7 @@ public class LoginActivity extends AppCompatActivity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
-        mDBHelper = DataBaseHelper.getInstance(this);
+        mDBHelper = AppController.getInstance().getDbHelper();
         ePswd = (EditText) findViewById(R.id.ePswd);
         spinnerName = (Spinner) findViewById(R.id.spinnerName);
         spinnerName.setOnItemSelectedListener(this);
@@ -82,7 +84,7 @@ public class LoginActivity extends AppCompatActivity implements
 
                     mDBHelper.currentOutDoc.set_id("");
                     mDBHelper.currentOutDoc.set_number(0); //clear currentOutdoc
-                    AppController.getInstance().getMainActivityViews().setOutDoc(makeOutDocDesc(new String[]{null}));
+                    AppController.getInstance().getMainActivityViews().setOutDoc(outDocService.makeOutDocDesc(new String[]{null}));
 
                     if (mDBHelper.getUserId_s(idUser)!=0) { //not a superuser
                         //select sotr(Employee), operation, division, department

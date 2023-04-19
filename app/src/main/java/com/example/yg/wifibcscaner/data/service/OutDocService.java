@@ -41,4 +41,22 @@ public class OutDocService {
         sb.append(prod);
         return sb.toString ();
     }
+
+    public static String makeOutDocDesc(String num, String dt, String selectOutDocById) {
+        StringBuilder sb = new StringBuilder ();
+        if (num != null) {
+            sb.append("Нкл. ");
+            sb.append(num);
+            if (dt != null) {
+                sb.append(" от ");
+                sb.append(dt.substring(0, dt.indexOf(" ")));
+            }
+            if (selectOutDocById != null) {
+                sb.append(selectOutDocById);
+            }
+        }else{
+            sb.append("Накладная не выбрана");
+        }
+        return sb.toString ();
+    }
 }

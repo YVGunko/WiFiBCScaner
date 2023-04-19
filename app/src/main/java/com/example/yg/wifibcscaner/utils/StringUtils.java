@@ -5,6 +5,8 @@ import android.database.CursorIndexOutOfBoundsException;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import com.example.yg.wifibcscaner.data.repository.BoxRepository;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -65,7 +67,7 @@ public class StringUtils {
 
             sb.append(makeOrderDesc(order));
 
-            sb.append(makeBoxNumber(cursor.getString(8)));
+            sb.append(BoxRepository.makeBoxNumber(cursor.getString(8)));
 
             sb.append("Всего: ");
             sb.append(cursor.getString(7));
@@ -84,14 +86,6 @@ public class StringUtils {
             Log.e(TAG, "makeLastBoxDef -> ", e);
             return sb.toString();
         }
-    }
-
-    public static String makeBoxNumber(@NonNull String num) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("№ кор: ");
-        sb.append(num);
-        sb.append(" ");
-        return sb.toString();
     }
 
 

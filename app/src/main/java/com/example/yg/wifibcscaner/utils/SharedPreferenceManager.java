@@ -18,6 +18,7 @@ public class SharedPreferenceManager {
     private final String UPDATE_DATE = "update_date";
     final static String VERSION_CODE = "version_code";
     final static String DB_NEED_REPLACE = "db_need_replace";
+    final static String LAST_SCANNED_ORDER_DESCRIPTION = "last_scanned_order_description";
     final static String LAST_SCANNED_BOX_DESCRIPTION = "last_scanned_box_description";
     final static int DOESNT_EXIST = -1;
 
@@ -118,6 +119,15 @@ public class SharedPreferenceManager {
     }
     public String getLastScannedBoxDescription() {
         return AppController.getInstance().getSharedPreferences().getString(LAST_SCANNED_BOX_DESCRIPTION,
+                AppController.getInstance().getResourses().getString(R.string.no_data_to_view));
+    }
+    public void setLastScannedOrderDescription(String value) {
+        editor = AppController.getInstance().getSharedPreferences().edit();
+        editor.putString(LAST_SCANNED_ORDER_DESCRIPTION, value);
+        editor.commit();
+    }
+    public String getLastScannedOrderDescription() {
+        return AppController.getInstance().getSharedPreferences().getString(LAST_SCANNED_ORDER_DESCRIPTION,
                 AppController.getInstance().getResourses().getString(R.string.no_data_to_view));
     }
 }

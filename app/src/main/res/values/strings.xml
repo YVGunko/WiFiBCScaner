@@ -58,4 +58,6 @@
     <string name="network_unawailable">Нет доступа к WiFi</string>
     <string name="no_data_to_exchange">Нет данных для обмена</string>
     <string name="no_data_to_view">Информация недоступна</string>
+    <string name="QR_invalid">QR-код не распознан</string>
+    <string name="wrong_division_order">Это коробка не вашего подразделения</string>
 </resources>

@@ -18,7 +18,7 @@ public class OrderService {
         ArrayList<HashMap<String, String>> readOrders = new ArrayList<HashMap<String, String>>();
 //        Cursor cursor = mDb.rawQuery("SELECT MasterData.Ord, MasterData.Cust, MasterData.Nomen, MasterData.Attrib, MasterData.Q_ord,MasterData.Q_box, Boxes.N_box, sum (Prods.RQ_box)" +
 //                " FROM Boxes, Prods, Deps, MasterData Where Boxes.Id_o=1 and Boxes.Id_m=MasterData._id and Boxes._id=Prods.Id_b and Prods.Id_d=Deps._id", null);
-        SQLiteDatabase db = AppController.getInstance().getDbHelper().openDataBase(false);
+        SQLiteDatabase db = AppController.getInstance().getDbHelper().openDataBase();
         Cursor cursor = db.rawQuery("SELECT MasterData.Ord, MasterData.Cust, MasterData.Nomen, MasterData.Attrib, MasterData.Q_ord,MasterData.Q_box, " +
                 "MasterData.N_box, MasterData.DT " +
                 "FROM MasterData WHERE division_code=? ORDER BY MasterData._id DESC", new String [] {String.valueOf(AppController.getInstance().getDbHelper().defs.getDivision_code())});

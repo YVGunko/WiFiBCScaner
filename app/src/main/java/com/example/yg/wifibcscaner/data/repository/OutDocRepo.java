@@ -10,6 +10,7 @@ import android.util.Log;
 import com.example.yg.wifibcscaner.DataBaseHelper;
 import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.OutDocs;
+import com.example.yg.wifibcscaner.data.service.OutDocService;
 
 import java.util.Date;
 
@@ -23,6 +24,7 @@ import static com.example.yg.wifibcscaner.utils.StringUtils.getUUID;
 import static java.lang.String.valueOf;
 
 public class OutDocRepo {
+    OutDocService outDocService;
     private static final String TAG = "OutDocRepo";
     private static final String MY_CHANNEL_ID = "Data Exchange";
     private SQLiteDatabase mDataBase = AppController.getInstance().getDbHelper().openDataBase();
@@ -165,6 +167,7 @@ public class OutDocRepo {
     public Cursor listOutDocs() {
         Cursor cursor = null;
         try {
+            Log.d(TAG, "listOutDocs cursor is NULL! "+mDataBase.isOpen() );
             if (mDbHelper.checkSuperUser(mDbHelper.defs.get_idUser())) {
                 //if (!mDataBase.isOpen())
                 //    mDataBase = this.getReadableDatabase();
