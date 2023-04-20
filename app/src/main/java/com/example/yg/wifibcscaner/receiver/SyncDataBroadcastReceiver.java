@@ -8,6 +8,7 @@ import android.support.annotation.RequiresApi;
 import android.util.Log;
 
 import com.example.yg.wifibcscaner.service.DataExchangeService;
+import com.example.yg.wifibcscaner.utils.SharedPreferenceManager;
 
 
 public class SyncDataBroadcastReceiver extends BroadcastReceiver {
@@ -17,6 +18,7 @@ public class SyncDataBroadcastReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         Log.d(TAG, " is called");
-        new DataExchangeService().call();
+        if (SharedPreferenceManager.getInstance().isLocalDataExpired())
+            new DataExchangeService().call();
     }
 }

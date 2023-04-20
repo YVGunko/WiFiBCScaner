@@ -6,19 +6,11 @@ public class OutDocService {
     public static String makeOutDocDesc(@NonNull String[] strings) {
         StringBuilder sb = new StringBuilder ();
         if (strings [0] != null) {
-            sb.append("Нкл. ");
-            sb.append(strings[0]);
-            if (strings.length > 1 && strings [1] != null) {
-                sb.append(" от ");
-                sb.append(strings[1].substring(0, strings[1].indexOf(" ")));
+            if (strings.length > 1 && strings [0] != null && strings [1] != null) {
+                sb.append(makeOutDocNumAndDateDesc(strings[0], strings[1]));
             }
-            if (strings.length > 2 && strings [2] != null) {
-                sb.append(" Кор: ");
-                sb.append(strings[2]);
-            }
-            if (strings.length > 3 && strings [3] != null) {
-                sb.append(" Под: ");
-                sb.append(strings[3]);
+            if (strings.length > 3 && strings [2] != null && strings [3] != null) {
+                sb.append(makeOutDocBoxAndProdDesc(strings [2], strings [3]));
             }
         }else{
             sb.append("Накладная не выбрана");
@@ -35,22 +27,17 @@ public class OutDocService {
     }
     public static String makeOutDocBoxAndProdDesc(@NonNull String box, @NonNull String prod) {
         StringBuilder sb = new StringBuilder ();
-        sb.append("Кор. ");
+        sb.append("\nКор.: ");
         sb.append(box);
-        sb.append(" Под. ");
+        sb.append(", Подошвы: ");
         sb.append(prod);
         return sb.toString ();
     }
 
     public static String makeOutDocDesc(String num, String dt, String selectOutDocById) {
         StringBuilder sb = new StringBuilder ();
-        if (num != null) {
-            sb.append("Нкл. ");
-            sb.append(num);
-            if (dt != null) {
-                sb.append(" от ");
-                sb.append(dt.substring(0, dt.indexOf(" ")));
-            }
+        if (num != null && dt != null) {
+            sb.append(makeOutDocNumAndDateDesc(num,dt));
             if (selectOutDocById != null) {
                 sb.append(selectOutDocById);
             }

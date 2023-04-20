@@ -47,6 +47,8 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+import static com.example.yg.wifibcscaner.data.service.OutDocService.makeOutDocDesc;
+
 public class SettingsActivity extends AppCompatActivity implements
         AdapterView.OnItemSelectedListener {
 
@@ -123,7 +125,7 @@ public class SettingsActivity extends AppCompatActivity implements
             ocl_check(findViewById(R.id.check));
         }
         catch(Exception e){
-            messageUtils.showMessage(getApplicationContext(),e.getMessage());
+            Log.e(TAG, ". onCreate -> ",e);
         }
 
 
@@ -347,12 +349,11 @@ public class SettingsActivity extends AppCompatActivity implements
                 ido=idd=ids=-1;
                 labelDivision2 = (TextView) findViewById(R.id.labelDivision2);
                 labelDivision2.setText(label);
-                AppController.getInstance().getMainActivityViews().setDivision(label);
+
                 try {
                     loadOpers_spinnerData();
                     opers_select_label = (TextView) findViewById(R.id.select_label);
                     opers_select_label.setText(spinner.getItemAtPosition(0).toString());
-                    AppController.getInstance().getMainActivityViews().setOperation(spinner.getItemAtPosition(0).toString());
                 }
                 catch (Exception e){
                     Log.d(TAG, "Error : " + e.getMessage());
@@ -361,7 +362,6 @@ public class SettingsActivity extends AppCompatActivity implements
                     loadSpinnerData();
                     select_label = (TextView) findViewById(R.id.select_label);
                     select_label.setText(spinner.getItemAtPosition(0).toString());
-                    AppController.getInstance().getMainActivityViews().setDepartment(spinner.getItemAtPosition(0).toString());
                 }
                 catch (Exception e){
                     Log.d(TAG, "Error : " + e.getMessage());
@@ -370,12 +370,11 @@ public class SettingsActivity extends AppCompatActivity implements
                     loadSpinnerSotrData();
                     labelSotr = (TextView) findViewById(R.id.labelSotr);
                     labelSotr.setText(spinnerSotr.getItemAtPosition(0).toString());
-                    AppController.getInstance().getMainActivityViews().setEmployee(spinnerSotr.getItemAtPosition(0).toString());
                 }
                 catch (Exception e){
                     Log.d(TAG, "Error : " + e.getMessage());
                 }
-                messageUtils.showMessage(getApplicationContext(),"Вы выбрали: " + label);
+                //messageUtils.showMessage(getApplicationContext(),"Вы выбрали: " + label);
             }
         }
 
@@ -386,14 +385,13 @@ public class SettingsActivity extends AppCompatActivity implements
                 ido = mDBHelper.getOpers_id_by_Name(label);
                 opers_select_label = (TextView) findViewById(R.id.opers_select_label);
                 opers_select_label.setText(label);
-                AppController.getInstance().getMainActivityViews().setOperation(label);
+
                // Showing selected spinner item
-                messageUtils.showMessage(getApplicationContext(),"Вы выбрали: " + label);
+                // messageUtils.showMessage(getApplicationContext(),"Вы выбрали: " + label);
                 try {
                     loadSpinnerData();
                     select_label = (TextView) findViewById(R.id.select_label);
                     select_label.setText(spinner.getItemAtPosition(0).toString());
-                    AppController.getInstance().getMainActivityViews().setDepartment(spinner.getItemAtPosition(0).toString());
                 }
                 catch (Exception e){
                     Log.d(TAG, "Error : " + e.getMessage());
@@ -402,7 +400,6 @@ public class SettingsActivity extends AppCompatActivity implements
                     loadSpinnerSotrData();
                     labelSotr = (TextView) findViewById(R.id.labelSotr);
                     labelSotr.setText(spinnerSotr.getItemAtPosition(0).toString());
-                    AppController.getInstance().getMainActivityViews().setEmployee(spinnerSotr.getItemAtPosition(0).toString());
                 }
                 catch (Exception e){
                     Log.d(TAG, "Error : " + e.getMessage());
@@ -417,15 +414,12 @@ public class SettingsActivity extends AppCompatActivity implements
                 idd = mDBHelper.getDeps_id_by_Name(mlabel);
                 select_label = (TextView) findViewById(R.id.select_label);
                 select_label.setText(mlabel);
-                AppController.getInstance().getMainActivityViews().setDepartment(mlabel);
-               // Showing selected spinner item
-                messageUtils.showMessage(getApplicationContext(), "Вы выбрали: " + mlabel);
+
                 ids=-1;
                 try {
                     loadSpinnerSotrData();
                     labelSotr = (TextView) findViewById(R.id.labelSotr);
                     labelSotr.setText(spinnerSotr.getItemAtPosition(0).toString());
-                    AppController.getInstance().getMainActivityViews().setEmployee(spinnerSotr.getItemAtPosition(0).toString());
                 }catch (Exception e){
                     Log.d(TAG, "Error : " + e.getMessage());
                 }
@@ -440,10 +434,9 @@ public class SettingsActivity extends AppCompatActivity implements
                     labelSotr = (TextView) findViewById(R.id.labelSotr);
                     labelSotr.setText(slabel);
                     // Showing selected spinner item
-                    messageUtils.showMessage(getApplicationContext(),"Вы выбрали: " + slabel);
-                    AppController.getInstance().getMainActivityViews().setEmployee(slabel);
+                    //messageUtils.showMessage(getApplicationContext(),"Вы выбрали: " + slabel);
                 }else{
-                    messageUtils.showMessage(getApplicationContext(),"Ошибка при поиске ID выбранного сотрудника!");
+                    MessageUtils.showToast(getApplicationContext(),"Ошибка при поиске ID выбранного сотрудника!", false);
                 }
             } else {
                 if (idd != 0) {
@@ -456,10 +449,9 @@ public class SettingsActivity extends AppCompatActivity implements
                             labelSotr = (TextView) findViewById(R.id.labelSotr);
                             labelSotr.setText(slabel);
                             // Showing selected spinner item
-                            messageUtils.showMessage(getApplicationContext(),"Вы выбрали: " + slabel);
-                            AppController.getInstance().getMainActivityViews().setEmployee(slabel);
+                            //messageUtils.showMessage(getApplicationContext(),"Вы выбрали: " + slabel);
                         }else{
-                            messageUtils.showMessage(getApplicationContext(),"Ошибка при поиске ID выбранного сотрудника!");
+                            MessageUtils.showToast(getApplicationContext(),"Ошибка при поиске выбранного сотрудника!", false);
                         }
                     }
                     catch (Exception e){
@@ -490,6 +482,7 @@ public class SettingsActivity extends AppCompatActivity implements
                 mDBHelper.currentOutDoc.setDivision_code("0");
                 mDBHelper.currentOutDoc.setIdUser(0);
             }
+            AppController.getInstance().getMainActivityViews().setOutDoc(makeOutDocDesc(new String[]{null}));
         }
 
         if ((division_code == null)||(division_code.equals("0"))) {

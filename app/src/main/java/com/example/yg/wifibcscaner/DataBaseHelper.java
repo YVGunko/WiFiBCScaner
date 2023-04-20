@@ -64,11 +64,11 @@ import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getStartOfDayLong;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getStartOfDayString;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.numberOfDaysInMonth;
 import static com.example.yg.wifibcscaner.utils.DbUtils.tryCloseCursor;
-import static com.example.yg.wifibcscaner.utils.StringUtils.getUUID;
-import static com.example.yg.wifibcscaner.utils.StringUtils.makeLastBoxDef;
-import static com.example.yg.wifibcscaner.utils.StringUtils.makeSotrDesc;
-import static com.example.yg.wifibcscaner.utils.StringUtils.retStringFollowingCRIfNotNull;
-import static com.example.yg.wifibcscaner.utils.StringUtils.makeOrderDesc;
+import static com.example.yg.wifibcscaner.utils.MyStringUtils.getUUID;
+import static com.example.yg.wifibcscaner.utils.MyStringUtils.makeLastBoxDef;
+import static com.example.yg.wifibcscaner.utils.MyStringUtils.makeSotrDesc;
+import static com.example.yg.wifibcscaner.utils.MyStringUtils.retStringFollowingCRIfNotNull;
+import static com.example.yg.wifibcscaner.utils.MyStringUtils.makeOrderDesc;
 
 import static java.lang.String.valueOf;
 
@@ -945,7 +945,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                             c.moveToFirst(); //есть boxes & prods
                             Log.d(TAG, "Looking for outdocs record count = " + c.getCount() + ", _id =" + c.getString((int) 0));
                             fb.outDocs = makeOutDocDesc(new String[]{c.getString(0),c.getString(1)});
-                            fb.depSotr = makeSotrDesc(new String[]{c.getString(2), c.getString(3)});
+                            fb.depSotr = makeSotrDesc(new String[]{c.getString(3)});
                         }
                     }
                 }
@@ -1842,10 +1842,19 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 defs = new Defs(cursor.getInt(0),cursor.getInt(1),cursor.getInt(2),
                         cursor.getString(3),cursor.getString(4),cursor.getInt(5),
                         cursor.getInt(6),cursor.getString(7),cursor.getInt(8),cursor.getString(9));
+
                 defs.descOper = getOpers_Name_by_id(defs.get_Id_o());
+                AppController.getInstance().getMainActivityViews().setOperation(defs.descOper);
+
                 defs.descDep = getDeps_Name_by_id(defs.get_Id_d());
+                AppController.getInstance().getMainActivityViews().setDepartment(defs.descDep);
+
                 defs.descSotr = getSotr_Name_by_id(defs.get_Id_s());
+                AppController.getInstance().getMainActivityViews().setEmployee(makeSotrDesc(new String[] {defs.descSotr}));
+
                 defs.descDivision = getDivisionsName(defs.getDivision_code());
+                AppController.getInstance().getMainActivityViews().setDivision(defs.descDivision);
+
                 defs.descUser = getUserName(defs.get_idUser());
             }
             tryCloseCursor(cursor);

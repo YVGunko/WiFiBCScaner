@@ -29,7 +29,7 @@ public class AppController extends Application {
     public void onCreate() {
         super.onCreate();
         mInstance = this;
-        mMainActivityViews = new MainActivityViews("","box","","div", "oper", "dep", "empl", "");
+        mMainActivityViews = new MainActivityViews("","","","", "", "", "", "");
         mResources = getResources();
         mSharedPreferences = getSharedPreferences("SharedPreferences", Context.MODE_PRIVATE);
         mDBHelper = DataBaseHelper.getInstance();

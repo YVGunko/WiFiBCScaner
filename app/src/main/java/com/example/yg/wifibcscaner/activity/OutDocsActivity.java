@@ -3,7 +3,6 @@ package com.example.yg.wifibcscaner.activity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.database.Cursor;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.LoaderManager;
@@ -19,34 +18,25 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
-import android.widget.ProgressBar;
 
 import com.example.yg.wifibcscaner.DataBaseHelper;
 import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.Defs;
 import com.example.yg.wifibcscaner.data.model.OutDocs;
-import com.example.yg.wifibcscaner.data.repository.CurrentDocDetailsRepository;
 import com.example.yg.wifibcscaner.data.repository.OutDocRepo;
 import com.example.yg.wifibcscaner.data.service.OutDocService;
 import com.example.yg.wifibcscaner.service.DataExchangeService;
-import com.example.yg.wifibcscaner.utils.ApiUtils;
 import com.example.yg.wifibcscaner.utils.MessageUtils;
-import com.example.yg.wifibcscaner.utils.StringUtils;
-
-import java.util.List;
-
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
+import com.example.yg.wifibcscaner.utils.MyStringUtils;
 
 import static com.example.yg.wifibcscaner.data.service.OutDocService.makeOutDocDesc;
-import static com.example.yg.wifibcscaner.data.repository.OutDocRepo.*;
+import static com.example.yg.wifibcscaner.utils.MyStringUtils.makeSotrDesc;
 
 public class OutDocsActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
 
     OutDocService outDocService ;
-    StringUtils stringUtils ;
+    MyStringUtils myStringUtils;
     OutDocRepo outDocRepo = new OutDocRepo();
 
     private DataBaseHelper mDBHelper = AppController.getInstance().getDbHelper();
@@ -95,9 +85,8 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
                                            int pos, long id) {
                 try {
                     if (scAdapter.getCount() > 0) {
-                        strTitle = outDocService.makeOutDocDesc(scAdapter.getCursor().getString(1),scAdapter.getCursor().getString(3),
-                                outDocRepo.selectOutDocById(scAdapter.getCursor().getString(0)));
-                        OutDocsActivity.this.setTitle(strTitle);
+                        MessageUtils.showToast(AppController.getInstance().getApplicationContext(),outDocService.makeOutDocDesc(scAdapter.getCursor().getString(1),scAdapter.getCursor().getString(3),
+                                outDocRepo.selectOutDocById(scAdapter.getCursor().getString(0))), true);
                     }
                 }catch (Exception e){
                     e.printStackTrace();
@@ -155,7 +144,6 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
                             MessageUtils.showToast(getApplicationContext(),"Ошибка при сохранении.",false);
                         }
                     }
-                    //outDocDesc[0] = outDocDesc[0] +" "+mDBHelper.defs.descDep+" "+mDBHelper.defs.descSotr;
                 }
 
                 if (!(mDBHelper.defs.get_Id_o()==mDBHelper.defs.get_idOperFirst() || mDBHelper.defs.get_Id_o()==mDBHelper.defs.get_idOperLast())
@@ -179,11 +167,10 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
                             }
                         }
                     }
-                    //outDocDesc[0] = makeOutDocDesc(new String[]{scAdapter.getCursor().getString(1)+" "+mDBHelper.defs.descDep});
                 }
                 OutDocsActivity.this.setTitle(outDocDesc[0]);
                 AppController.getInstance().getMainActivityViews().setDepartment(mDBHelper.getDeps_Name_by_id(mDBHelper.defs.get_Id_d()));
-                AppController.getInstance().getMainActivityViews().setEmployee(mDBHelper.getSotr_Name_by_id(mDBHelper.defs.get_Id_s()));
+                AppController.getInstance().getMainActivityViews().setEmployee(makeSotrDesc(new String[] {mDBHelper.getSotr_Name_by_id(mDBHelper.defs.get_Id_s())}));
                 AppController.getInstance().getMainActivityViews().setOutDoc(outDocDesc[0]);
             }
         });
@@ -199,16 +186,14 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
     }
     // обработка нажатия кнопки
     public void onButtonClick(View view) {
-        int docNum = outDocRepo.outDocsAddRec();
-        // добавляем запись
-        if (docNum!=0) {
+        if (outDocRepo.outDocsAddRec()) {
             // получаем новый курсор с данными
             getSupportLoaderManager().getLoader(0).forceLoad();
 
-            OutDocsActivity.this.setTitle(makeOutDocDesc(new String[]{String.valueOf(docNum)}));
+            OutDocsActivity.this.setTitle(makeOutDocDesc(new String[]{String.valueOf(mDBHelper.currentOutDoc.get_number()), mDBHelper.currentOutDoc.get_DT()}));
+            AppController.getInstance().getMainActivityViews().setOutDoc(makeOutDocDesc(new String[]{String.valueOf(mDBHelper.currentOutDoc.get_number()), mDBHelper.currentOutDoc.get_DT()}));
         } else {
-            MessageUtils messageUtils = new MessageUtils();
-            messageUtils.showMessage(getApplicationContext(),"Ошибка при добавлении записи.");
+            MessageUtils.showToast(getApplicationContext(),"Новая накладная не создана. Попробуйте позже.", false);
         }
     }
     @Override

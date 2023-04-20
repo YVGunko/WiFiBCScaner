@@ -18,7 +18,8 @@ import com.example.yg.wifibcscaner.utils.MessageUtils;
 
 import java.util.List;
 
-import static com.example.yg.wifibcscaner.utils.StringUtils.makeUserDesc;
+import static com.example.yg.wifibcscaner.utils.MyStringUtils.makeSotrDesc;
+import static com.example.yg.wifibcscaner.utils.MyStringUtils.makeUserDesc;
 
 public class LoginActivity extends AppCompatActivity implements
         AdapterView.OnItemSelectedListener {
@@ -46,7 +47,7 @@ public class LoginActivity extends AppCompatActivity implements
         if(sp.getId() == R.id.spinnerName) {
             if (position >= 0) {
                 idUser = mDBHelper.getIdByName(user.TABLE, parent.getItemAtPosition(position).toString());
-                if (idUser == 0) messageUtils.showMessage(getApplicationContext(), "Пользователь не найден! Регистрация невозможна.");
+                if (idUser == 0) MessageUtils.showToast(getApplicationContext(), "Пользователь не найден! Регистрация невозможна.", false);
             }
         }}
     @Override
@@ -80,7 +81,7 @@ public class LoginActivity extends AppCompatActivity implements
                     mDBHelper.defs.set_idUser(idUser);      //set user as default
                     mDBHelper.defs.setDescUser(mDBHelper.getUserName(idUser));
                     AppController.getInstance().getMainActivityViews().setUser(makeUserDesc(mDBHelper.defs.getDescUser()));
-                    messageUtils.showMessage(getApplicationContext(), "Вы вошли в систему как: "+mDBHelper.defs.getDescUser());
+                    //messageUtils.showMessage(getApplicationContext(), "Вы вошли в систему как: "+mDBHelper.defs.getDescUser());
 
                     mDBHelper.currentOutDoc.set_id("");
                     mDBHelper.currentOutDoc.set_number(0); //clear currentOutdoc
@@ -91,7 +92,7 @@ public class LoginActivity extends AppCompatActivity implements
                         mDBHelper.defs.set_Id_s(mDBHelper.getUserId_s(idUser)); //employee
                         Sotr sotr = mDBHelper.getSotrReq(mDBHelper.defs.get_Id_s());
                         mDBHelper.defs.setDescSotr(sotr.get_Sotr());
-                        AppController.getInstance().getMainActivityViews().setEmployee(mDBHelper.defs.getDescUser());
+                        AppController.getInstance().getMainActivityViews().setEmployee(makeSotrDesc(new String[] {mDBHelper.defs.getDescUser()}));
 
                         if (sotr.get_Id_o()!=0) {
                             mDBHelper.defs.set_Id_o(sotr.get_Id_o()); //oper
@@ -111,18 +112,18 @@ public class LoginActivity extends AppCompatActivity implements
                         }
                     }
                     if (mDBHelper.updateDefsTable(mDBHelper.defs) == 0) {
-                        messageUtils.showMessage(getApplicationContext(),"Ошибка при сохранении.");
+                        MessageUtils.showToast(getApplicationContext(),"Ошибка при сохранении.", false);
                     } else mDBHelper.selectDefsTable();
                 } else { //same user logged
 
                 }
 
             } else {
-                messageUtils.showMessage(getApplicationContext(), "Пароль не верен! Вход в систему не возможен!");
+                MessageUtils.showToast(getApplicationContext(), "Пароль не верен! Вход в систему не возможен!", false);
             }
         } else {
-            if (idUser == 0) messageUtils.showMessage(getApplicationContext(), "Выберите пользователя!");
-            if (ePswd.getText().toString().isEmpty()) messageUtils.showMessage(getApplicationContext(), "Введите пароль!");
+            if (idUser == 0) MessageUtils.showToast(getApplicationContext(), "Выберите пользователя!", false);
+            if (ePswd.getText().toString().isEmpty()) MessageUtils.showToast(getApplicationContext(), "Введите пароль!", false);
         }
     }
 }

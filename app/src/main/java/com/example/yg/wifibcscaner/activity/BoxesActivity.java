@@ -91,16 +91,16 @@ public class BoxesActivity extends AppCompatActivity {
                                 if (!mDBHelper.deleteFromTable(Boxes.TABLE_boxes,Boxes.COLUMN_ID,sBId)){
                                     Log.d("1","Коробка не может быть удалена из-за ссылок других операций! Id= "+sBId );
                                 }
-                                messageUtils.showMessage(getApplicationContext(), "Ок! Успешно!");
+                                MessageUtils.showToast(getApplicationContext(), "Ок! Успешно!", false);
                             }
                             else {
                                 Log.d("1","Движения Подошвы не можгут быть удалены из-за ссылок других операций! Id= "+sBmId );
-                                messageUtils.showMessage(getApplicationContext(), "Движения Подошвы не могут быть удалены!");
+                                MessageUtils.showToast(getApplicationContext(), "Движения Подошвы не могут быть удалены!", false);
                             }
                         }
                         else {
                             Log.d("1","Ошибка при удалении Подошвы! Id= "+sPdId );
-                            messageUtils.showMessage(getApplicationContext(),  "Ошибка при удалении Подошвы!");
+                            MessageUtils.showToast(getApplicationContext(),  "Ошибка при удалении Подошвы!",false);
                         }
                     }});
                 adb.show();

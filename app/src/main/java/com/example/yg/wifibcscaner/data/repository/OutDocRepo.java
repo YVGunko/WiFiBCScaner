@@ -19,7 +19,7 @@ import static com.example.yg.wifibcscaner.data.service.OutDocService.makeOutDocD
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDateTimeLong;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getLongDateTimeString;
 import static com.example.yg.wifibcscaner.utils.DbUtils.tryCloseCursor;
-import static com.example.yg.wifibcscaner.utils.StringUtils.getUUID;
+import static com.example.yg.wifibcscaner.utils.MyStringUtils.getUUID;
 
 import static java.lang.String.valueOf;
 
@@ -108,11 +108,9 @@ public class OutDocRepo {
     }
 
 
-    public int outDocsAddRec () {
+    public boolean outDocsAddRec () {
         Cursor cursor = null;
-        boolean dbWasOpen = false;
-        int docNum;
-        int result = 0;
+        int docNum = 0;
         try {
             try{
                 mDataBase = AppController.getInstance().getDbHelper().openDataBase();
@@ -141,7 +139,6 @@ public class OutDocRepo {
                     values.put(OutDocs.COLUMN_Division_code, mDbHelper.defs.getDivision_code());
                     values.put(OutDocs.COLUMN_idUser, mDbHelper.defs.get_idUser());
                     if (mDataBase.insertOrThrow(OutDocs.TABLE, null, values)>0) {
-                        result = docNum+1;
                         mDbHelper.currentOutDoc.set_id(uuid);
                         mDbHelper.currentOutDoc.set_number(docNum+1);
                         mDbHelper.currentOutDoc.set_comment(mDbHelper.defs.descDep+", "+mDbHelper.defs.descUser);
@@ -157,8 +154,7 @@ public class OutDocRepo {
             }
         }  finally {
             tryCloseCursor(cursor);
-            //if (!dbWasOpen) mDataBase.close();
-            return result;
+            return (docNum != 0);
         }
     }
 

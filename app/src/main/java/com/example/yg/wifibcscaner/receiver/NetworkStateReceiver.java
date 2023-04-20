@@ -7,6 +7,8 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.util.Log;
 
+import com.example.yg.wifibcscaner.service.CheckIfServerAvailable;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,7 +48,7 @@ public class NetworkStateReceiver extends BroadcastReceiver {
         /**
          * NOTE: getActiveNetworkInfo() may return null when there is no default network e.g. Airplane Mode
          */
-        if(networkInfo != null && networkInfo.getState() == NetworkInfo.State.CONNECTED) {
+        if(networkInfo != null && networkInfo.getState() == NetworkInfo.State.CONNECTED && CheckIfServerAvailable.isOnline()) {
             connected = true;
         } else if(intent.getBooleanExtra(ConnectivityManager.EXTRA_NO_CONNECTIVITY, Boolean.FALSE)) {    //Boolean that indicates whether there is a complete lack of connectivity
             connected = false;

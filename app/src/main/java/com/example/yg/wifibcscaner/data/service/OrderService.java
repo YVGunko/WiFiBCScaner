@@ -3,14 +3,13 @@ package com.example.yg.wifibcscaner.data.service;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 
-import com.example.yg.wifibcscaner.DataBaseHelper;
 import com.example.yg.wifibcscaner.controller.AppController;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getLongDateTimeString;
-import static com.example.yg.wifibcscaner.utils.StringUtils.retStringFollowingCRIfNotNull;
+import static com.example.yg.wifibcscaner.utils.MyStringUtils.retStringFollowingCRIfNotNull;
 
 public class OrderService {
     //list all boxes

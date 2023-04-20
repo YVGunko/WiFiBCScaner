@@ -3,6 +3,7 @@ package com.example.yg.wifibcscaner.utils;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
+import android.util.Log;
 
 import com.example.yg.wifibcscaner.BuildConfig;
 import com.example.yg.wifibcscaner.R;
@@ -12,8 +13,9 @@ import java.util.Date;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.*;
 
 public class SharedPreferenceManager {
+    private static final String TAG = "SharedPreferenceMan";
 
-    private final String NEXT_DOWNLOAD_ATTEMPT_TIMEOUT = "download_timeout";
+    private final String NEXT_DOWNLOAD_ATTEMPT_TIME = "download_timeout";
     private final String NEXT_PAGE_TO_LOAD = "next_page_number";
     private final String UPDATE_DATE = "update_date";
     final static String VERSION_CODE = "version_code";
@@ -21,6 +23,7 @@ public class SharedPreferenceManager {
     final static String LAST_SCANNED_ORDER_DESCRIPTION = "last_scanned_order_description";
     final static String LAST_SCANNED_BOX_DESCRIPTION = "last_scanned_box_description";
     final static int DOESNT_EXIST = -1;
+    final static int TIME_SHIFT = 300000;
 
     private static SharedPreferenceManager sharedPreferenceManager;
 
@@ -35,8 +38,15 @@ public class SharedPreferenceManager {
 
     public void setLastUpdatedTimestamp() {
         editor = AppController.getInstance().getSharedPreferences().edit();
-        editor.putLong(NEXT_DOWNLOAD_ATTEMPT_TIMEOUT, System.currentTimeMillis());
+        editor.putLong(NEXT_DOWNLOAD_ATTEMPT_TIME, System.currentTimeMillis());
+        Log.d(TAG, " setLastUpdatedTimestamp -> "+DateTimeUtils.getFormattedDateTime(System.currentTimeMillis()));
         editor.commit();
+    }
+    public long getLastUpdatedTimestamp() {
+        return AppController.getInstance().getSharedPreferences().getLong(
+                NEXT_DOWNLOAD_ATTEMPT_TIME,
+                0
+        );
     }
     public void setDefaults(String key, String value) {
         editor = AppController.getInstance().getSharedPreferences().edit();
@@ -64,9 +74,9 @@ public class SharedPreferenceManager {
      */
     public boolean isLocalDataExpired() {
         if (System.currentTimeMillis() - AppController.getInstance().getSharedPreferences().getLong(
-                NEXT_DOWNLOAD_ATTEMPT_TIMEOUT,
+                NEXT_DOWNLOAD_ATTEMPT_TIME,
                 0
-        ) > BuildConfig.NEXT_DOWNLOAD_ATTEMPT_TIMEOUT
+        ) > BuildConfig.NEXT_DOWNLOAD_ATTEMPT_TIMEOUT - TIME_SHIFT
         ) {
             return true;
         }
@@ -98,7 +108,7 @@ public class SharedPreferenceManager {
 
     public void setUpdateDateNow() {
         editor = AppController.getInstance().getSharedPreferences().edit();
-        editor.putLong(UPDATE_DATE, new Date().getTime() - 120);
+        editor.putLong(UPDATE_DATE, new Date().getTime() - TIME_SHIFT);
         editor.commit();
     }
     public void setUpdateDate(long lDate) {

@@ -44,13 +44,16 @@ import com.example.yg.wifibcscaner.data.model.Boxes;
 import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.data.model.Prods;
 import com.example.yg.wifibcscaner.data.repository.OutDocRepo;
-import com.example.yg.wifibcscaner.data.service.OutDocService;
 import com.example.yg.wifibcscaner.databinding.ActivityMainBinding;
 import com.example.yg.wifibcscaner.receiver.SyncDataBroadcastReceiver;
+import com.example.yg.wifibcscaner.service.CheckIfServerAvailable;
 import com.example.yg.wifibcscaner.service.DataExchangeService;
 import com.example.yg.wifibcscaner.utils.ApiUtils;
+import com.example.yg.wifibcscaner.utils.AppUtils;
 import com.example.yg.wifibcscaner.utils.MessageUtils;
+import com.example.yg.wifibcscaner.utils.NotificationUtils;
 import com.example.yg.wifibcscaner.utils.SharedPreferenceManager;
+import com.example.yg.wifibcscaner.utils.executors.DefaultExecutorSupplier;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 import com.honeywell.aidc.AidcManager;
@@ -73,14 +76,21 @@ import retrofit2.Response;
 import static android.text.TextUtils.substring;
 import static com.example.yg.wifibcscaner.DataBaseHelper.*;
 import static com.example.yg.wifibcscaner.data.service.OutDocService.makeOutDocDesc;
-import static com.example.yg.wifibcscaner.utils.StringUtils.makeOrderDesc;
-import static com.example.yg.wifibcscaner.utils.StringUtils.makeUserDesc;
-import static com.example.yg.wifibcscaner.utils.StringUtils.filter;
+import static com.example.yg.wifibcscaner.utils.MyStringUtils.makeOrderDesc;
+import static com.example.yg.wifibcscaner.utils.MyStringUtils.makeUserDesc;
+import static com.example.yg.wifibcscaner.utils.MyStringUtils.makeSotrDesc;
+import static com.example.yg.wifibcscaner.utils.MyStringUtils.filter;
 
 
 public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeListener, DatePickerDialog.OnDateSetListener {
     private static final String TAG = "MainActivity";
-    OutDocService outDocService = new OutDocService();
+    private static final String MY_CHANNEL_ID = "Data Exchange";
+
+    NotificationUtils notificationUtils;
+    public void setNotificationUtils(NotificationUtils notificationUtils) {
+        this.notificationUtils = notificationUtils;
+    }
+
     OutDocRepo outDocRepo = new OutDocRepo();
     private static BarcodeReader barcodeReader; //honeywell
     private AidcManager manager;
@@ -90,7 +100,6 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
 
 
     private DataBaseHelper mDBHelper;
-    TextView currentUser;
     static EditText editTextRQ;
     foundbox fb;
     foundorder fo;
@@ -101,9 +110,19 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
         return device_unique_id;
     }
 
+    public void onUserInteraction (){
+        Log.d(TAG, " onUserInteraction()");
+        if (SharedPreferenceManager.getInstance().isLocalDataExpired())
+            SharedPreferenceManager.getInstance().setLastUpdatedTimestamp();
+    }
+
     @Override
     protected void onNetworkChange(boolean isConnected) {
-
+        Log.d(TAG, " onNetworkChange() -> isConnected -> "+isConnected);
+        if (isConnected) {
+            LoadOrderAsync task = new LoadOrderAsync();
+            task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, null);
+        }
     }
 
     @Override
@@ -145,6 +164,12 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
                 barcodeReader.addBarcodeListener(MainActivity.this);
             }
         });
+
+        notificationUtils = new NotificationUtils();
+        setNotificationUtils(notificationUtils);
+
+        if (notificationUtils != null)
+            Log.d(TAG, "notificationUtils -> null");
     }
 
     @Override
@@ -184,6 +209,26 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
                 AppController.getInstance().getMainActivityViews().getUser().isEmpty()) {
             Log.d(TAG, "setUser called onResume");
             AppController.getInstance().getMainActivityViews().setUser(makeUserDesc(mDBHelper.getUserName(mDBHelper.defs.get_idUser())));
+        }
+        if (AppController.getInstance().getMainActivityViews().getDivision() == null ||
+                AppController.getInstance().getMainActivityViews().getDivision().isEmpty()) {
+            Log.d(TAG, "setDivision called onResume");
+            AppController.getInstance().getMainActivityViews().setDivision(mDBHelper.getDivisionsName(mDBHelper.defs.getDivision_code()));
+        }
+        if (AppController.getInstance().getMainActivityViews().getOperation() == null ||
+                AppController.getInstance().getMainActivityViews().getOperation().isEmpty()) {
+            Log.d(TAG, "setOperation called onResume");
+            AppController.getInstance().getMainActivityViews().setOperation(mDBHelper.getOpers_Name_by_id(mDBHelper.defs.get_Id_o()));
+        }
+        if (AppController.getInstance().getMainActivityViews().getDepartment() == null ||
+                AppController.getInstance().getMainActivityViews().getDepartment().isEmpty()) {
+            Log.d(TAG, "setDepartment called onResume");
+            AppController.getInstance().getMainActivityViews().setDepartment(mDBHelper.getDeps_Name_by_id(mDBHelper.defs.get_Id_d()));
+        }
+        if (AppController.getInstance().getMainActivityViews().getEmployee() == null ||
+                AppController.getInstance().getMainActivityViews().getEmployee().isEmpty()) {
+            Log.d(TAG, "setDepartment called onResume");
+            AppController.getInstance().getMainActivityViews().setEmployee(makeSotrDesc(new String[] {mDBHelper.getSotr_Name_by_id(mDBHelper.defs.get_Id_s())}));
         }
         if (barcodeReader != null) {
             try {
@@ -273,7 +318,6 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
         }else {//камера устройства
             input.setEnabled(false);
             if(barcodeReader!=null){
-                //showMessage("Режим работы со встроенным сканером.");
                 try {
                     barcodeReader.softwareTrigger(true);
                 } catch (ScannerNotClaimedException | ScannerUnavailableException e) {
@@ -350,7 +394,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
             return;
         }
         fo = mDBHelper.searchOrder(currentbarcode);
-        if (!fo.division_code.equals(mDBHelper.defs.getDivision_code())) {
+        if (fo.division_code != null && !fo.division_code.equals(mDBHelper.defs.getDivision_code())) {
             Log.d(TAG, "scanResultHandler -> division mismatch -> return");
             MessageUtils.showToast(MainActivity.this, getString(R.string.wrong_division_order),true);
             return;
@@ -635,11 +679,19 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
 
         @Override
         protected String doInBackground(String... strings) {
+            if (!AppUtils.isNetworkAvailable(AppController.getInstance())) {
+                Log.d(TAG, "isNetworkAvailable -> no");
+                if (notificationUtils != null)
+                    //notificationUtils.notify(context, AppController.getInstance().getResourses().getString(R.string.error_connection));
+                    DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
+                        notificationUtils.notify(AppController.getInstance().getApplicationContext(),
+                                AppController.getInstance().getResourses().getString(R.string.network_unawailable),
+                                MY_CHANNEL_ID);
+                    });
+                return null;
+            }
             try {
                 ArrayList<String> OrdersId = new ArrayList<String>();
-                bCancelFlag = false;
-                Log.i(TAG, " bCancelFlag was set to: "+bCancelFlag);
-                //TODO check if server is available
                 if (strings !=null && strings.length != 0)
                     OrdersId.add(strings[0]);
                 else
@@ -671,13 +723,12 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
                                             if (mDBHelper.deleteFromOrderNotFound(s))
                                                 Log.d("loadOrderAsync", "OrderNotFound Record deleted: " + s);
                                             MessageUtils.showToast(getApplicationContext(),
-                                                    "Заказ "+makeOrderDesc(new String[] {response.body().getOrder().get_Ord(),
+                                                    "Теперь можно принять коробку :\n "+makeOrderDesc(new String[] {response.body().getOrder().get_Ord(),
                                                             response.body().getOrder().get_Cust(),
                                                             response.body().getOrder().get_Nomen(),
                                                             response.body().getOrder().get_Attrib(),
                                                             String.valueOf(response.body().getOrder().get_Q_ord()),
-                                                            String.valueOf(response.body().getOrder().get_Q_box())})+
-                                                    " загружен. Отсканируйте коробку еще раз.",
+                                                            String.valueOf(response.body().getOrder().get_Q_box())}),
                                                     true);
                                         }
                                     }
@@ -707,6 +758,7 @@ public class MainActivity extends BaseActivity implements BarcodeReader.BarcodeL
 
     /**
      * sets repeating alarm for data download
+     * SystemClock.elapsedRealtime() + BuildConfig.NEXT_DOWNLOAD_ATTEMPT_TIMEOUT
      */
     public void setSyncRepeatingAlarm() {
         Intent intent = new Intent(this, SyncDataBroadcastReceiver.class);

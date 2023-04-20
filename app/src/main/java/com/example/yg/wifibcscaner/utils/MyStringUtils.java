@@ -12,7 +12,7 @@ import java.util.UUID;
 
 import static android.content.ContentValues.TAG;
 
-public class StringUtils {
+public class MyStringUtils {
     private static final String TAG = "StringUtils";
 
     public static String getUUID() {
@@ -91,37 +91,49 @@ public class StringUtils {
 
     public static String makeSotrDesc(@NonNull String[] strings) {
         StringBuilder sb = new StringBuilder ();
-        //sb.append ("Нкл. ");
-        sb.append (strings [0]);
-        sb.append(", ");
-        sb.append(strings [1]);
+        sb.append ("Сотрудник: ");
+        if (strings.length > 0 && strings [0] != null) {
+            sb.append(strings[0].substring(0, strings[0].indexOf(" ")));
+        }
+        if (strings.length > 1 && strings [1] != null) {
+            sb.append(", ");
+            sb.append(strings[1]);
+        }
 
         return sb.toString ();
     }
     public static String makeOrderDesc(@NonNull String[] strings) {
         StringBuilder sb = new StringBuilder ();
         sb.append ("№");
-        sb.append (strings [0]); //number
-        sb.append(", ");
-        sb.append(strings [1]); //customer
-        sb.append("\n");
-        sb.append("Подошва: ");
-        sb.append(strings [2]);//nomenklature
-        if ((strings [3] != null) && (!strings [3].equals(""))) {
+        if (strings.length > 0 && strings [0] != null) {
+            sb.append(strings[0]);
+        }
+        if (strings.length > 1 && strings [1] != null) {
+            sb.append(", ");
+            sb.append(strings[1]); //customer
+        }
+        if (strings.length > 2 && strings [2] != null) {
+            sb.append("\n");
+            sb.append("Подошва: ");
+            sb.append(strings [2]);//nomenklature
+        }
+
+        if (strings.length > 3 && strings [3] != null && !strings [3].equals("")) {
             sb.append(", ");
             sb.append(retStringFollowingCRIfNotNull(strings [3]));//attribut
         } else sb.append("\n");
-        sb.append("Всего пар: ");
-        sb.append(strings [4]);// total ordered number of nomeklature - Q_ord
-        sb.append(", Всего кор: ");
-        sb.append(strings [5]);// total number of boxes - Q_box
-        sb.append("\n");
+
+        if (strings.length > 4 && strings [4] != null) {
+            sb.append("Всего пар: ");
+            sb.append(strings [4]);// total ordered number of nomeklature - Q_ord
+        }
+        if (strings.length > 5 && strings [5] != null) {
+            sb.append(", Всего кор: ");
+            sb.append(strings [5]);// total number of boxes - Q_box
+            sb.append("\n");
+        }
+
         return sb.toString ();
-        /*
-        *         def += "Заказ: " + cursor.getString(6) +
-                ". Регл: " + cursor.getString(7) +
-                ". Всего кор: " + cursor.getString(8) + "\n";
-        * */
     }
     public static String makeUserDesc(@NonNull String name) {
         StringBuilder sb = new StringBuilder();

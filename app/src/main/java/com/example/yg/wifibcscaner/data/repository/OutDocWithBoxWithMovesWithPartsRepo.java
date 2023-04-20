@@ -20,8 +20,7 @@ import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.data.model.Prods;
 import com.example.yg.wifibcscaner.utils.ApiUtils;
 import com.example.yg.wifibcscaner.utils.NotificationUtils;
-import com.example.yg.wifibcscaner.utils.SharedPreferenceManager;
-import com.example.yg.wifibcscaner.utils.StringUtils;
+import com.example.yg.wifibcscaner.utils.MyStringUtils;
 import com.example.yg.wifibcscaner.utils.executors.DefaultExecutorSupplier;
 
 import java.util.ArrayList;
@@ -125,20 +124,20 @@ public class OutDocWithBoxWithMovesWithPartsRepo {
                     getPartBoxNotSent(cursor, db));
 
             responce.outDocReqList.addAll(getOutDoc(cursor, db,
-                    StringUtils.toSqlInString(responce.partBoxReqList.stream()
+                    MyStringUtils.toSqlInString(responce.partBoxReqList.stream()
                             .map(Prods::get_idOutDocs)
                             .distinct()
                             .collect(Collectors.toList()))));
 
             responce.movesReqList.addAll(
                     getBoxMoves(cursor, db,
-                            StringUtils.toSqlInString(responce.partBoxReqList.stream()
+                            MyStringUtils.toSqlInString(responce.partBoxReqList.stream()
                                     .map(Prods::get_Id_bm)
                                     .distinct()
                                     .collect(Collectors.toList()))));
             responce.boxReqList.addAll(
                     getBoxes(cursor, db,
-                            StringUtils.toSqlInString(responce.movesReqList.stream()
+                            MyStringUtils.toSqlInString(responce.movesReqList.stream()
                                     .map(BoxMoves::get_Id_b)
                                     .distinct()
                                     .collect(Collectors.toList()))));
