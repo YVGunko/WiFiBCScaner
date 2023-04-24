@@ -62,7 +62,7 @@ public interface OrderService {
     @POST("/archiveOrders")
     Call<List<String>> getArchiveOrders(@Body ArrayList<String> ordersId);
 
-    @GET("/divisions")
+    @GET("/division")
     Call<List<Division>> getDivision();
 
     @GET("/employee")

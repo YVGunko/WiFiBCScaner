@@ -25,12 +25,12 @@ import static com.example.yg.wifibcscaner.DataBaseHelper.getDayTimeLong;
 import static com.example.yg.wifibcscaner.DataBaseHelper.getStartOfDayString;
 
 public class UpdateActivity extends AppCompatActivity {
+    private static final String TAG = "UpdateActivity";
     private DataBaseHelper mDBHelper;
     ProgressBar pbar;
     Button buttonStart;
     ListView listView;
     Button buttonSetDate;
-    Integer iPartBox, iPartBoxRecordNumber, iPartBoxPage, ibmPage, iBox, iBoxRecordNumber, iBoxMove, iBoxMoveRecordNumber ;
     String strUpdateDate = mDBHelper.dtMin;
     Long lUpdateDate = mDBHelper.ldtMin;
 
@@ -137,6 +137,26 @@ public class UpdateActivity extends AppCompatActivity {
                     }
                 });
 
+                ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getDivision().enqueue(new Callback<List<Division>>() {
+                    @Override
+                    public void onResponse(Call<List<Division>> call, Response<List<Division>> response) {
+
+                        if (response.isSuccessful() && !response.body().isEmpty()) {
+                                mDBHelper.insertDivisionInBulk(response.body());
+                            if (response.body().size() != 0) {
+                                Log.d(TAG, "Ответ сервера на запрос новых подразделений: " + response.body().size());
+                            }
+                        }
+                        counter = counter + 5;
+                        publishProgress(1);
+                    }
+
+                    @Override
+                    public void onFailure(Call<List<Division>> call, Throwable t) {
+                        Log.d("UpdateActivity", "Ответ сервера на запрос новых сотрудников: " + t.getMessage());
+                    }
+                });
+
                 ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getSotr(mDBHelper.getMaxSotrDate()).enqueue(new Callback<List<Sotr>>() {
                     // TODO Обработать результат. Записать поле sent... если успешно
                     @Override
@@ -214,9 +234,8 @@ public class UpdateActivity extends AppCompatActivity {
                     @Override
                     public void onResponse(Call<List<Orders>> call, Response<List<Orders>> response) {
                         Log.d("UpdateActivity", "Ответ сервера на запрос новых заказов: " + response.body().size());
-                        if (response.isSuccessful()) {
-                            for (Orders order : response.body())
-                                mDBHelper.insertOrders(order);
+                        if (response.isSuccessful() && !response.body().isEmpty()) {
+                                mDBHelper.insertOrdersInBulk(response.body());
                             //Прописать даты в lastUpdate
                             if (response.body().size() != 0)
                                 mDBHelper.setLastUpdate(new lastUpdate(Orders.TABLE_orders,
@@ -237,9 +256,8 @@ public class UpdateActivity extends AppCompatActivity {
                                 public void onResponse(Call<List<OutDocs>> call, Response<List<OutDocs>> response) {
                                     MessageUtils messageUtils = new MessageUtils();
                                     Log.d("UpdateActivity", "Ответ сервера на запрос новых накладных: " + response.body().size());
-                                    if (response.isSuccessful()) {
-                                        for (OutDocs deps : response.body())
-                                            mDBHelper.insertOrUpdateOutDocs(deps);
+                                    if (response.isSuccessful() && !response.body().isEmpty()) {
+                                        mDBHelper.insertOutDocInBulk(response.body());
                                         if (response.body().size() != 0){
                                             Log.d("UpdateActivity", "Ок! Новые накладные приняты!");
                                             //Прописать даты в lastUpdate
@@ -262,9 +280,8 @@ public class UpdateActivity extends AppCompatActivity {
                                             @Override
                                             public void onResponse(Call<List<Boxes>> call, Response<List<Boxes>> response) {
 
-                                                if (response.isSuccessful()) {
-                                                    for (Boxes boxes : response.body())
-                                                        mDBHelper.insertBoxes(boxes);
+                                                if (response.isSuccessful() && !response.body().isEmpty()) {
+                                                    mDBHelper.insertBoxInBulk(response.body());
 
                                                     if (response.body().size() != 0) {
                                                         if (mDBHelper.getTableUpdateDate(Boxes.TABLE_boxes) < mDBHelper.sDateToLong(response.body().get(response.body().size()-1).get_DT()))
@@ -306,9 +323,8 @@ public class UpdateActivity extends AppCompatActivity {
                                                                     @Override
                                                                     public void onResponse
                                                                     (Call<List<BoxMoves>> call, Response<List<BoxMoves>> response) {
-                                                                        if (response.isSuccessful()) {
-                                                                            for (BoxMoves bm : response.body())
-                                                                                mDBHelper.insertBoxMoves(bm);
+                                                                        if (response.isSuccessful() && !response.body().isEmpty()) {
+                                                                            mDBHelper.insertBoxMoveInBulk(response.body());
 
                                                                             if (response.body().size() != 0) {
                                                                                 if (mDBHelper.getTableUpdateDate(BoxMoves.TABLE_bm) < mDBHelper.sDateToLong(response.body().get(response.body().size()-1).get_DT()))
@@ -359,14 +375,8 @@ public class UpdateActivity extends AppCompatActivity {
                                                                 enqueue(new Callback<List<Prods>>() {
                                                                      @Override
                                                                     public void onResponse(Call<List<Prods>> call, Response<List<Prods>> response) {
-                                                                        if (response.isSuccessful()) {
-                                                                            iPartBox = 0;
-                                                                            iPartBoxRecordNumber = response.body().size();
-                                                                            for (Prods pb : response.body()) {
-                                                                                mDBHelper.insertProds(pb);
-                                                                                iPartBox += 1;
-                                                                                if ((iPartBox % 1000) == 0) publishProgress(81);
-                                                                            }
+                                                                        if (response.isSuccessful() && !response.body().isEmpty()) {
+                                                                            mDBHelper.insertProdInBulk(response.body());
                                                                             if (response.body().size() != 0) {
                                                                                 if (mDBHelper.getTableUpdateDate("Prods") < mDBHelper.sDateToLong(response.body().get(response.body().size()-1).get_P_date()))
                                                                                 {
@@ -446,7 +456,6 @@ public class UpdateActivity extends AppCompatActivity {
         protected void onProgressUpdate(Integer... values) {
             super.onProgressUpdate(values);
             listView.setItemChecked(values[0]-1, true);
-            MessageUtils messageUtils = new MessageUtils();
 
             switch (values[0]) {
                 case -1:
@@ -454,8 +463,6 @@ public class UpdateActivity extends AppCompatActivity {
                     values[0] = 0;
                     break;
                 case 1:
-                    values[0] = values[0] * 2;
-                    break;
                 case 2:
                     values[0] = values[0] * 2;
                     break;
@@ -463,23 +470,20 @@ public class UpdateActivity extends AppCompatActivity {
                     values[0] = values[0] * 1;
                     break;
                 case 4:
-                    values[0] = values[0] * 3;
-                    break;
                 case 5:
                     values[0] = values[0] * 3;
                     break;
                 case 6:
                     values[0] = values[0] * 3;
-                    messageUtils.showLongMessage(getApplicationContext(), "Синхронизация коробок завершена.");
+                    MessageUtils.showToast(getApplicationContext(), "Синхронизация коробок завершена.", false);
                     break;
                 case 7:
                     values[0] = values[0] * 4;
-                    messageUtils.showLongMessage(getApplicationContext(), "Синхронизация движений подошвы завершена.");
+                    MessageUtils.showToast(getApplicationContext(), "Синхронизация движений подошвы завершена.", false);
                     break;
                 case 8:
                     values[0] = values[0] * 5;
-                    messageUtils.showLongMessage(getApplicationContext(), "Синхронизация подошвы завершена. Загружено "+
-                            String.valueOf(iPartBox));
+                    MessageUtils.showToast(getApplicationContext(), "Синхронизация подошвы завершена.", false);
                     break;
 
             }

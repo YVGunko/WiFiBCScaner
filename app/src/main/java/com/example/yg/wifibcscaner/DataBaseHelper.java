@@ -32,20 +32,27 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
+import android.database.sqlite.SQLiteStatement;
 import android.os.Environment;
 import android.util.Log;
 import android.content.SharedPreferences;
 
+import com.example.yg.wifibcscaner.service.MessageUtils;
+import com.example.yg.wifibcscaner.utils.DateTimeUtils;
+
 import java.time.LocalDate;
+
+import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDateLong;
+import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDateTimeLong;
 import static java.time.temporal.TemporalAdjusters.firstDayOfYear;
 import static java.time.temporal.TemporalAdjusters.lastDayOfYear;
 import static android.text.TextUtils.substring;
 import static java.lang.String.valueOf;
 
 public class DataBaseHelper extends SQLiteOpenHelper {
+    private static final String TAG = "DataBaseHelper";
     private static String DB_PATH = "";
-    //public static final int DB_VERSION = 21; //8
-    //public static final String Prg_VERSION = "3.3.";
+
     private static String DB_NAME = "SQR.db";
     private static final String TABLE_MD = "MasterData";
     private static final String dtPattern = "dd.MM.yyyy HH:mm:ss";
@@ -57,12 +64,12 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     public static final String COLUMN_sentToMasterDate = "sentToMasterDate";
     public long serverUpdateTime;
     public String globalUpdateDate = "";
-    //public String DeviceId = "";
     public static final String puDivision = "00-000002";
+    public static final String tepDivision = "00-000025";
 
     private SQLiteDatabase mDataBase;
     private final Context mContext;
-    //private boolean mNeedUpdate = false;
+
     private static DataBaseHelper sInstance;
 
     public static long getDayTimeLong(Date date) {
@@ -134,6 +141,8 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     public Sotr sotr;
     //public Division division;
     final String LOG_TAG = "bCScanerLogs";
+
+
 
     public class foundbox {
         String barcode; //строка описания
@@ -310,291 +319,6 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        if ((newVersion>oldVersion)&(newVersion == 16))
-        try {
-            db.execSQL("PRAGMA foreign_keys = 0;");
-            db.beginTransaction();
-
-            db.execSQL("DROP TABLE IF EXISTS outDocs;");
-            db.execSQL("CREATE TABLE outDocs (_id     VARCHAR (128) PRIMARY KEY UNIQUE,"+
-                    "number    INTEGER,"+
-                    "comment VARCHAR (50)," +
-                    "DT      INTEGER," +
-                    "Id_o    INTEGER REFERENCES Opers (_id),"+
-                    "sentToMasterDate INTEGER);");
-            db.execSQL("INSERT INTO outDocs (_id,number,comment,DT,Id_o)"+
-                    "SELECT '0',0,'Нулевая накладная',"+"1483218000000"+", 9999;");
-
-            db.execSQL("CREATE TABLE sqlitestudio_Prods_temp_table AS SELECT * FROM Prods;");
-            db.execSQL("DROP TABLE Prods;");
-            db.execSQL("CREATE TABLE Prods ("+
-                    "_id              VARCHAR (128) PRIMARY KEY UNIQUE,"+
-                    "Id_bm            VARCHAR (128) REFERENCES BoxMoves (_id),"+
-                    "Id_d             INTEGER,"+
-                    "Id_s             INTEGER,"+
-                    "RQ_box           INTEGER,"+
-                    "P_date           INTEGER NOT NULL,"+
-                    "sentToMasterDate INTEGER,"+
-                    "idOutDocs        VARCHAR (128) REFERENCES outDocs (_id),"+
-                    "FOREIGN KEY (Id_d) REFERENCES Deps (_id),"+
-                    "FOREIGN KEY (Id_s) REFERENCES Sotr (_id));");
-
-            db.execSQL("INSERT INTO Prods (_id,Id_bm,Id_d,Id_s,RQ_box,P_date,sentToMasterDate,idOutDocs)"+
-                    "SELECT _id,Id_bm,Id_d,Id_s,RQ_box,P_date,sentToMasterDate,'0' FROM sqlitestudio_Prods_temp_table;");
-            db.execSQL("DROP TABLE sqlitestudio_Prods_temp_table; ");
-
-            db.execSQL("CREATE INDEX idx_prods ON Prods (Id_bm, Id_d, idOutDocs);");
-            db.execSQL("CREATE INDEX pd_dt ON Prods (P_date ASC);");
-            db.execSQL("CREATE INDEX pd_sent ON Prods (sentToMasterDate ASC);");
-
-            db.execSQL("DROP INDEX IF EXISTS bm_id_box;");
-            db.execSQL("CREATE INDEX bm_id_box ON BoxMoves (Id_b ASC);");
-
-            db.execSQL("DROP INDEX IF EXISTS id_desc;");
-            db.execSQL("CREATE INDEX id_desc ON MasterData (_id DESC);");
-
-            db.execSQL("CREATE TABLE Division (code VARCHAR (255) PRIMARY KEY NOT NULL UNIQUE,name VARCHAR (255));");
-            db.execSQL("INSERT INTO Division (code,name) values ('0','Выберите подразделение')");
-            db.execSQL("INSERT INTO Division (code,name) values ('00-000025','ТЭП подразделение')");
-            db.execSQL("INSERT INTO Division (code,name) values ('00-000002','ПУ подразделение')");
-
-            db.execSQL("CREATE TABLE sqlitestudio_Defs_temp_table AS SELECT * FROM Defs;");
-            db.execSQL("DROP TABLE Defs;");
-            db.execSQL("CREATE TABLE Defs ("+
-                    "_id              INTEGER PRIMARY KEY AUTOINCREMENT,"+
-                    "Host_IP          TEXT,"+
-                    "Port             TEXT,"+
-                    "Id_d             INTEGER,"+
-                    "Id_o           INTEGER,"+
-                    "Id_s           INTEGER,"+
-                    "idOperFirst INTEGER,"+
-                    "idOperLast  INTEGER,"+
-                    "division_code VARCHAR (255) REFERENCES Division (code) DEFAULT (0),"+
-                    "FOREIGN KEY (idOperLast) REFERENCES Opers (_id),"+
-                    "FOREIGN KEY (idOperFirst) REFERENCES Opers (_id),"+
-                    "FOREIGN KEY (Id_o) REFERENCES Opers (_id),"+
-                    "FOREIGN KEY (Id_d) REFERENCES Deps (_id),"+
-                    "FOREIGN KEY (Id_s) REFERENCES Sotr (_id));");
-
-            db.execSQL("INSERT INTO Defs (_id,Host_IP,Port,Id_d,Id_o,Id_s,idOperFirst,idOperLast,division_code)"+
-                    "SELECT _id,Host_IP,Port,Id_d,Id_o,Id_s,idOperFirst,idOperLast,'0' FROM sqlitestudio_Defs_temp_table;");
-            db.execSQL("DROP TABLE sqlitestudio_Defs_temp_table; ");
-
-            //Deps
-            db.execSQL("CREATE TABLE sqlitestudio_temp_table AS SELECT * FROM Deps;");
-            db.execSQL("DROP TABLE Deps;");
-            db.execSQL("CREATE TABLE Deps (_id INTEGER,Id_deps TEXT,Name_Deps TEXT,DT INTEGER,"+
-                    "division_code VARCHAR (255) REFERENCES Division (code) DEFAULT (0), PRIMARY KEY (_id));");
-            db.execSQL("INSERT INTO Deps (_id,Id_deps,Name_Deps,DT,division_code)"+
-                    "SELECT _id,Id_deps,Name_Deps,DT,'0' FROM sqlitestudio_temp_table;");
-
-            db.execSQL("DROP TABLE sqlitestudio_temp_table;");
-
-//Sotr
-            db.execSQL("CREATE TABLE sqlitestudio_temp_table AS SELECT * FROM Sotr;");
-            db.execSQL("DROP TABLE Sotr;");
-            db.execSQL("CREATE TABLE Sotr (_id INTEGER,tn_Sotr TEXT,Sotr TEXT,DT INTEGER,"+
-                    "division_code VARCHAR (255) REFERENCES Division (code) DEFAULT (0), PRIMARY KEY (_id));");
-            db.execSQL("INSERT INTO Sotr (_id,tn_Sotr,Sotr,DT,division_code)"+
-                    "SELECT _id,tn_Sotr,Sotr,DT,'0' FROM sqlitestudio_temp_table;");
-
-            db.execSQL("DROP TABLE sqlitestudio_temp_table;");
-
-            //outdoc
-            db.execSQL("CREATE TABLE sqlitestudio_temp_table AS SELECT * FROM outDocs;");
-            db.execSQL("DROP TABLE IF EXISTS outDocs;");
-            db.execSQL("CREATE TABLE outDocs (_id VARCHAR (128) PRIMARY KEY UNIQUE,"+
-                    "number INTEGER,"+
-                    "comment VARCHAR (50)," +
-                    "DT INTEGER," +
-                    "Id_o INTEGER REFERENCES Opers (_id),"+
-                    "sentToMasterDate INTEGER,"+
-                    "division_code VARCHAR (255) REFERENCES Division (code) DEFAULT (0));");
-            db.execSQL("INSERT INTO outDocs (_id,number,comment,DT,Id_o,sentToMasterDate,division_code)"+
-                    "SELECT _id,number,comment,DT,Id_o,sentToMasterDate,'00-000025' FROM sqlitestudio_temp_table;");
-            db.execSQL("DROP TABLE sqlitestudio_temp_table;");
-
-            //masterdata
-            db.execSQL("CREATE TABLE sqlitestudio_temp_table AS SELECT * FROM MasterData;");
-            db.execSQL("DROP TABLE IF EXISTS MasterData;");
-            db.execSQL("CREATE TABLE MasterData (_id INTEGER,"+
-                    "Ord_id        TEXT          UNIQUE,"+
-                    "Ord           TEXT,"+
-                    "Cust          TEXT,"+
-                    "Nomen         TEXT,"+
-                    "Attrib        TEXT,"+
-                    "Q_ord         INTEGER,"+
-                    "Q_box         INTEGER,"+
-                    "N_box         INTEGER,"+
-                    "DT            INTEGER,"+
-                    "archive       BOOLEAN       DEFAULT false,"+
-                    "division_code VARCHAR (255) REFERENCES Division (code) DEFAULT (0)," +
-                    "PRIMARY KEY (_id));");
-            db.execSQL("INSERT INTO MasterData (_id,Ord_id,Ord,Cust,Nomen,Attrib,Q_ord,Q_box,N_box,DT,archive,division_code)"+
-                    "SELECT _id,Ord_id,Ord,Cust,Nomen,Attrib,Q_ord,Q_box,N_box,DT,archive,'00-000025' FROM sqlitestudio_temp_table;");
-            db.execSQL("DROP TABLE sqlitestudio_temp_table;");
-            db.execSQL("CREATE INDEX md_dt ON MasterData (DT ASC);");
-
-            //                Прописать код тэпа
-            db.execSQL("Update Deps set division_code='00-000025' where _id >0 and _id in (select distinct Id_d from Prods);");
-            db.execSQL("Update Sotr set division_code='00-000025' where _id >0 and _id in (select distinct Id_s from Prods);");
-            db.execSQL("Update outDocs set division_code='00-000025' where _id <>'0';");
-            //db.execSQL("Insert into outDocs (number, comment, DT, Id_o, division_code) values (,'00-000002');");
-            db.execSQL("Update MasterData set division_code='00-000025' where _id >0;");
-
-            db.execSQL("CREATE TABLE lastUpdate (tableName     TEXT (10) UNIQUE NOT NULL PRIMARY KEY,"+
-                    " updateStart   INTEGER, updateEnd     INTEGER, updateSuccess BOOLEAN);");
-            db.execSQL("Insert into lastUpdate (tableName) values ('Boxes');");
-            db.execSQL("Insert into lastUpdate (tableName) values ('BoxMoves');");
-            db.execSQL("Insert into lastUpdate (tableName) values ('Deps');");
-            db.execSQL("Insert into lastUpdate (tableName) values ('Division');");
-            db.execSQL("Insert into lastUpdate (tableName) values ('MasterData');");
-            db.execSQL("Insert into lastUpdate (tableName) values ('Opers');");
-            db.execSQL("Insert into lastUpdate (tableName) values ('OutDocs');");
-            db.execSQL("Insert into lastUpdate (tableName) values ('Prods');");
-            db.execSQL("Insert into lastUpdate (tableName) values ('Sotr');");
-
-            db.setTransactionSuccessful();
-        }
-        finally {
-            db.endTransaction();
-            db.execSQL("PRAGMA foreign_keys = 1;");
-        }
-        if ((newVersion>oldVersion)&(newVersion == 17))
-            try {
-                db.execSQL("PRAGMA foreign_keys = 0;");
-                db.beginTransaction();
-                //Sotr
-                db.execSQL("CREATE TABLE sqlitestudio_temp_table AS SELECT * FROM Sotr;");
-                db.execSQL("DROP TABLE Sotr;");
-                db.execSQL("CREATE TABLE Sotr (_id INTEGER,tn_Sotr TEXT,Sotr TEXT,DT INTEGER,"+
-                        "Id_o INTEGER REFERENCES Opers (_id) DEFAULT (0),"+
-                        "Id_d INTEGER REFERENCES Deps (_id) DEFAULT (0),"+
-                        "division_code VARCHAR (255) REFERENCES Division (code) DEFAULT (0), PRIMARY KEY (_id));");
-                db.execSQL("INSERT INTO Sotr (_id,tn_Sotr,Sotr,DT,Id_o,Id_d,division_code)"+
-                        "SELECT _id,tn_Sotr,Sotr,DT,0,0,'0' FROM sqlitestudio_temp_table;");
-
-                db.execSQL("DROP TABLE sqlitestudio_temp_table;");
-//new table user. superUser means no restriction to change user's own settings
-                db.execSQL("DROP TABLE IF EXISTS user;");
-                db.execSQL("CREATE TABLE user (" +
-                        "_id INTEGER PRIMARY KEY,"+
-                        "name VARCHAR (30) UNIQUE NOT NULL,"+
-                        "pswd VARCHAR (10) NOT NULL DEFAULT (1234),"+
-                        "superUser BOOLEAN DEFAULT false,"+
-                        "Id_s INTEGER REFERENCES Sotr (_id) DEFAULT (0),"+
-                        "DT INTEGER );");
-
-                db.execSQL("Insert into lastUpdate (tableName) values ('user');");
-                //Defs
-                db.execSQL("CREATE TABLE sqlitestudio_Defs_temp_table AS SELECT * FROM Defs;");
-                db.execSQL("DROP TABLE Defs;");
-                db.execSQL("CREATE TABLE Defs ("+
-                        "_id              INTEGER PRIMARY KEY AUTOINCREMENT,"+
-                        "Host_IP          TEXT,"+
-                        "Port             TEXT,"+
-                        "Id_d             INTEGER NOT NULL DEFAULT (0),"+
-                        "Id_o           INTEGER NOT NULL DEFAULT (0),"+
-                        "Id_s           INTEGER NOT NULL DEFAULT (0),"+
-                        "idOperFirst INTEGER,"+
-                        "idOperLast  INTEGER,"+
-                        "division_code VARCHAR (255) REFERENCES Division (code) DEFAULT (0),"+
-                        "idUser INTEGER NOT NULL DEFAULT (0),"+
-                        "FOREIGN KEY (idOperLast) REFERENCES Opers (_id),"+
-                        "FOREIGN KEY (idOperFirst) REFERENCES Opers (_id),"+
-                        "FOREIGN KEY (Id_o) REFERENCES Opers (_id),"+
-                        "FOREIGN KEY (idUser) REFERENCES user (_id),"+
-                        "FOREIGN KEY (Id_d) REFERENCES Deps (_id),"+
-                        "FOREIGN KEY (Id_s) REFERENCES Sotr (_id));");
-
-                db.execSQL("INSERT INTO Defs (_id,Host_IP,Port,Id_d,Id_o,Id_s,idOperFirst,idOperLast,division_code)"+
-                        "SELECT _id,Host_IP,Port,Id_d,Id_o,Id_s,idOperFirst,idOperLast,'0' FROM sqlitestudio_Defs_temp_table;");
-                db.execSQL("DROP TABLE sqlitestudio_Defs_temp_table; ");
-
-                //outdoc
-                db.execSQL("CREATE TABLE sqlitestudio_temp_table AS SELECT * FROM outDocs;");
-                db.execSQL("DROP TABLE IF EXISTS outDocs;");
-                db.execSQL("CREATE TABLE outDocs (_id VARCHAR (128) PRIMARY KEY UNIQUE,"+
-                        "number INTEGER,"+
-                        "comment VARCHAR (50)," +
-                        "DT INTEGER," +
-                        "Id_o INTEGER REFERENCES Opers (_id),"+
-                        "sentToMasterDate INTEGER,"+
-                        "division_code VARCHAR (255) REFERENCES Division (code) DEFAULT (0)," +
-                        "idUser INTEGER NOT NULL REFERENCES user (_id) DEFAULT (0));");
-                db.execSQL("INSERT INTO outDocs (_id,number,comment,DT,Id_o,sentToMasterDate,division_code,idUser)"+
-                        "SELECT _id,number,comment,DT,Id_o,sentToMasterDate,division_code,0 FROM sqlitestudio_temp_table;");
-                db.execSQL("DROP TABLE sqlitestudio_temp_table;");
-
-                db.setTransactionSuccessful();
-            }
-            finally {
-                db.endTransaction();
-                db.execSQL("PRAGMA foreign_keys = 1;");
-            }
-        if ((newVersion>oldVersion)&(newVersion == 18))
-            try {
-                db.execSQL("PRAGMA foreign_keys = 0;");
-                db.beginTransaction();
-                db.execSQL("INSERT INTO user (_id,name,pswd,superUser,Id_s,DT)"+
-                        "VALUES(0,'Пусто','++++****',1,0,0);");
-                //outdoc
-                db.execSQL("CREATE TABLE sqlitestudio_temp_table AS SELECT * FROM outDocs;");
-                db.execSQL("DROP TABLE IF EXISTS outDocs;");
-                db.execSQL("CREATE TABLE outDocs (_id VARCHAR (128) PRIMARY KEY UNIQUE,"+
-                        "number INTEGER,"+
-                        "comment VARCHAR (50)," +
-                        "DT INTEGER," +
-                        "Id_o INTEGER REFERENCES Opers (_id),"+
-                        "sentToMasterDate INTEGER,"+
-                        "division_code VARCHAR (255) REFERENCES Division (code) DEFAULT (0)," +
-                        "idUser INTEGER NOT NULL REFERENCES user (_id) DEFAULT (0));");
-                db.execSQL("INSERT INTO outDocs (_id,number,comment,DT,Id_o,sentToMasterDate,division_code,idUser)"+
-                        "SELECT _id,number,comment,DT,Id_o,sentToMasterDate,division_code,0 FROM sqlitestudio_temp_table;");
-                db.execSQL("DROP TABLE sqlitestudio_temp_table;");
-
-                db.setTransactionSuccessful();
-            }
-            finally {
-                db.endTransaction();
-                db.execSQL("PRAGMA foreign_keys = 1;");
-            }
-        if ((newVersion>oldVersion)&(newVersion == 19))
-            try {
-                db.execSQL("PRAGMA foreign_keys = 0;");
-                db.beginTransaction();
-//Defs
-                db.execSQL("CREATE TABLE sqlitestudio_Defs_temp_table AS SELECT * FROM Defs;");
-                db.execSQL("DROP TABLE Defs;");
-                db.execSQL("CREATE TABLE Defs ("+
-                        "_id              INTEGER PRIMARY KEY AUTOINCREMENT,"+
-                        "Host_IP          TEXT,"+
-                        "Port             TEXT,"+
-                        "Id_d             INTEGER NOT NULL DEFAULT (0),"+
-                        "Id_o           INTEGER NOT NULL DEFAULT (0),"+
-                        "Id_s           INTEGER NOT NULL DEFAULT (0),"+
-                        "idOperFirst INTEGER,"+
-                        "idOperLast  INTEGER,"+
-                        "division_code VARCHAR (255) REFERENCES Division (code) DEFAULT (0),"+
-                        "idUser INTEGER NOT NULL DEFAULT (0),"+
-                        "DeviceId VARCHAR (20) NOT NULL DEFAULT (0),"+
-                        "FOREIGN KEY (idOperLast) REFERENCES Opers (_id),"+
-                        "FOREIGN KEY (idOperFirst) REFERENCES Opers (_id),"+
-                        "FOREIGN KEY (Id_o) REFERENCES Opers (_id),"+
-                        "FOREIGN KEY (idUser) REFERENCES user (_id),"+
-                        "FOREIGN KEY (Id_d) REFERENCES Deps (_id),"+
-                        "FOREIGN KEY (Id_s) REFERENCES Sotr (_id));");
-
-                db.execSQL("INSERT INTO Defs (_id,Host_IP,Port,Id_d,Id_o,Id_s,idOperFirst,idOperLast,division_code,idUser,DeviceId)"+
-                        "SELECT _id,Host_IP,Port,Id_d,Id_o,Id_s,idOperFirst,idOperLast,division_code,idUser,'0' FROM sqlitestudio_Defs_temp_table;");
-                db.execSQL("DROP TABLE sqlitestudio_Defs_temp_table; ");
-
-                db.setTransactionSuccessful();
-            }
-            finally {
-                db.endTransaction();
-                db.execSQL("PRAGMA foreign_keys = 1;");
-            }
         if ((newVersion>oldVersion)&(newVersion == 20))
             try {
                 db.execSQL("PRAGMA foreign_keys = 0;");
@@ -2506,6 +2230,281 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             tryCloseCursor(cursor);
             mDataBase.close();
             return count;
+        }
+    }
+    public int getId_sByOutDocId(String idOutDocs){
+        int result = 0;
+        if (!mDataBase.isOpen()) {
+            mDataBase = this.getReadableDatabase();
+        }
+        Cursor cursor = mDataBase.rawQuery("SELECT distinct(Id_s) FROM Prods Where idOutDocs='" + idOutDocs + "'", null);
+        if ((cursor != null) & (cursor.getCount() != 0)) {
+            cursor.moveToFirst();
+            while (!cursor.isAfterLast()) {
+                result = cursor.getInt(0);
+                cursor.moveToNext();
+            }
+        }
+        tryCloseCursor(cursor);
+        ////mDataBase.close();
+        return result;
+    }
+    public void updateOutDocCommentById(String comment, String id) {
+        if (!mDataBase.isOpen()) {
+            mDataBase = this.getWritableDatabase();
+        }
+        try {
+            mDataBase.beginTransaction();
+            String sql = "Update OutDocs Set comment = ? " +
+                    " Where _id = ? ";
+
+            SQLiteStatement statement = mDataBase.compileStatement(sql);
+
+            statement.clearBindings();
+            statement.bindString(1, comment);
+            statement.bindString(2, id);
+            statement.executeUpdateDelete();
+
+
+            mDataBase.setTransactionSuccessful(); // This commits the transaction if there were no exceptions
+        } catch (Exception e) {
+            Log.e(TAG, "updateOutDocCommentById exception saveing comment -> " + comment + " by id -> " + id, e);
+        } finally {
+            MessageUtils.showToast(this.mContext, "Сохранено. " + comment, false);
+            mDataBase.endTransaction();
+        }
+    }
+    //Insert in Bulk
+    public void insertOrdersInBulk(List<Orders> list){
+        if (!mDataBase.isOpen()) {
+            mDataBase = this.getWritableDatabase();
+        }
+        try {
+            mDataBase.execSQL("PRAGMA foreign_keys = 0;");
+            mDataBase.beginTransaction();
+            String sql = "INSERT OR REPLACE INTO MasterData (_id, Ord_id, Ord, Cust, Nomen, Attrib," +
+                    " Q_ord, Q_box, N_box, DT, archive, division_code)" +
+                    " VALUES (?,?,?,?,?,?,?,?,?,?,?,?);";
+
+            SQLiteStatement statement = mDataBase.compileStatement(sql);
+
+            for (Orders o : list) {
+                statement.clearBindings();
+                statement.bindLong(1, o.get_id());
+                statement.bindString(2, o.get_Ord_Id());
+                statement.bindString(3, o.get_Ord());
+                statement.bindString(4, o.get_Cust());
+                statement.bindString(5, o.get_Nomen());
+                if (o.get_Attrib() == null)
+                    statement.bindString(6, "");
+                else
+                    statement.bindString(6, (o.get_Attrib()));
+                statement.bindLong(7, o.get_Q_ord());
+                statement.bindLong(8, o.get_Q_box());
+                statement.bindLong(9, o.get_N_box());
+                statement.bindLong(10, getDateTimeLong(o.get_DT()));
+                if (o.getArchive() == null)
+                    statement.bindLong(11, 0);
+                else
+                    statement.bindLong(11, (o.getArchive() ? 1 : 0));
+                statement.bindString(12, o.getDivision_code());
+                statement.executeInsert();
+            }
+
+            mDataBase.setTransactionSuccessful(); // This commits the transaction if there were no exceptions
+            mDataBase.execSQL("PRAGMA foreign_keys = 1;");
+        } catch (Exception e) {
+            Log.w(TAG, e);
+            throw new RuntimeException("To catch into upper level.");
+        } finally {
+            mDataBase.endTransaction();
+        }
+    }
+    public void insertOutDocInBulk(List<OutDocs> list){
+        if (!mDataBase.isOpen()) {
+            mDataBase = this.getReadableDatabase();
+        }
+        try {
+
+            mDataBase.execSQL("PRAGMA foreign_keys = 0;");
+            mDataBase.beginTransaction();
+            String sql = "INSERT OR REPLACE INTO OutDocs (_id, Id_o, number, comment, DT, sentToMasterDate, division_code, idUser) " +
+                    " VALUES (?,?,?,?,?,?,?,?);";
+
+            SQLiteStatement statement = mDataBase.compileStatement(sql);
+
+            for (OutDocs o : list) {
+                statement.clearBindings();
+                statement.bindString(1, o.get_id());
+                statement.bindLong(2, o.get_Id_o());
+                statement.bindLong(3, o.get_number());
+                if (o.get_comment() == null)
+                    statement.bindString(4, "");
+                else
+                    statement.bindString(4, o.get_comment());
+
+                statement.bindLong(5, getDateTimeLong(o.get_DT()));
+
+                if (o.get_sentToMasterDate() == null)
+                    statement.bindLong(6, new Date().getTime());
+                else
+                    statement.bindLong(6, getDateTimeLong(o.get_sentToMasterDate()));
+
+                statement.bindString(7, o.getDivision_code());
+                statement.bindLong(8, o.getIdUser());
+                statement.executeInsert();
+            }
+
+            mDataBase.setTransactionSuccessful(); // This commits the transaction if there were no exceptions
+            mDataBase.execSQL("PRAGMA foreign_keys = 1;");
+        } catch (Exception e) {
+            Log.w(TAG, e);
+            throw new RuntimeException("To catch into upper level.");
+        } finally {
+            mDataBase.endTransaction();
+        }
+    }
+    public void insertBoxInBulk(List<Boxes> list){
+        if (!mDataBase.isOpen()) {
+            mDataBase = this.getReadableDatabase();
+        }
+        try {
+
+            mDataBase.execSQL("PRAGMA foreign_keys = 0;");
+            mDataBase.beginTransaction();
+            String sql = "INSERT OR REPLACE INTO Boxes (_id, Id_m, Q_box, N_box, DT, sentToMasterDate, archive) " +
+                    " VALUES (?,?,?,?,?,?,?);";
+
+            SQLiteStatement statement = mDataBase.compileStatement(sql);
+
+            for (Boxes o : list) {
+                statement.clearBindings();
+                statement.bindString(1, o.get_id());
+                statement.bindLong(2, o.get_Id_m());
+                statement.bindLong(3, o.get_Q_box());
+                statement.bindLong(4, o.get_N_box());
+                statement.bindLong(5, getDateTimeLong(o.get_DT()));
+
+                if (o.get_sentToMasterDate() == null)
+                    statement.bindLong(6, new Date().getTime());
+                else
+                    statement.bindLong(6, getDateTimeLong(o.get_sentToMasterDate()));
+
+                statement.bindLong(7, (o.isArchive() ? 1 : 0));
+                statement.executeInsert();
+            }
+
+            mDataBase.setTransactionSuccessful(); // This commits the transaction if there were no exceptions
+            mDataBase.execSQL("PRAGMA foreign_keys = 1;");
+        } catch (Exception e) {
+            Log.w(TAG, e);
+            throw new RuntimeException("To catch into upper level.");
+        } finally {
+            mDataBase.endTransaction();
+        }
+    }
+
+    public void insertBoxMoveInBulk(List<BoxMoves> list) {
+        if (!mDataBase.isOpen()) {
+            mDataBase = this.getReadableDatabase();
+        }
+        try {
+
+            mDataBase.execSQL("PRAGMA foreign_keys = 0;");
+            mDataBase.beginTransaction();
+            String sql = "INSERT OR REPLACE INTO BoxMoves (_id, Id_b, Id_o, DT, sentToMasterDate) " +
+                    " VALUES (?,?,?,?,?);";
+
+            SQLiteStatement statement = mDataBase.compileStatement(sql);
+
+            for (BoxMoves o : list) {
+                statement.clearBindings();
+                statement.bindString(1, o.get_id());
+                statement.bindString(2, o.get_Id_b());
+                statement.bindLong(3, o.get_Id_o());
+                statement.bindLong(5, getDateTimeLong(o.get_DT()));
+
+                if (o.get_sentToMasterDate() == null)
+                    statement.bindLong(4, new Date().getTime());
+                else
+                    statement.bindLong(4, getDateTimeLong(o.get_sentToMasterDate()));
+
+                statement.executeInsert();
+            }
+
+            mDataBase.setTransactionSuccessful(); // This commits the transaction if there were no exceptions
+            mDataBase.execSQL("PRAGMA foreign_keys = 1;");
+        } catch (Exception e) {
+            Log.w(TAG, e);
+            throw new RuntimeException("To catch into upper level.");
+        } finally {
+            mDataBase.endTransaction();
+        }
+    }
+
+    public void insertProdInBulk(List<Prods> list) {
+        if (!mDataBase.isOpen()) {
+            mDataBase = this.getReadableDatabase();
+        }
+        try {
+
+            mDataBase.execSQL("PRAGMA foreign_keys = 0;");
+            mDataBase.beginTransaction();
+            String sql = "INSERT OR REPLACE INTO Prods (_id, Id_bm, Id_d, Id_s, RQ_box, P_date, sentToMasterDate, idOutDocs) " +
+                    " VALUES (?,?,?,?,?,?,?,?);";
+
+            SQLiteStatement statement = mDataBase.compileStatement(sql);
+
+            for (Prods o : list) {
+                statement.clearBindings();
+                statement.bindString(1, o.get_id());
+                statement.bindString(2, o.get_Id_bm());
+                statement.bindLong(3, o.get_Id_d());
+                statement.bindLong(4, o.get_Id_s());
+                statement.bindLong(5, o.get_RQ_box());
+                statement.bindLong(6, getDateLong(o.get_P_date()));
+
+                if (o.get_sentToMasterDate() == null)
+                    statement.bindLong(7, new Date().getTime());
+                else
+                    statement.bindLong(7, getDateTimeLong(o.get_sentToMasterDate()));
+                statement.bindString(8, o.get_idOutDocs());
+                statement.executeInsert();
+            }
+
+            mDataBase.setTransactionSuccessful(); // This commits the transaction if there were no exceptions
+            mDataBase.execSQL("PRAGMA foreign_keys = 1;");
+        } catch (Exception e) {
+            Log.w(TAG, e);
+            throw new RuntimeException("To catch into upper level.");
+        } finally {
+            mDataBase.endTransaction();
+        }
+    }
+    public void insertDivisionInBulk(List<Division> list) {
+        if (!mDataBase.isOpen()) {
+            mDataBase = this.getReadableDatabase();
+        }
+        try {
+            mDataBase.beginTransaction();
+            String sql = "INSERT OR REPLACE INTO "+Division.TABLE+" (code, name) " +
+                    " VALUES (?,?) ";
+
+            SQLiteStatement statement = mDataBase.compileStatement(sql);
+
+            for (Division o : list) {
+                statement.clearBindings();
+                statement.bindString(1, o.getCode());
+                statement.bindString(2, o.getName());
+
+                statement.executeInsert();
+            }
+            mDataBase.setTransactionSuccessful();
+        } catch (Exception e) {
+            Log.w(TAG, e);
+            throw new RuntimeException("To catch into upper level.");
+        } finally {
+            mDataBase.endTransaction();
         }
     }
 }

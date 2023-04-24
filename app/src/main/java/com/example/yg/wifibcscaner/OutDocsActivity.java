@@ -202,6 +202,32 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
                     }
                     result = selectedTitle +scAdapter.getCursor().getString(1)+" "+mDBHelper.defs.descDep;
                 }
+
+                if (!(mDBHelper.defs.get_Id_o()==mDBHelper.defs.get_idOperFirst() || mDBHelper.defs.get_Id_o()==mDBHelper.defs.get_idOperLast())
+                        && mDBHelper.defs.getDivision_code().equals(mDBHelper.tepDivision)) {
+                    //Если не производство и ТЭП - установить бригаду из строки таблицы Prods c выбранной накладной
+                    final int iDep = mDBHelper.getId_dByOutdoc(mDBHelper.currentOutDoc.get_id());
+                    if ((iDep != 0)&&(iDep!=mDBHelper.defs.get_Id_d())){
+                        mDBHelper.defs.set_Id_d(iDep);
+
+                        final int iSotr = mDBHelper.getId_sByOutDocId(mDBHelper.currentOutDoc.get_id());
+                        if ((iSotr != 0)&&(iSotr!=mDBHelper.defs.get_Id_d())) {
+                            mDBHelper.defs.set_Id_s(iSotr);
+                            Defs defs = new Defs(iDep, mDBHelper.defs.get_Id_o(), mDBHelper.defs.get_Id_s(),
+                                    mDBHelper.defs.get_Host_IP(), mDBHelper.defs.get_Port(),
+                                    mDBHelper.defs.getDivision_code(), mDBHelper.defs.get_idUser(), mDBHelper.defs.getDeviceId());
+                            if (mDBHelper.updateDefsTable(defs) != 0) {
+                                mDBHelper.selectDefsTable();
+                                MessageUtils.showToast(getApplicationContext(), "Сохранено." + mDBHelper.defs.descDep, false);
+                            } else {
+                                MessageUtils.showToast(getApplicationContext(), "Ошибка при сохранении.", false);
+                            }
+                        }
+                    }else {
+                        mDBHelper.currentOutDoc.set_comment(mDBHelper.defs.descDep+", "+mDBHelper.defs.descUser);
+                        mDBHelper.updateOutDocCommentById(mDBHelper.currentOutDoc.get_comment(), mDBHelper.currentOutDoc.get_id());
+                    }
+                }
                 OutDocsActivity.this.setTitle(result);
             }
         });
