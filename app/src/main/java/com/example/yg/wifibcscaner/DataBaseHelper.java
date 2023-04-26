@@ -845,8 +845,8 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         def += " / " + cursor.getString(3) + "\n";
         def += "Подошва: " + cursor.getString(4) ;
         if (AppUtils.isNotEmpty(cursor.getString(5)))
-            def += ", " + retStringFollowingCRIfNotNull(cursor.getString(5));
-        def += "Заказ: " + cursor.getString(6) +
+            def += ", " + cursor.getString(5);
+        def += "\nЗаказ: " + cursor.getString(6) +
                 ". Регл: " + cursor.getString(7) +
                 ". Всего кор: " + cursor.getString(8) + "\n";
         return def;
@@ -1449,16 +1449,14 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         long rowId = 0;
         String product = "Принятых коробок нет.";
         Cursor cursor = null;
-        if (rowId <= 0) {
-            cursor = mDataBase.rawQuery("SELECT max(p.ROWID) as _id FROM Boxes, BoxMoves bm, Prods p, OutDocs o Where Boxes._id=bm.Id_b and bm.Id_o=" + valueOf(defs.get_Id_o()) +
-                    " and bm._id=p.Id_bm and p.idOutDocs=o._id and o.division_code=?" , new String [] {String.valueOf(defs.getDivision_code())});
-            if ((cursor != null) & (cursor.getCount() > 0)) {
-                Log.d(LOG_TAG, "lastbox Records count = " + cursor.getCount());
-                cursor.moveToFirst();
-                rowId = cursor.getLong(0);
-            } else {
-                rowId = 1;
-            }
+        cursor = mDataBase.rawQuery("SELECT max(p.ROWID) as _id FROM Boxes, BoxMoves bm, Prods p, OutDocs o Where Boxes._id=bm.Id_b and bm.Id_o=" + valueOf(defs.get_Id_o()) +
+                " and bm._id=p.Id_bm and p.idOutDocs=o._id and o.division_code=?" , new String [] {String.valueOf(defs.getDivision_code())});
+        if ((cursor != null) & (cursor.getCount() > 0)) {
+            Log.d(LOG_TAG, "lastbox Records count = " + cursor.getCount());
+            cursor.moveToFirst();
+            rowId = cursor.getLong(0);
+        } else {
+            rowId = 1;
         }
         if (rowId!=0)
         try {
@@ -1476,9 +1474,9 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                     product += " / " + cursor.getString(1) + "\n";
                     product += "Подошва: " + cursor.getString(2);
                     if (AppUtils.isNotEmpty(cursor.getString(5)))
-                        product += ", " + retStringFollowingCRIfNotNull(cursor.getString(5));
+                        product += ", " + cursor.getString(5);
 
-                    product += "Заказ: " + cursor.getString(4) + ". № кор: " + cursor.getString(6) +
+                    product += "\nЗаказ: " + cursor.getString(4) + ". № кор: " + cursor.getString(6) +
                             ". Регл: " + cursor.getString(5) + " ";
                     product += "В кор: " + cursor.getString(7) + "." + "\n";
                     product += isNotEmpty(cursor.getString(8)) ? cursor.getString(8) + ", " + cursor.getString(9) + "\n" : ""; //Бригада

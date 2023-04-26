@@ -241,8 +241,10 @@ IntentFilter filterAttached_and_Detached = null;
         actionBar.setSubtitle(Html.fromHtml("<font color='#FFBF00'>"+snum+"</font>"));
         actionBar.setTitle("Подразделение: "+mDBHelper.defs.descDivision);
 
-        tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
-        tVDBInfo.setText(mDBHelper.lastBox());
+        if (!editTextRQ.isEnabled()){
+            tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
+            tVDBInfo.setText(mDBHelper.lastBox());
+        }
 
         currentDocDetails  = (TextView) findViewById(R.id.currentDocDetails);
         currentDocDetails.setText("Накл.№" +mDBHelper.currentOutDoc.get_number() + ", " + mDBHelper.selectCurrentOutDocDetails(mDBHelper.currentOutDoc.get_id()));
@@ -312,8 +314,7 @@ IntentFilter filterAttached_and_Detached = null;
 
         /* Если сканер подключен - вызывать обработчик для него*/
         final     EditText            input = (EditText) findViewById(R.id.barCodeInput);
-        if (editTextRQ.isEnabled()==true){
-            //input.setEnabled(false);
+        if (editTextRQ.isEnabled()){
             ocl_bOk(v);
         }else {
         if (mdevice != null){//внешний usb сканер
