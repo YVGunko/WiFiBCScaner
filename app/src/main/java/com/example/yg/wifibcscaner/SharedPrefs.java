@@ -10,6 +10,8 @@ public class SharedPrefs {
     final static String PREFS_NAME = "WiFiBCScanerPrefsFile";
     final static String PREF_VERSION_CODE_KEY = "version_code";
     final static String PREF_DB_NEED_REPLACE = "db_need_replace";
+    final static String FIRST_OPER_ONE = "first_oper_1";
+    final static String FIRST_OPER_TWO = "first_oper_2";
     final static int DOESNT_EXIST = -1;
     public static void setDefaults(String key, String value, Context context) {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);

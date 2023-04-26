@@ -1,7 +1,6 @@
 package com.example.yg.wifibcscaner;
 
 
-import android.Manifest;
 import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
@@ -11,16 +10,14 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
-import android.content.pm.PackageManager;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
-import android.support.v4.app.ActivityCompat;
+import android.support.annotation.RequiresApi;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.telephony.TelephonyManager;
 import android.text.Editable;
 import android.text.Html;
 import android.text.TextUtils;
@@ -31,10 +28,11 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.yg.wifibcscaner.service.MessageUtils;
+import com.example.yg.wifibcscaner.utils.AppUtils;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 import com.honeywell.aidc.AidcManager;
@@ -48,23 +46,20 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.UUID;
 
 import me.drakeet.support.toast.ToastCompat;
 
 import static android.text.TextUtils.substring;
-import static com.google.zxing.integration.android.IntentIntegrator.REQUEST_CODE;
+import static com.example.yg.wifibcscaner.utils.AppUtils.isDepAndSotrOper;
+import static com.example.yg.wifibcscaner.utils.AppUtils.isOneOfFirstOper;
+import static com.example.yg.wifibcscaner.utils.AppUtils.isOutDocOnlyOper;
 
 
 public class MainActivity extends AppCompatActivity implements BarcodeReader.BarcodeListener {
-private static BarcodeReader barcodeReader;
-//private static final int DB_VERSION = 21; //8
-private static boolean dbNeedReplace = false; //8
-//SqlScoutServer sqlScoutServer;
+    private static final String TAG = "MainActivity";
+    private static BarcodeReader barcodeReader;
+
 private AidcManager manager;
-private Button btnAutomaticBarcode;
-boolean useTrigger=true;
-boolean btnPressed = false;
 UsbManager mUsbManager = null;
 UsbDevice mdevice;
 IntentFilter filterAttached_and_Detached = null;
@@ -75,7 +70,6 @@ IntentFilter filterAttached_and_Detached = null;
     private int sId_d = 1;
     private DataBaseHelper mDBHelper;
     TextView tVDBInfo, currentDocDetails, currentUser;
-    ListView lvCurrentDoc;
     EditText editTextRQ, barCodeInput;
     Button bScan;
     DataBaseHelper.foundbox fb;
@@ -268,6 +262,7 @@ IntentFilter filterAttached_and_Detached = null;
     }
 
 
+    @RequiresApi(api = Build.VERSION_CODES.N)
     public void ocl_scan(View v) { //Вызов активности Сканирования
         if (mDBHelper.defs.get_idUser()==0){
             showLongMessage("Нужно войти в систему...");
@@ -275,13 +270,13 @@ IntentFilter filterAttached_and_Detached = null;
             //if not a superuser check for current user today's outdoc and add new one if not exist.
             return;
         }
-        if ((mDBHelper.defs.get_Id_o()==0)||(new String("0").equals(mDBHelper.defs.getDivision_code())))
+        if ((mDBHelper.defs.get_Id_o()==0)||(mDBHelper.defs.getDivision_code().equals("0")))
         {   //Операция не выбрана
             showLongMessage("Нужно зайти в настройки и выбрать операцию, подразделение...");
             startActivity(new Intent(this,SettingsActivity.class));  //Вызов активности Коробки
             return;
         }
-        if ((mDBHelper.defs.get_Id_o()==mDBHelper.defs.get_idOperLast())&(
+        if (isOutDocOnlyOper(mDBHelper.defs.get_Id_o())&(
                 (mDBHelper.currentOutDoc.get_id()==null)||
                         (mDBHelper.currentOutDoc.get_number()==0)))
         {
@@ -289,7 +284,7 @@ IntentFilter filterAttached_and_Detached = null;
             startActivity(new Intent(this,OutDocsActivity.class));
             return;
         }
-        if ((mDBHelper.defs.get_Id_o()!=mDBHelper.defs.get_idOperLast())&(
+        if (isDepAndSotrOper(mDBHelper.defs.get_Id_o())&(
                 (mDBHelper.defs.get_Id_d()==0)||
                 (mDBHelper.defs.get_Id_s()==0)||
                 (mDBHelper.currentOutDoc.get_id()==null)||
@@ -435,12 +430,10 @@ IntentFilter filterAttached_and_Detached = null;
     }
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-        if(Build.VERSION.SDK_INT > 11) {
-            boolean checkSuper= mDBHelper.checkSuperUser(mDBHelper.defs.get_idUser());
-            invalidateOptionsMenu();
-            menu.findItem(R.id.action_settings).setVisible(checkSuper);
-            menu.findItem(R.id.action_orders).setVisible(checkSuper);
-        }
+        boolean checkSuper= mDBHelper.checkSuperUser(mDBHelper.defs.get_idUser());
+        invalidateOptionsMenu();
+        menu.findItem(R.id.action_settings).setVisible(checkSuper);
+        menu.findItem(R.id.action_orders).setVisible(checkSuper);
         return super.onPrepareOptionsMenu(menu);
     }
 private static String filter (String str){
@@ -460,46 +453,55 @@ private static String filter (String str){
             //поискать символ с кодом 194
         currentbarcode = filter(currentbarcode);
         if ((currentbarcode.length()<20)&&(StringUtils.countMatches(currentbarcode,'.')!=5)) {
-            showMessage("QR-код не распознан.");
+            Log.d(TAG, "scanResultHandler -> barcode mismatch -> return");
+            MessageUtils.showToast(MainActivity.this, getString(R.string.QR_invalid),true);
             return;
         }
         fo = mDBHelper.searchOrder(currentbarcode);
+        if (fo.division_code != null && !fo.division_code.equals(mDBHelper.defs.getDivision_code())) {
+            Log.d(TAG, "scanResultHandler -> division mismatch -> return");
+            MessageUtils.showToast(MainActivity.this, getString(R.string.wrong_division_order),true);
+            return;
+        }
         if (!fo.archive) { // архив
             if (fo._id != 0) {                                      //Заказ найден, ищем коробку
                 fb = mDBHelper.searchBox(fo._id, currentbarcode);
                 //---Получаем строку данных о коробке для вывода в tVDBInfo и количество для редактирования
                 tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
-                if (!fb.boxdef.equals(""))
+                if (StringUtils.isNotEmpty(fb.boxdef))
                     fo.orderdef += fb.boxdef+ "\n";
-                if (!fb.depSotr.equals(""))
+                if (StringUtils.isNotEmpty(fb.depSotr))
                     fo.orderdef += fb.depSotr+ "\n";
-                if (!fb.outDocs.equals(""))
+                if (StringUtils.isNotEmpty(fb.outDocs))
                     fo.orderdef += fb.outDocs;
                 tVDBInfo.setText(fo.orderdef);
                 if (!fb._archive){
-                    if ((!fb._id.equals("")&&(fb._id != null))) {                                  //Коробка есть
+                    if (StringUtils.isNotEmpty(fb._id)) {                                  //Коробка есть
                         if (fb.QB == fb.RQ) {//Коробка заполнена
 
                             editTextRQ = (EditText) findViewById(R.id.editTextRQ);
                             editTextRQ.setText(String.valueOf(fb.QB - fb.RQ));
                             editTextRQ.setEnabled(false);
-                            if (mDBHelper.defs.get_Id_o()==mDBHelper.defs.get_idOperFirst()) showLongMessage("Эта коробка уже принята полной!");
-                            else showLongMessage("Эта коробка уже отгружена!");
+
+                            MessageUtils.showToast(this, "Эта коробка уже принята на "+mDBHelper.defs.descOper, false);
                         } else {
                             Button bScan = (Button) findViewById(R.id.bScan);
                             bScan.setText("OK!");
                             editTextRQ = (EditText) findViewById(R.id.editTextRQ);
                             editTextRQ.setText(String.valueOf(fb.QB - fb.RQ));
-                            editTextRQ.setEnabled(true);
+                            final boolean isSetEnabled = true; //!AppUtils.isOutComeOper(mDBHelper.defs.get_Id_o());
+                            editTextRQ.setEnabled(isSetEnabled);
+                            editTextRQ.setSelection(editTextRQ.getText().length());
                             if (fb.RQ != 0) {showMessage("Эта коробка ранее принималась неполной!");}
                         }
                     } else {                                                //Коробки нет , подставить колво в поле редактирования колва и дожаться ОК.
-                        if (mDBHelper.defs.get_Id_o()==mDBHelper.defs.get_idOperFirst()){ //Добавить коробку если это операция приемки baseOper = 1
+                        if (isOneOfFirstOper(mDBHelper.defs.get_Id_o())){ //Добавить коробку если это операция приемки baseOper = 1
                             Button bScan = (Button) findViewById(R.id.bScan);
                             bScan.setText("OK!");
                             editTextRQ = (EditText) findViewById(R.id.editTextRQ);
-                            editTextRQ.setText(String.valueOf(fb.QB - fb.RQ));
+                            editTextRQ.setText(String.valueOf(fb.QB - fb.RQ)); //устанавливаетяся количество как разница
                             editTextRQ.setEnabled(true);
+                            editTextRQ.setSelection(editTextRQ.getText().length());
                         }else{
                             showLongMessage("Эта коробка не принималась на производстве!");
                         }
@@ -521,7 +523,8 @@ private static String filter (String str){
         boolean newBM = false;
 
         String _RQ = editTextRQ.getText().toString();
-        if ((!TextUtils.isEmpty(_RQ))&(Integer.valueOf(_RQ)<=(fb.QB - fb.RQ))) {//колво  не пустое
+        boolean skipCheckingNumber = AppUtils.isIncomeOper(mDBHelper.defs.get_Id_o());
+        if (skipCheckingNumber || (!TextUtils.isEmpty(_RQ))&(Integer.valueOf(_RQ)<=(fb.QB - fb.RQ))) {//колво  не пустое
             try {
                 Button bScan = (Button) findViewById(R.id.bScan);
                 bScan.setText("Scan!");

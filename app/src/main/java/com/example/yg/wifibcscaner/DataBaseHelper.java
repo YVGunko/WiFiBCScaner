@@ -37,11 +37,18 @@ import android.os.Environment;
 import android.util.Log;
 import android.content.SharedPreferences;
 
+import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
+import com.example.yg.wifibcscaner.utils.AppUtils;
 import com.example.yg.wifibcscaner.utils.DateTimeUtils;
+
+import org.apache.commons.lang3.StringUtils;
 
 import java.time.LocalDate;
 
+import static com.example.yg.wifibcscaner.utils.AppUtils.getFirstOperFor;
+import static com.example.yg.wifibcscaner.utils.AppUtils.isNotEmpty;
+import static com.example.yg.wifibcscaner.utils.AppUtils.isOneOfFirstOper;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDateLong;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDateTimeLong;
 import static java.time.temporal.TemporalAdjusters.firstDayOfYear;
@@ -51,6 +58,8 @@ import static java.lang.String.valueOf;
 
 public class DataBaseHelper extends SQLiteOpenHelper {
     private static final String TAG = "DataBaseHelper";
+    final String LOG_TAG = "bCScanerLogs";
+
     private static String DB_PATH = "";
 
     private static String DB_NAME = "SQR.db";
@@ -140,7 +149,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     public OutDocs currentOutDoc;
     public Sotr sotr;
     //public Division division;
-    final String LOG_TAG = "bCScanerLogs";
+
 
 
 
@@ -413,7 +422,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         while (!cursor.isAfterLast()) {
             HashMap readBox = new HashMap<String, String>();
             String sTmp = null;
-            if (defs.get_Id_o()== defs.get_idOperLast()) sTmp = defs.descOper; else sTmp = cursor.getString(0);
+            if (!AppUtils.isDepAndSotrOper(defs.get_Id_o())) sTmp = defs.descOper; else sTmp = cursor.getString(0);
             //Заполняем
             readBox.put("Ord", sTmp);
             readBox.put("Cust", "Коробок: " + cursor.getString(1) + ". Пар: " + cursor.getString(2));
@@ -588,6 +597,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         }
     }
     public Cursor listOutDocs() {
+        Date curDate = new Date();
         Cursor cursor = null;
         try {
                 if (checkSuperUser(defs.get_idUser())) {
@@ -595,6 +605,8 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                         mDataBase = this.getReadableDatabase();
                     cursor = mDataBase.rawQuery("SELECT _id, number, comment, strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as DT, Id_o, division_code, idUser " +
                                     " FROM OutDocs where _id<>0 and division_code=? and Id_o=?" +
+                                    " AND date(DT / 1000,'unixepoch') BETWEEN date("+DateTimeUtils.getStartOfDayLong(DateTimeUtils.addDays(curDate,1))+
+                                    " / 1000,'unixepoch') AND  date("+DateTimeUtils.getStartOfDayLong(DateTimeUtils.addDays(curDate,1))+" / 1000,'unixepoch')"+
                                     " ORDER BY number desc",
                             new String[]{String.valueOf(defs.getDivision_code()), String.valueOf(defs.get_Id_o())});
                 }
@@ -603,6 +615,8 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                         mDataBase = this.getReadableDatabase();
                     cursor = mDataBase.rawQuery("SELECT _id, number, comment, strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as DT, Id_o, division_code, idUser " +
                                     " FROM OutDocs where _id<>0 and division_code=? and Id_o=? and idUser=?" +
+                                    " AND date(DT / 1000,'unixepoch') BETWEEN date("+DateTimeUtils.getStartOfDayLong(DateTimeUtils.addDays(curDate,1))+
+                                    " / 1000,'unixepoch') AND  date("+DateTimeUtils.getStartOfDayLong(DateTimeUtils.addDays(curDate,1))+" / 1000,'unixepoch')"+
                                     " ORDER BY number desc",
                             new String[]{String.valueOf(defs.getDivision_code()), String.valueOf(defs.get_Id_o()), String.valueOf(defs.get_idUser())});
                 }
@@ -664,7 +678,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         ArrayList<HashMap<String, Integer>> readBoxes = new ArrayList<HashMap<String, Integer>>();
         mDataBase = this.getReadableDatabase();
         Cursor cursor = null;
-        if (defs.get_Id_o()== defs.get_idOperLast())
+        if (!AppUtils.isDepAndSotrOper(defs.get_Id_o()))
             cursor = mDataBase.rawQuery("SELECT MasterData.Ord, MasterData.Cust, MasterData.Nomen, MasterData.Attrib, MasterData.Q_ord, " +
                     "Boxes.Q_box, Boxes.N_box, Prods.RQ_box, Deps.Name_Deps, s.Sotr, MasterData.Ord_id, Boxes._id, bm._id, Prods._id" +
                     " FROM Opers, Boxes, BoxMoves bm, Prods, Deps, MasterData, Sotr s Where Opers._id=" + valueOf(defs.get_Id_o()) +
@@ -685,10 +699,10 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         while (!cursor.isAfterLast()) {
             HashMap readBox = new HashMap<String, Integer>();
             String sTmp = null;
-            if (defs.get_Id_o()== defs.get_idOperLast()) sTmp = ""; else sTmp = cursor.getString(8)+", " + cursor.getString(9);
+            if (!AppUtils.isDepAndSotrOper(defs.get_Id_o())) sTmp = ""; else sTmp = cursor.getString(8)+", " + cursor.getString(9);
             //Заполняем
             readBox.put("Ord", cursor.getString(0) + ". " + cursor.getString(1));
-            readBox.put("Cust", "Подошва: " + cursor.getString(2) + ". "+ "Атрибут: " + retStringFollowingCRIfNotNull(cursor.getString(3))
+            readBox.put("Cust", "Подошва: " + cursor.getString(2) + ", " + retStringFollowingCRIfNotNull(cursor.getString(3))
             + "Заказ: " + cursor.getString(4) + ". № кор: " + cursor.getString(6) + ". Регл: " + cursor.getString(5) + " "
             + "В кор: " + cursor.getString(7) + ". " + sTmp);
             readBox.put("bId",cursor.getString(11)+"/bId");
@@ -829,27 +843,16 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     private String makeOrderdef(Cursor cursor) {
         String def = "№ " + cursor.getString(2);
         def += " / " + cursor.getString(3) + "\n";
-        def += "Подошва: " + cursor.getString(4) + ", ";
-        if ((cursor.getString(5)!=null)&&(!cursor.getString(5).equals("")))
-            def += "Атрибут: " + retStringFollowingCRIfNotNull(cursor.getString(5));
-        else def += "\n";
+        def += "Подошва: " + cursor.getString(4) ;
+        if (AppUtils.isNotEmpty(cursor.getString(5)))
+            def += ", " + retStringFollowingCRIfNotNull(cursor.getString(5));
         def += "Заказ: " + cursor.getString(6) +
                 ". Регл: " + cursor.getString(7) +
                 ". Всего кор: " + cursor.getString(8) + "\n";
         return def;
     }
 
-    private String makeBoxdef(Cursor cursor) {
-        String product = "№ " + cursor.getString(0);
-        product += " / " + cursor.getString(1) + "\n";
-        product += "Подошва: " + cursor.getString(2) + ", ";
-        if ((cursor.getString(3)!=null)&&(!cursor.getString(3).equals("")))
-            product += "Атрибут: " + retStringFollowingCRIfNotNull(cursor.getString(3));
-        else product += "\n";
-        product += "Заказ: " + cursor.getString(4) + ". № кор: " + cursor.getString(6) + ". Регл: " + cursor.getString(5) + " ";
-        product += "В кор: " + cursor.getString(7) + ". " + cursor.getString(8)+", " + cursor.getString(9);
-        return product;
-    }
+
     private String lDateToString (long lDate){
         Calendar cal = Calendar.getInstance();
         cal.setTimeInMillis(lDate);
@@ -864,7 +867,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         boolean b = (Order_Id != "");
         if (b) {
             SQLiteDatabase db = getReadableDatabase();
-            String query = "SELECT _id,Ord_id,Ord,Cust,Nomen,Attrib,Q_ord,Q_box,N_box,DT,archive FROM " + TABLE_MD + " WHERE Ord_id = '" + Order_Id + "'";
+            String query = "SELECT _id,Ord_id,Ord,Cust,Nomen,Attrib,Q_ord,Q_box,N_box,DT,archive, division_code FROM " + TABLE_MD + " WHERE Ord_id = '" + Order_Id + "'";
             Cursor c = db.rawQuery(query, null);
             try {
                 c.moveToFirst();
@@ -876,6 +879,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 fo.orderdef = makeOrderdef(c);
                 fo.barcode = storedbarcode;
                 fo.archive = (c.getInt(c.getColumnIndex("archive")) != 0);
+                fo.division_code = c.getString(c.getColumnIndex("division_code"));
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -887,8 +891,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         return fo;
     }
 
-    public foundbox searchBox(int Order_id, String storedbarcode) {
-        long Id_b = -1;
+    public foundbox searchBox(final int Order_id, final String storedbarcode) {
         Cursor c = null;
 
         foundbox fb = new foundbox();
@@ -915,11 +918,11 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 Log.d(LOG_TAG, "searchBox Record count = " + c.getCount() + ", _id =" + c.getString((int) 0));
 
                 if (!fb._archive) {
-                    if ((!fb._id.equals("") && (fb._id != null))) {
-                        if (defs.get_Id_o() != defs.get_idOperFirst()) {//нет записи в BoxMoves и Prods. Другая операция. Определить принятое колво
+                    if (StringUtils.isNotEmpty(fb._id)) {
+                        if (!isOneOfFirstOper(defs.get_Id_o())) {//нет записи в BoxMoves и Prods. Другая операция. Определить принятое колво
                             tryCloseCursor(c);
                             query = "SELECT sum(Prods.RQ_box) as RQ_box FROM BoxMoves bm, Prods " + "" +
-                                    "Where bm.Id_b='" + fb._id + "' and bm.Id_o=" + valueOf(defs.get_idOperFirst()) +
+                                    "Where bm.Id_b='" + fb._id + "' and bm.Id_o=" + valueOf(getFirstOperFor(defs.get_Id_o())) +
                                     " and bm._id=Prods.Id_bm Group by Prods.Id_bm";
                             c = mDataBase.rawQuery(query, null);
                             if ((c != null) & (c.getCount() != 0)) { //есть записи в BoxMoves и Prods для базовой операции
@@ -951,7 +954,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                             c.moveToFirst(); //есть boxes & prods
                             Log.d(LOG_TAG, "Looking for outdocs record count = " + c.getCount() + ", _id =" + c.getString((int) 0));
                             fb.outDocs = "Накл " + c.getString(0) + " от " + c.getString(1);
-                            fb.depSotr = c.getString(2) + ", " + c.getString(3);
+                            fb.depSotr = isNotEmpty(c.getString(2)) ? c.getString(2) + ", " + c.getString(3) : "";
                         }
                     }
                 }
@@ -1196,12 +1199,12 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             try {
                 BoxMoves bm = new BoxMoves (getUUID(),fb._id, defs.get_Id_o(),lDateToString(new Date().getTime()),null);
                 if (insertBoxMoves(bm)) {
-                    Prods prods = null;
-                    if (bm.get_Id_o()== defs.get_idOperLast()) {//Базовая операция
-                        prods = new Prods(getUUID(), bm.get_id(), 0, 0, fb.RQ, getStartOfDayString(new Date()), null,currentOutDoc.get_id());
+                    Prods prods ;
+                    if (AppUtils.isDepAndSotrOper(bm.get_Id_o())) {// it needs Dep and Sotr
+                        prods = new Prods(getUUID(), bm.get_id(), defs.get_Id_d(), defs.get_Id_s(), fb.RQ, getStartOfDayString(new Date()), null,currentOutDoc.get_id());
                     }
                     else {
-                        prods = new Prods(getUUID(), bm.get_id(), defs.get_Id_d(), defs.get_Id_s(), fb.RQ, getStartOfDayString(new Date()), null,currentOutDoc.get_id());
+                        prods = new Prods(getUUID(), bm.get_id(), 0, 0, fb.RQ, getStartOfDayString(new Date()), null,currentOutDoc.get_id());
                     }
                     b = insertProds(prods);
                 }
@@ -1467,18 +1470,20 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                     " and Prods.Id_s=s._id  and Prods.idOutDocs=o._id"+
                     " Order by Prods._id desc", new String [] {String.valueOf(defs.getDivision_code())});
             try {
-                cursor.moveToFirst();
-                product = "№ " + cursor.getString(0);
-                product += " / " + cursor.getString(1) + "\n";
-                product += "Подошва: " + cursor.getString(2) + ". ";
-                if ((cursor.getString(3)!=null)&&(!cursor.getString(3).equals("")))
-                    product += "Атрибут: " + retStringFollowingCRIfNotNull(cursor.getString(3));
-                else product += "\n";
-                product += "Заказ: " + cursor.getString(4) + ". № кор: " + cursor.getString(6) +
-                        ". Регл: " + cursor.getString(5) + " ";
-                product += "В кор: " + cursor.getString(7) + "."+ "\n";
-                product += cursor.getString(8)+", " + cursor.getString(9)+ "\n"; //Бригада
-                product += "Накл "+ cursor.getString(10)+" от " + cursor.getString(11);
+                if ((cursor != null) & (cursor.getCount() > 0)) {
+                    cursor.moveToFirst();
+                    product = "№ " + cursor.getString(0);
+                    product += " / " + cursor.getString(1) + "\n";
+                    product += "Подошва: " + cursor.getString(2);
+                    if (AppUtils.isNotEmpty(cursor.getString(5)))
+                        product += ", " + retStringFollowingCRIfNotNull(cursor.getString(5));
+
+                    product += "Заказ: " + cursor.getString(4) + ". № кор: " + cursor.getString(6) +
+                            ". Регл: " + cursor.getString(5) + " ";
+                    product += "В кор: " + cursor.getString(7) + "." + "\n";
+                    product += isNotEmpty(cursor.getString(8)) ? cursor.getString(8) + ", " + cursor.getString(9) + "\n" : ""; //Бригада
+                    product += "Накл " + cursor.getString(10) + " от " + cursor.getString(11);
+                }
             } catch (CursorIndexOutOfBoundsException e){
                 Log.d(LOG_TAG, "lastBox CursorIndexOutOfBoundsException" + cursor.getCount());
                 return product;

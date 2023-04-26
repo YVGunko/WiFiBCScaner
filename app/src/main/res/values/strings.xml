@@ -34,4 +34,6 @@
     <string name="action_version">О программе...</string>
     <string name="action_db_need_replace">Очистить БД</string>
     <string name="dialog_db_need_replace">Очистить базу данных? Восстановление невозможно!</string>
+    <string name="QR_invalid">QR код не распознан!</string>
+    <string name="wrong_division_order">Это коробка другого подразделения</string>
 </resources>
