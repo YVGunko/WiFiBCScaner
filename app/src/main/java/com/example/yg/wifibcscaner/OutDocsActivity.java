@@ -140,7 +140,7 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
                                            int pos, long id) {
                 try {
                     if (scAdapter.getCount() > 0) {
-                        strTitle = "№" +scAdapter.getCursor().getString(1)+ ", "
+                        strTitle = "№" +scAdapter.getCursor().getString(1)
                                 + mDBHelper.selectCurrentOutDocDetails(scAdapter.getCursor().getString(0));
                         OutDocsActivity.this.setTitle(strTitle);
                     }

@@ -586,9 +586,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                             " group by p.idOutDocs", null);
             if ((cursor != null) & (cursor.getCount() != 0)) {
                 cursor.moveToFirst();
-                result = "Кор: "+cursor.getString(1)+", Под.: "+cursor.getString(2);
-            }else {
-                result = "Кор.:0, Подошвы:0";
+                result = ", Кор: "+cursor.getString(1)+", Под.: "+cursor.getString(2);
             }
         } finally {
             tryCloseCursor(cursor);
@@ -1473,8 +1471,8 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                     product = "№ " + cursor.getString(0);
                     product += " / " + cursor.getString(1) + "\n";
                     product += "Подошва: " + cursor.getString(2);
-                    if (AppUtils.isNotEmpty(cursor.getString(5)))
-                        product += ", " + cursor.getString(5);
+                    if (AppUtils.isNotEmpty(cursor.getString(3)))
+                        product += ", " + cursor.getString(3);
 
                     product += "\nЗаказ: " + cursor.getString(4) + ". № кор: " + cursor.getString(6) +
                             ". Регл: " + cursor.getString(5) + " ";

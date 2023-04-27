@@ -1,5 +1,9 @@
 package com.example.yg.wifibcscaner;
 
+import com.example.yg.wifibcscaner.utils.AppUtils;
+
+import org.apache.commons.lang3.StringUtils;
+
 /**
  * Created by yg on 17.04.2018.
  */
@@ -69,9 +73,11 @@ public class OutDocs {
     }
 
     public int get_number() {
-        return _number;
+        return _number ;
     }
-
+    public String getNumberString() {
+        return AppUtils.isNotEmpty(String.valueOf(_number)) ? String.valueOf(_number) : " не выбрана." ;
+    }
     public void set_number(int _number) {
         this._number = _number;
     }

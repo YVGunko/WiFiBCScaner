@@ -31,7 +31,7 @@ public class AppUtils {
     }
 
     public static boolean isNotEmpty(final String string) {
-        return StringUtils.isNotEmpty(string) & !string.equals("Пусто");
+        return StringUtils.isNotEmpty(string) & !string.equals("Пусто") & !string.equals("0");
     }
 
     public static int getFirstOperFor(final int key) {

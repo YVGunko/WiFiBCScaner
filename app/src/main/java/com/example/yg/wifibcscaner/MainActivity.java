@@ -164,7 +164,7 @@ IntentFilter filterAttached_and_Detached = null;
         tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
         currentDocDetails  = (TextView) findViewById(R.id.currentDocDetails);
         currentUser  = (TextView) findViewById(R.id.currentUser);
-        tVDBInfo.setText(mDBHelper.lastBox());
+        //tVDBInfo.setText(mDBHelper.lastBox());
         editTextRQ = (EditText) findViewById(R.id.editTextRQ);
         editTextRQ.setEnabled(false);
         //registerReceiver
@@ -234,23 +234,23 @@ IntentFilter filterAttached_and_Detached = null;
     protected void onResume() {
         super.onResume();
 
-        String snum = "Накл.???";
-        if (mDBHelper.currentOutDoc.get_number() != 0) snum = "Накл.№"+mDBHelper.currentOutDoc.get_number();
-        snum = mDBHelper.defs.descOper+", "+snum;
-        android.support.v7.app.ActionBar actionBar = getSupportActionBar();
-        actionBar.setSubtitle(Html.fromHtml("<font color='#FFBF00'>"+snum+"</font>"));
-        actionBar.setTitle("Подразделение: "+mDBHelper.defs.descDivision);
 
-        if (!editTextRQ.isEnabled()){
+        if (!editTextRQ.isEnabled()){ // if enabled we are waiting for quantity to be entered
+            String snum = "Накл.№ не выбрана";
+            if (mDBHelper.currentOutDoc.get_number() != 0) snum = "Накл.№"+mDBHelper.currentOutDoc.get_number();
+            snum = mDBHelper.defs.descOper+", "+snum;
+            android.support.v7.app.ActionBar actionBar = getSupportActionBar();
+            actionBar.setSubtitle(Html.fromHtml("<font color='#FFBF00'>"+snum+"</font>"));
+            actionBar.setTitle("Подразделение: "+mDBHelper.defs.descDivision);
             tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
             tVDBInfo.setText(mDBHelper.lastBox());
+
+            currentDocDetails  = (TextView) findViewById(R.id.currentDocDetails);
+            currentDocDetails.setText("Накл.№" +mDBHelper.currentOutDoc.getNumberString() + mDBHelper.selectCurrentOutDocDetails(mDBHelper.currentOutDoc.get_id()));
+
+            currentUser  = (TextView) findViewById(R.id.currentUser);
+            currentUser.setText("Пользователь: " +mDBHelper.getUserName(mDBHelper.defs.get_idUser()));
         }
-
-        currentDocDetails  = (TextView) findViewById(R.id.currentDocDetails);
-        currentDocDetails.setText("Накл.№" +mDBHelper.currentOutDoc.get_number() + ", " + mDBHelper.selectCurrentOutDocDetails(mDBHelper.currentOutDoc.get_id()));
-
-        currentUser  = (TextView) findViewById(R.id.currentUser);
-        currentUser.setText("Пользователь: " +mDBHelper.getUserName(mDBHelper.defs.get_idUser()));
 
         if (barcodeReader != null) {
             try {
@@ -548,7 +548,7 @@ private static String filter (String str){
                         tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
                         tVDBInfo.setText(mDBHelper.lastBox());
                         currentDocDetails  = (TextView) findViewById(R.id.currentDocDetails);
-                        currentDocDetails.setText("Накл.№" +mDBHelper.currentOutDoc.get_number() + ", " + mDBHelper.selectCurrentOutDocDetails(mDBHelper.currentOutDoc.get_id()));
+                        currentDocDetails.setText("Накл.№" +mDBHelper.currentOutDoc.getNumberString() + mDBHelper.selectCurrentOutDocDetails(mDBHelper.currentOutDoc.get_id()));
                         if (mDBHelper.lastBoxCheck(fo)) showLongMessage("Это последняя коробка из заказа!");
                     }else {
                         showLongMessage(mDBHelper.defs.descOper+". Повторный прием коробки в смену! Повторный прием возможен в другую смену.");
@@ -561,7 +561,7 @@ private static String filter (String str){
                         tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
                         tVDBInfo.setText(mDBHelper.lastBox());
                         currentDocDetails  = (TextView) findViewById(R.id.currentDocDetails);
-                        currentDocDetails.setText("Накл.№" +mDBHelper.currentOutDoc.get_number() + ", " + mDBHelper.selectCurrentOutDocDetails(mDBHelper.currentOutDoc.get_id()));
+                        currentDocDetails.setText("Накл.№" +mDBHelper.currentOutDoc.getNumberString() + mDBHelper.selectCurrentOutDocDetails(mDBHelper.currentOutDoc.get_id()));
 
                         //showMessage(mDBHelper.defs.descOper+". Принята новая коробка.");
                         if (mDBHelper.lastBoxCheck(fo)) showLongMessage("Это последняя коробка из заказа!");
