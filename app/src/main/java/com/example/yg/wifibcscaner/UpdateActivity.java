@@ -243,10 +243,10 @@ public class UpdateActivity extends AppCompatActivity {
                                         getDayTimeLong(new Date()),
                                     true));
                             counter = counter + 10;
+                            publishProgress(5);
                         } else {
                             Log.d(TAG, "getOrders response is empty.");
                         }
-                        publishProgress(5);
                     }
 
                     @Override
@@ -303,9 +303,10 @@ public class UpdateActivity extends AppCompatActivity {
                                             }
                                             Log.d(TAG, "Ответ сервера на запрос синхронизации коробок: " + response.body().size());
                                         }
+                                        counter = counter + 10;
+                                        publishProgress(6);
+                                        Log.d(TAG, "Last page Boxes: " + response.body().size());
                                     }
-                                    counter = counter + 10;
-                                    publishProgress(6);
                                 }
 
                                 @Override
@@ -325,6 +326,7 @@ public class UpdateActivity extends AppCompatActivity {
                                 public void onResponse(Call<Integer> call, Response<Integer> response) {
                                     if (response.isSuccessful()) {
                                         int totalPages = response.body().intValue();
+                                        final int[] innerCounter = {totalPages};
                                         for (int i = 0; i < totalPages; i++) {
                                             ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getBoxMovesByDatePageble(strUpdateDate, mDBHelper.defs.get_idUser(), mDBHelper.defs.getDeviceId(), i).
                                                     enqueue(new Callback<List<BoxMoves>>() {
@@ -345,9 +347,14 @@ public class UpdateActivity extends AppCompatActivity {
                                                                     }
                                                                     Log.d("UpdateActivity", "Ответ сервера на запрос синхронизации BoxMoves: " + response.body().size());
                                                                 }
+                                                                innerCounter[0] = innerCounter[0] - 1;
+                                                                if (innerCounter[0] == 0) {
+                                                                    counter = counter + 20;
+                                                                    publishProgress(7);
+                                                                    Log.d(TAG, "Last page BoxMoves: " + response.body().size());
+                                                                }
                                                             }
-                                                            counter = counter + 20;
-                                                            publishProgress(7);
+
                                                         }
 
                                                         @Override
@@ -378,6 +385,7 @@ public class UpdateActivity extends AppCompatActivity {
                                     if (response.isSuccessful()) {
 
                                         int totalPages = response.body().intValue();
+                                        final int[] innerCounter = {totalPages};
                                         for (int i = 0; i < totalPages; i++) {
                                             ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getPartBoxByDatePageble(strUpdateDate, mDBHelper.defs.get_idUser(), mDBHelper.defs.getDeviceId(), i).
                                                     enqueue(new Callback<List<Prods>>() {
@@ -396,10 +404,14 @@ public class UpdateActivity extends AppCompatActivity {
                                                                     }
                                                                     Log.d("UpdateActivity", "Ответ сервера на запрос синхронизации PartBox: " + response.body().size());
                                                                 }
+                                                                innerCounter[0] = innerCounter[0] - 1;
+                                                                if (innerCounter[0] == 0) {
+                                                                    counter = counter + 40;
+                                                                    publishProgress(8);
+                                                                    Log.d(TAG, "Last page PartBox: " + response.body().size());
 
+                                                                }
                                                             }
-                                                            counter = counter + 40;
-                                                            publishProgress(8);
                                                         }
 
                                                         @Override
@@ -413,7 +425,7 @@ public class UpdateActivity extends AppCompatActivity {
                                 }
                                 @Override
                                 public void onFailure(Call<Integer> call, Throwable t) {
-                                    Log.d(TAG, "getBoxMovesByDatePagebleCount onFailure: " + t.getMessage());
+                                    Log.d(TAG, "PartBox onFailure: " + t.getMessage());
                                 }
                             });
 

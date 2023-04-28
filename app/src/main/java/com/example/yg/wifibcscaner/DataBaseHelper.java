@@ -2281,7 +2281,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             mDataBase = this.getWritableDatabase();
         }
         try {
-            mDataBase.execSQL("PRAGMA foreign_keys = 0;");
+            //mDataBase.execSQL("PRAGMA foreign_keys = 0;");
             mDataBase.beginTransaction();
             String sql = "INSERT OR REPLACE INTO MasterData (_id, Ord_id, Ord, Cust, Nomen, Attrib," +
                     " Q_ord, Q_box, N_box, DT, archive, division_code)" +
@@ -2313,7 +2313,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             }
 
             mDataBase.setTransactionSuccessful(); // This commits the transaction if there were no exceptions
-            mDataBase.execSQL("PRAGMA foreign_keys = 1;");
+            //mDataBase.execSQL("PRAGMA foreign_keys = 1;");
         } catch (Exception e) {
             Log.w(TAG, e);
             throw new RuntimeException("To catch into upper level.");
@@ -2327,7 +2327,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         }
         try {
 
-            mDataBase.execSQL("PRAGMA foreign_keys = 0;");
+            //mDataBase.execSQL("PRAGMA foreign_keys = 0;");
             mDataBase.beginTransaction();
             String sql = "INSERT OR REPLACE INTO OutDocs (_id, Id_o, number, comment, DT, sentToMasterDate, division_code, idUser) " +
                     " VALUES (?,?,?,?,?,?,?,?);";
@@ -2357,7 +2357,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             }
 
             mDataBase.setTransactionSuccessful(); // This commits the transaction if there were no exceptions
-            mDataBase.execSQL("PRAGMA foreign_keys = 1;");
+            //mDataBase.execSQL("PRAGMA foreign_keys = 1;");
         } catch (Exception e) {
             Log.w(TAG, e);
             throw new RuntimeException("To catch into upper level.");
@@ -2371,7 +2371,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         }
         try {
 
-            mDataBase.execSQL("PRAGMA foreign_keys = 0;");
+            //mDataBase.execSQL("PRAGMA foreign_keys = 0;");
             mDataBase.beginTransaction();
             String sql = "INSERT OR REPLACE INTO Boxes (_id, Id_m, Q_box, N_box, DT, sentToMasterDate, archive) " +
                     " VALUES (?,?,?,?,?,?,?);";
@@ -2396,7 +2396,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             }
 
             mDataBase.setTransactionSuccessful(); // This commits the transaction if there were no exceptions
-            mDataBase.execSQL("PRAGMA foreign_keys = 1;");
+            //mDataBase.execSQL("PRAGMA foreign_keys = 1;");
         } catch (Exception e) {
             Log.w(TAG, e);
             throw new RuntimeException("To catch into upper level.");
@@ -2411,7 +2411,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         }
         try {
 
-            mDataBase.execSQL("PRAGMA foreign_keys = 0;");
+            //mDataBase.execSQL("PRAGMA foreign_keys = 0;");
             mDataBase.beginTransaction();
             String sql = "INSERT OR REPLACE INTO BoxMoves (_id, Id_b, Id_o, DT, sentToMasterDate) " +
                     " VALUES (?,?,?,?,?);";
@@ -2434,7 +2434,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             }
 
             mDataBase.setTransactionSuccessful(); // This commits the transaction if there were no exceptions
-            mDataBase.execSQL("PRAGMA foreign_keys = 1;");
+            //mDataBase.execSQL("PRAGMA foreign_keys = 1;");
         } catch (Exception e) {
             Log.w(TAG, e);
             throw new RuntimeException("To catch into upper level.");
@@ -2449,7 +2449,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         }
         try {
 
-            mDataBase.execSQL("PRAGMA foreign_keys = 0;");
+            //mDataBase.execSQL("PRAGMA foreign_keys = 0;");
             mDataBase.beginTransaction();
             String sql = "INSERT OR REPLACE INTO Prods (_id, Id_bm, Id_d, Id_s, RQ_box, P_date, sentToMasterDate, idOutDocs) " +
                     " VALUES (?,?,?,?,?,?,?,?);";
@@ -2474,7 +2474,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             }
 
             mDataBase.setTransactionSuccessful(); // This commits the transaction if there were no exceptions
-            mDataBase.execSQL("PRAGMA foreign_keys = 1;");
+            //mDataBase.execSQL("PRAGMA foreign_keys = 1;");
         } catch (Exception e) {
             Log.w(TAG, e);
             throw new RuntimeException("To catch into upper level.");
