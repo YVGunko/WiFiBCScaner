@@ -50,8 +50,11 @@ import java.util.Iterator;
 import me.drakeet.support.toast.ToastCompat;
 
 import static android.text.TextUtils.substring;
+import static com.example.yg.wifibcscaner.utils.AppUtils.getFirstOperFor;
 import static com.example.yg.wifibcscaner.utils.AppUtils.isDepAndSotrOper;
+import static com.example.yg.wifibcscaner.utils.AppUtils.isNotEmpty;
 import static com.example.yg.wifibcscaner.utils.AppUtils.isOneOfFirstOper;
+import static com.example.yg.wifibcscaner.utils.AppUtils.isOneScanOnlyOper;
 import static com.example.yg.wifibcscaner.utils.AppUtils.isOutDocOnlyOper;
 
 
@@ -234,7 +237,6 @@ IntentFilter filterAttached_and_Detached = null;
     protected void onResume() {
         super.onResume();
 
-
         if (!editTextRQ.isEnabled()){ // if enabled we are waiting for quantity to be entered
             String snum = "Накл.№ не выбрана";
             if (mDBHelper.currentOutDoc.get_number() != 0) snum = "Накл.№"+mDBHelper.currentOutDoc.get_number();
@@ -242,11 +244,8 @@ IntentFilter filterAttached_and_Detached = null;
             android.support.v7.app.ActionBar actionBar = getSupportActionBar();
             actionBar.setSubtitle(Html.fromHtml("<font color='#FFBF00'>"+snum+"</font>"));
             actionBar.setTitle("Подразделение: "+mDBHelper.defs.descDivision);
-            tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
-            tVDBInfo.setText(mDBHelper.lastBox());
 
-            currentDocDetails  = (TextView) findViewById(R.id.currentDocDetails);
-            currentDocDetails.setText("Накл.№" +mDBHelper.currentOutDoc.getNumberString() + mDBHelper.selectCurrentOutDocDetails(mDBHelper.currentOutDoc.get_id()));
+            setTextViews();
 
             currentUser  = (TextView) findViewById(R.id.currentUser);
             currentUser.setText("Пользователь: " +mDBHelper.getUserName(mDBHelper.defs.get_idUser()));
@@ -478,6 +477,8 @@ private static String filter (String str){
                 tVDBInfo.setText(fo.orderdef);
                 if (!fb._archive){
                     if (StringUtils.isNotEmpty(fb._id)) {                                  //Коробка есть
+                        //if it isOneScanOnlyOper just set Quantity equal
+                        if (isOneScanOnlyOper(mDBHelper.defs.get_Id_o())) fb.QB = fb.RQ;
                         if (fb.QB == fb.RQ) {//Коробка заполнена
 
                             editTextRQ = (EditText) findViewById(R.id.editTextRQ);
@@ -504,7 +505,7 @@ private static String filter (String str){
                             editTextRQ.setEnabled(true);
                             editTextRQ.setSelection(editTextRQ.getText().length());
                         }else{
-                            showLongMessage("Эта коробка не принималась на производстве!");
+                            showLongMessage("Эта коробка не принималась на "+mDBHelper.defs.descFirstOperForCurrent);
                         }
                     }
                 }else {
@@ -519,52 +520,36 @@ private static String filter (String str){
     }
 
     public void ocl_bOk(View v) { //Вызов активности Сканирования
-        int idar = 0;
-        int iRQ = 0;
         boolean newBM = false;
 
-        String _RQ = editTextRQ.getText().toString();
+        final String _RQ = editTextRQ.getText().toString();
         boolean skipCheckingNumber = AppUtils.isIncomeOper(mDBHelper.defs.get_Id_o());
         if (skipCheckingNumber || (!TextUtils.isEmpty(_RQ))&(Integer.valueOf(_RQ)<=(fb.QB - fb.RQ))) {//колво  не пустое
             try {
                 Button bScan = (Button) findViewById(R.id.bScan);
                 bScan.setText("Scan!");
-                iRQ = Integer.valueOf(_RQ);
                 tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
                 editTextRQ = (EditText) findViewById(R.id.editTextRQ);
                 editTextRQ.setEnabled(false);
-                if ((!fb._id.equals("")&&(fb._id != null))) {                                            //коробка есть и не полная, добавить в prods
-                    if (fb.RQ == 0) {
-                        newBM = true;                                           //новая операция по существующей коробке
-                    }
-                    fb.RQ = iRQ;
+                if (StringUtils.isNotEmpty(fb._id)) {                                            //коробка есть и не полная, добавить в prods
+                    newBM = (fb.RQ != 0);                                           //новая операция по существующей коробке
+                    fb.RQ = Integer.valueOf(_RQ);
                     if (mDBHelper.addProds(fb)) {
-                        if (newBM){
-                            //showMessage(mDBHelper.defs.descOper+". Обработана новая коробка.");
-                            newBM=false;
-                        }else {
-                            showMessage(mDBHelper.defs.descOper+". В коробку добавлено "+String.valueOf(iRQ));
-                        }
-                        tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
-                        tVDBInfo.setText(mDBHelper.lastBox());
-                        currentDocDetails  = (TextView) findViewById(R.id.currentDocDetails);
-                        currentDocDetails.setText("Накл.№" +mDBHelper.currentOutDoc.getNumberString() + mDBHelper.selectCurrentOutDocDetails(mDBHelper.currentOutDoc.get_id()));
-                        if (mDBHelper.lastBoxCheck(fo)) showLongMessage("Это последняя коробка из заказа!");
+                        if (newBM)
+                            showMessage(mDBHelper.defs.descOper+". В коробку добавлено "+_RQ);
+
+                        setTextViews();
+                        mDBHelper.lastBoxCheck(fo);
                     }else {
                         showLongMessage(mDBHelper.defs.descOper+". Повторный прием коробки в смену! Повторный прием возможен в другую смену.");
                     }
 
                 }else {
-                    if (!mDBHelper.addBoxes(fo,iRQ)) {            //---Вызов метода добавления коробки и продс
+                    if (!mDBHelper.addBoxes(fo,Integer.valueOf(_RQ))) {            //---Вызов метода добавления коробки и продс
                         showLongMessage(mDBHelper.defs.descOper+". Ошибка! Коробка не добавлена в БД!");
                     } else {
-                        tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
-                        tVDBInfo.setText(mDBHelper.lastBox());
-                        currentDocDetails  = (TextView) findViewById(R.id.currentDocDetails);
-                        currentDocDetails.setText("Накл.№" +mDBHelper.currentOutDoc.getNumberString() + mDBHelper.selectCurrentOutDocDetails(mDBHelper.currentOutDoc.get_id()));
-
-                        //showMessage(mDBHelper.defs.descOper+". Принята новая коробка.");
-                        if (mDBHelper.lastBoxCheck(fo)) showLongMessage("Это последняя коробка из заказа!");
+                        setTextViews();
+                        mDBHelper.lastBoxCheck(fo);
                     }
                 }
                 if (mdevice != null){//внешний usb сканер
@@ -572,7 +557,7 @@ private static String filter (String str){
                     input.requestFocus();
                 }
             } catch (Exception e) {
-                Log.e(mDBHelper.LOG_TAG, mDBHelper.defs.descOper+". Ошибка при получении количества в коробке!", e);
+                Log.e(TAG, mDBHelper.defs.descOper+". Ошибка при получении количества в коробке!", e);
                 showMessage(mDBHelper.defs.descOper+". Ошибка! Невозможно получить введенное количество!");
             }
         }else {
@@ -580,6 +565,12 @@ private static String filter (String str){
         }
     }
 
+    private void setTextViews (){
+        tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
+        tVDBInfo.setText(mDBHelper.lastBox());
+        currentDocDetails  = (TextView) findViewById(R.id.currentDocDetails);
+        currentDocDetails.setText("Накл.№" +mDBHelper.currentOutDoc.getNumberString() + mDBHelper.selectCurrentOutDocDetails(mDBHelper.currentOutDoc.get_id()));
+    }
     public void ocl_boxes(View v) {
         startActivity(new Intent(this,BoxesActivity.class)); //Вызов активности Коробки
     }

@@ -22,18 +22,6 @@ public interface PartBoxService {
     @POST("/partBox")
     Call<PartBoxRequest> addBoxes(@Body PartBoxRequest partBoxRequest, @Query("userId") int userId, @Query("deviceId") String deviceId);
 
-    /*@POST("/boxSync")
-    Call<PartBoxRequest> boxSync(@Query("date") String date);
-
-    @GET("/partBoxCheck")
-    Call<PartBoxRequest> partBoxCheck(@Body PartBoxRequest partBoxRequest);*/
-
     @GET("/")
     Call<Object> checkConnection();
-
-    /*@POST("/boxSyncPageable")
-    Call<PartBoxRequest> boxSyncPageable(@Query("date") String date, @Query ("pageNumber") int pageNumber);
-
-    @GET("/boxSyncPageableCount")
-    Call<Integer> boxSyncPageableCount(@Query("date") String date);*/
 }
