@@ -99,9 +99,6 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
 
         @Override
         protected void onProgressUpdate(Integer... values) {
-            //pbar = (ProgressBar) findViewById(R.id.progressBarpbar);
-
-            //pbar.setProgress(values[0]);
             super.onProgressUpdate(values);
         }
     }
@@ -169,7 +166,8 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
                 if (mDBHelper.currentOutDoc == null) {
                     mDBHelper.currentOutDoc = new OutDocs(scAdapter.getCursor().getString(0), scAdapter.getCursor().getInt(4),
                             scAdapter.getCursor().getInt(1), scAdapter.getCursor().getString(2), scAdapter.getCursor().getString(3),
-                            null,scAdapter.getCursor().getString(5),scAdapter.getCursor().getInt(6));
+                            null,scAdapter.getCursor().getString(5),scAdapter.getCursor().getInt(6),
+                            scAdapter.getCursor().getInt(7), scAdapter.getCursor().getInt(8));
 
                 } else {
                     mDBHelper.currentOutDoc.set_id(scAdapter.getCursor().getString(0));
@@ -180,6 +178,8 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
                     mDBHelper.currentOutDoc.set_sentToMasterDate(null);
                     mDBHelper.currentOutDoc.setDivision_code(scAdapter.getCursor().getString(5));
                     mDBHelper.currentOutDoc.setIdUser(scAdapter.getCursor().getInt(6));
+                    mDBHelper.currentOutDoc.setIdSotr(scAdapter.getCursor().getInt(7));
+                    mDBHelper.currentOutDoc.setIdDeps(scAdapter.getCursor().getInt(8));
                 }
 
                 result = selectedTitle +scAdapter.getCursor().getString(1);

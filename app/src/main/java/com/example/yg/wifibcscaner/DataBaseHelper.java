@@ -140,11 +140,6 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
     public Defs defs;
     public OutDocs currentOutDoc;
-    public Sotr sotr;
-    //public Division division;
-
-
-
 
     public class foundbox {
         String barcode; //строка описания
@@ -255,7 +250,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         selectDefsTable();
         //division = new Division(defs.getDivision_code(),getDivisionsName(defs.getDivision_code()));
         currentOutDoc = new OutDocs(null, 0, 0,null,null,
-                null, defs.getDivision_code(), defs.get_idUser());
+                null, defs.getDivision_code(), defs.get_idUser(), defs.get_Id_s(), defs.get_Id_d());
 
     }
 
@@ -360,6 +355,42 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 db.execSQL("INSERT INTO Deps (_id,Id_deps,Name_Deps,DT,division_code,Id_o)"+
                         "SELECT _id,Id_deps,Name_Deps,DT,'0',0 FROM sqlitestudio_temp_table;");
                 db.execSQL("DROP TABLE sqlitestudio_temp_table; ");
+                db.setTransactionSuccessful();
+            }
+            finally {
+                db.endTransaction();
+                db.execSQL("PRAGMA foreign_keys = 1;");
+            }
+        if ((newVersion>oldVersion)&(newVersion == 23))
+            try {
+                db.execSQL("PRAGMA foreign_keys = 0;");
+                db.beginTransaction();
+
+                db.execSQL("CREATE TABLE sqlitestudio_temp_table AS SELECT * FROM outDocs;");
+                db.execSQL("DROP TABLE IF EXISTS outDocs;");
+                db.execSQL("CREATE TABLE outDocs (_id VARCHAR (128) PRIMARY KEY UNIQUE,"+
+                        "number INTEGER,"+
+                        "comment VARCHAR (50)," +
+                        "DT INTEGER," +
+                        "Id_o INTEGER REFERENCES Opers (_id),"+
+                        "sentToMasterDate INTEGER,"+
+                        "division_code VARCHAR (255) REFERENCES Division (code) DEFAULT (0)," +
+                        "idUser INTEGER NOT NULL REFERENCES user (_id) DEFAULT (0),"+
+                        "idSotr INTEGER REFERENCES Sotr (_id),"+
+                        "idDeps INTEGER REFERENCES Deps (_id));");
+                db.execSQL("INSERT INTO outDocs (_id,number,comment,DT,Id_o,sentToMasterDate,division_code,idUser)"+
+                        "SELECT _id,number,comment,DT,Id_o,sentToMasterDate,division_code,0 FROM sqlitestudio_temp_table;");
+
+                db.execSQL(" update outDocs "+
+                " set idSotr = (select Id_s from prods p where p.idOutDocs = outDocs._id) "+
+                " where Id_o < 9999; ");
+
+                db.execSQL(" update outDocs "+
+                        " set idDeps = (select Id_d from prods p where p.idOutDocs = outDocs._id) "+
+                        " where Id_o < 9999; ");
+
+                db.execSQL("DROP TABLE sqlitestudio_temp_table;");
+
                 db.setTransactionSuccessful();
             }
             finally {
@@ -594,7 +625,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 if (checkSuperUser(defs.get_idUser())) {
                     if (!mDataBase.isOpen())
                         mDataBase = this.getReadableDatabase();
-                    cursor = mDataBase.rawQuery("SELECT _id, number, comment, strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as DT, Id_o, division_code, idUser " +
+                    cursor = mDataBase.rawQuery("SELECT _id, number, comment, strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as DT, Id_o, division_code, idUser, idSotr, idDeps " +
                                     " FROM OutDocs where _id<>0 and division_code=? and Id_o=?" +
                                     " AND date(DT / 1000,'unixepoch') BETWEEN date("+DateTimeUtils.getStartOfDayLong(DateTimeUtils.addDays(curDate,1))+
                                     " / 1000,'unixepoch') AND  date("+DateTimeUtils.getStartOfDayLong(DateTimeUtils.addDays(curDate,1))+" / 1000,'unixepoch')"+
@@ -604,7 +635,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 else {
                     if (!mDataBase.isOpen())
                         mDataBase = this.getReadableDatabase();
-                    cursor = mDataBase.rawQuery("SELECT _id, number, comment, strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as DT, Id_o, division_code, idUser " +
+                    cursor = mDataBase.rawQuery("SELECT _id, number, comment, strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as DT, Id_o, division_code, idUser, idSotr, idDeps " +
                                     " FROM OutDocs where _id<>0 and division_code=? and Id_o=? and idUser=?" +
                                     " AND date(DT / 1000,'unixepoch') BETWEEN date("+DateTimeUtils.getStartOfDayLong(DateTimeUtils.addDays(curDate,1))+
                                     " / 1000,'unixepoch') AND  date("+DateTimeUtils.getStartOfDayLong(DateTimeUtils.addDays(curDate,1))+" / 1000,'unixepoch')"+
@@ -618,7 +649,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             }else {
                 Log.d(LOG_TAG, "listOutDocs cursor is NULL! " );
                 mDataBase = this.getReadableDatabase();
-                cursor = mDataBase.rawQuery("SELECT _id, number, comment, strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as DT, Id_o, division_code, idUser " +
+                cursor = mDataBase.rawQuery("SELECT _id, number, comment, strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as DT, Id_o, division_code, idUser, idSotr, idDeps " +
                                 " FROM OutDocs where _id=0",
                         null);
             }

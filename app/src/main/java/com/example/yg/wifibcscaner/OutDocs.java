@@ -2,8 +2,6 @@ package com.example.yg.wifibcscaner;
 
 import com.example.yg.wifibcscaner.utils.AppUtils;
 
-import org.apache.commons.lang3.StringUtils;
-
 /**
  * Created by yg on 17.04.2018.
  */
@@ -18,6 +16,8 @@ public class OutDocs {
     private String division_code;
     private  String DeviceId;
     private int idUser;
+    private int idSotr;
+    private int idDeps;
 
     public static final String TABLE = "OutDocs";
     public static final String COLUMN_Id = "_id";
@@ -27,6 +27,8 @@ public class OutDocs {
     public static final String COLUMN_Id_o = "Id_o";
     public static final String COLUMN_idUser = "idUser";
     public static final String COLUMN_Division_code = "division_code";
+    public static final String COLUMN_ID_SOTR = "idSotr";
+    public static final String COLUMN_ID_DEPS = "idDeps";
 
 
     public String getDivision_code() {
@@ -45,7 +47,7 @@ public class OutDocs {
         this.idUser = idUser;
     }
 
-    public OutDocs(String _id, int _Id_o, int _number, String _comment, String _DT, String _sentToMasterDate, String division_code, int idUser ) {
+    public OutDocs(String _id, int _Id_o, int _number, String _comment, String _DT, String _sentToMasterDate, String division_code, int idUser) {
         this._id = _id;
         this._number = _number;
         this._comment = _comment;
@@ -54,6 +56,19 @@ public class OutDocs {
         this.idUser = idUser;
         this._sentToMasterDate = _sentToMasterDate;
         this.division_code = division_code;
+    }
+
+    public OutDocs(String _id, int _Id_o, int _number, String _comment, String _DT, String _sentToMasterDate, String division_code, int idUser, int idSotr, int idDeps) {
+        this._id = _id;
+        this._number = _number;
+        this._comment = _comment;
+        this._DT = _DT;
+        this._Id_o = _Id_o;
+        this.idUser = idUser;
+        this._sentToMasterDate = _sentToMasterDate;
+        this.division_code = division_code;
+        this.idSotr = idSotr;
+        this.idDeps = idDeps;
     }
 
     public String get_id() {
@@ -104,4 +119,21 @@ public class OutDocs {
     public String get_sentToMasterDate() {
         return _sentToMasterDate;
     }
+
+    public int getIdDeps() {
+        return idDeps;
+    }
+
+    public void setIdDeps(int idDeps) {
+        this.idDeps = idDeps;
+    }
+
+    public int getIdSotr() {
+        return idSotr;
+    }
+
+    public void setIdSotr(int idSotr) {
+        this.idSotr = idSotr;
+    }
+
 }

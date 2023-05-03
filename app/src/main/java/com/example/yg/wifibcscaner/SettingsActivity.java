@@ -16,9 +16,6 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.animation.AlphaAnimation;
-import android.view.animation.Animation;
-import android.view.animation.LinearInterpolator;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
@@ -553,7 +550,7 @@ public class SettingsActivity extends AppCompatActivity implements
         if (ido != mDBHelper.defs.get_Id_o()) {
             if (mDBHelper.currentOutDoc == null) {
                 mDBHelper.currentOutDoc = new OutDocs("", 0,0, "", "01.01.2018 00:00:00",
-                        null, mDBHelper.defs.getDivision_code(), mDBHelper.defs.get_idUser());
+                        null, mDBHelper.defs.getDivision_code(), mDBHelper.defs.get_idUser(), mDBHelper.defs.get_Id_s(), mDBHelper.defs.get_Id_d());
             } else {
                 mDBHelper.currentOutDoc.set_id("");
                 mDBHelper.currentOutDoc.set_number(0);
@@ -563,6 +560,8 @@ public class SettingsActivity extends AppCompatActivity implements
                 mDBHelper.currentOutDoc.set_sentToMasterDate(null);
                 mDBHelper.currentOutDoc.setDivision_code("0");
                 mDBHelper.currentOutDoc.setIdUser(0);
+                mDBHelper.currentOutDoc.setIdSotr(0);
+                mDBHelper.currentOutDoc.setIdDeps(0);
             }
         }
         MessageUtils messageUtils = new MessageUtils();
