@@ -6,7 +6,6 @@ package com.example.yg.wifibcscaner;
 
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.CursorIndexOutOfBoundsException;
 import android.database.SQLException;
@@ -24,7 +23,6 @@ import java.io.OutputStream;
 import java.nio.channels.FileChannel;
 import java.util.Calendar;
 import java.util.Date;
-import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -35,24 +33,19 @@ import java.util.UUID;
 import android.database.sqlite.SQLiteStatement;
 import android.os.Environment;
 import android.util.Log;
-import android.content.SharedPreferences;
 
-import com.example.yg.wifibcscaner.service.ApiUtils;
+import com.example.yg.wifibcscaner.data.Operation;
 import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.utils.AppUtils;
 import com.example.yg.wifibcscaner.utils.DateTimeUtils;
 
 import org.apache.commons.lang3.StringUtils;
 
-import java.time.LocalDate;
-
 import static com.example.yg.wifibcscaner.utils.AppUtils.getFirstOperFor;
 import static com.example.yg.wifibcscaner.utils.AppUtils.isNotEmpty;
 import static com.example.yg.wifibcscaner.utils.AppUtils.isOneOfFirstOper;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDateLong;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDateTimeLong;
-import static java.time.temporal.TemporalAdjusters.firstDayOfYear;
-import static java.time.temporal.TemporalAdjusters.lastDayOfYear;
 import static android.text.TextUtils.substring;
 import static java.lang.String.valueOf;
 
@@ -964,8 +957,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             return fb;
         }
     }
-    public boolean lastBoxCheck(foundorder fo){
-        boolean b = false;
+    public void lastBoxCheck(foundorder fo){
         Cursor c = null;
         String query;
         try {
@@ -975,17 +967,16 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 c = mDataBase.rawQuery(query, null);
                 if ((c != null) & (c.getCount() != 0)) {            //есть записи в BoxMoves и Prods
                     c.moveToFirst(); //есть boxes & prods
-                    Log.d(LOG_TAG, "Checking for order's last box = " + fo.NB + ", Box checked num =" + c.getString((int) 0));
-                    b = (fo.NB == c.getInt(0));
+                    Log.d(TAG, "Checking for order's last box = " + fo.NB + ", Box checked num =" + c.getString(0));
+                    if(fo.NB == c.getInt(0));
+                        MessageUtils.showToast(this.mContext, "Это последняя коробка из заказа!", false);
                 }
             } catch (SQLException e) {
-                // TODO: handle exception
-                throw e;
+                Log.e(TAG, "lastBoxCheck exception on id -> " + fo._id , e);
             }
         }finally {
             mDataBase.close();
             tryCloseCursor(c);
-            return b;
         }
     }
     public long sDateToLong (String sDate){
@@ -1792,6 +1783,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 defs.descSotr = getSotr_Name_by_id(defs.get_Id_s());
                 defs.descDivision = getDivisionsName(defs.getDivision_code());
                 defs.descUser = getUserName(defs.get_idUser());
+                defs.descFirstOperForCurrent = getOpers_Name_by_id(getFirstOperFor(defs.get_Id_o()));
             }
             tryCloseCursor(cursor);
             mDataBase.close();

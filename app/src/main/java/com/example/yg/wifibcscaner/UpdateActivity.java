@@ -10,9 +10,11 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.ProgressBar;
+
+import com.example.yg.wifibcscaner.data.Operation;
 import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
-import java.util.ArrayList;
+
 import java.util.Date;
 import java.util.List;
 import retrofit2.Call;

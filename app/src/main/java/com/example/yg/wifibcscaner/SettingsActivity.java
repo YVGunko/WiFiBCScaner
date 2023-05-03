@@ -1,9 +1,6 @@
 package com.example.yg.wifibcscaner;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
-import android.app.AlarmManager;
-import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -12,7 +9,6 @@ import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.os.AsyncTask;
-import android.support.v4.content.IntentCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -29,12 +25,12 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Spinner;
 
+import com.example.yg.wifibcscaner.data.Operation;
 import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.service.PartBoxService;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import retrofit2.Call;
@@ -73,7 +69,7 @@ public class SettingsActivity extends AppCompatActivity implements
         mDBHelper = DataBaseHelper.getInstance(this);
         host_v=(EditText) findViewById(R.id.host);
 
-        String devId = "Unknown";
+        String devId;
         try {
             devId = ((mDBHelper.defs.getDeviceId().substring(0,6).length()==6) ? mDBHelper.defs.getDeviceId().substring(0,5) : "Unknown");}
         catch (Exception e) {
@@ -81,12 +77,6 @@ public class SettingsActivity extends AppCompatActivity implements
         }
 
         strTitle = "Настройки"+". v."+BuildConfig.VERSION_NAME+"."+BuildConfig.VERSION_CODE+". Id."+ devId;
-
-        final Animation animation = new AlphaAnimation(1, 0); // Change alpha from fully visible to invisible
-        animation.setDuration(500); // duration - half a second
-        animation.setInterpolator(new LinearInterpolator()); // do not alter animation rate
-        animation.setRepeatCount(Animation.INFINITE); // Repeat animation infinitely
-        animation.setRepeatMode(Animation.REVERSE); // Reverse animation at the end so the button will fade back in
 
         // Spinner element
         opers_spinner = (Spinner) findViewById(R.id.opers_spinner);
@@ -612,7 +602,6 @@ public class SettingsActivity extends AppCompatActivity implements
             try {
 
                 ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getOperation("01.01.2018 00:00:00").enqueue(new Callback<List<Operation>>() {
-                    // TODO Обработать результат. Записать поле sent... если успешно
                     @Override
                     public void onResponse(Call<List<Operation>> call, Response<List<Operation>> response) {
 
@@ -633,7 +622,6 @@ public class SettingsActivity extends AppCompatActivity implements
                 });
 
                 ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getDeps("01.01.2018 00:00:00").enqueue(new Callback<List<Deps>>() {
-                    // TODO Обработать результат. Записать поле sent... если успешно
                     @Override
                     public void onResponse(Call<List<Deps>> call, Response<List<Deps>> response) {
                         if (response.isSuccessful()) {
@@ -654,7 +642,6 @@ public class SettingsActivity extends AppCompatActivity implements
                 });
 
                 ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getSotr("01.01.2018 00:00:00").enqueue(new Callback<List<Sotr>>() {
-                    // TODO Обработать результат. Записать поле sent... если успешно
                     @Override
                     public void onResponse(Call<List<Sotr>> call, Response<List<Sotr>> response) {
                         //Log.d("1", "Ответ сервера на запрос новых сотрудников: " + response.body());

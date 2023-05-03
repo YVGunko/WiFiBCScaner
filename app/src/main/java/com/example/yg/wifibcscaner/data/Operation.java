@@ -1,4 +1,4 @@
-package com.example.yg.wifibcscaner;
+package com.example.yg.wifibcscaner.data;
 
 /**
  * Created by yg on 29.01.2018.
@@ -54,4 +54,5 @@ public class Operation {
     public void set_dt(String _dt) {
         this._dt = _dt;
     }
+
 }

@@ -30,6 +30,7 @@ public class Defs {
     public String descDep = "";
     public String descSotr = "";
     public String descUser = "";
+    public String descFirstOperForCurrent = "";
     private String _Host_IP;
     private String _Port;
 

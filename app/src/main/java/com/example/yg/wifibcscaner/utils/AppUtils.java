@@ -47,15 +47,9 @@ public class AppUtils {
         final int[] array = {9};
         return ArrayUtils.contains(array, key);
     }
-    /*private String makeBoxdef(Cursor cursor) {
-        String def = "№ " + cursor.getString(0);
-        def += " / " + cursor.getString(1) + "\n";
-        def += "Подошва: " + cursor.getString(2) + ", ";
-        if (AppUtils.isNotEmpty(cursor.getString(3)))
-            def += ", " + retStringFollowingCRIfNotNull(cursor.getString(3));
-        else def += "\n";
-        def += "Заказ: " + cursor.getString(4) + ". № кор: " + cursor.getString(6) + ". Регл: " + cursor.getString(5) + " ";
-        def += "В кор: " + cursor.getString(7) + ". " + cursor.getString(8)+", " + cursor.getString(9);
-        return def;
-    }*/
+
+    public static boolean isOneScanOnlyOper(final int key){
+        final int[] array = {7, 9};
+        return ArrayUtils.contains(array, key);
+    }
 }
