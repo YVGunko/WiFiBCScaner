@@ -477,8 +477,8 @@ private static String filter (String str){
                 tVDBInfo.setText(fo.orderdef);
                 if (!fb._archive){
                     if (StringUtils.isNotEmpty(fb._id)) {                                  //Коробка есть
-                        //if it isOneScanOnlyOper just set Quantity equal
-                        if (isOneScanOnlyOper(mDBHelper.defs.get_Id_o())) fb.QB = fb.RQ;
+                        //if it isOneScanOnlyOper and there is another outDoc record, set Quantity equal, bcs it can be only one shot
+                        if (isOneScanOnlyOper(mDBHelper.defs.get_Id_o()) & StringUtils.isNotEmpty(fb.outDocs)) fb.QB = fb.RQ;
                         if (fb.QB == fb.RQ) {//Коробка заполнена
 
                             editTextRQ = (EditText) findViewById(R.id.editTextRQ);
@@ -520,48 +520,71 @@ private static String filter (String str){
     }
 
     public void ocl_bOk(View v) { //Вызов активности Сканирования
-        boolean newBM = false;
 
-        final String _RQ = editTextRQ.getText().toString();
-        boolean skipCheckingNumber = AppUtils.isIncomeOper(mDBHelper.defs.get_Id_o());
-        if (skipCheckingNumber || (!TextUtils.isEmpty(_RQ))&(Integer.valueOf(_RQ)<=(fb.QB - fb.RQ))) {//колво  не пустое
+        final int enteredNumber;
+        if (TextUtils.isEmpty(editTextRQ.getText().toString())) {
+            MessageUtils.showToast(this,"Ошибка! Введите количество верно!", false);
+            return;
+        }else{ //check is it number
             try {
-                Button bScan = (Button) findViewById(R.id.bScan);
-                bScan.setText("Scan!");
-                tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
-                editTextRQ = (EditText) findViewById(R.id.editTextRQ);
-                editTextRQ.setEnabled(false);
-                if (StringUtils.isNotEmpty(fb._id)) {                                            //коробка есть и не полная, добавить в prods
-                    newBM = (fb.RQ != 0);                                           //новая операция по существующей коробке
-                    fb.RQ = Integer.valueOf(_RQ);
-                    if (mDBHelper.addProds(fb)) {
-                        if (newBM)
-                            showMessage(mDBHelper.defs.descOper+". В коробку добавлено "+_RQ);
-
-                        setTextViews();
-                        mDBHelper.lastBoxCheck(fo);
-                    }else {
-                        showLongMessage(mDBHelper.defs.descOper+". Повторный прием коробки в смену! Повторный прием возможен в другую смену.");
-                    }
-
-                }else {
-                    if (!mDBHelper.addBoxes(fo,Integer.valueOf(_RQ))) {            //---Вызов метода добавления коробки и продс
-                        showLongMessage(mDBHelper.defs.descOper+". Ошибка! Коробка не добавлена в БД!");
-                    } else {
-                        setTextViews();
-                        mDBHelper.lastBoxCheck(fo);
-                    }
-                }
-                if (mdevice != null){//внешний usb сканер
-                    final     EditText            input = (EditText) findViewById(R.id.barCodeInput);
-                    input.requestFocus();
-                }
-            } catch (Exception e) {
+                enteredNumber = Integer.valueOf(editTextRQ.getText().toString());
+            }catch (NumberFormatException e){
                 Log.e(TAG, mDBHelper.defs.descOper+". Ошибка при получении количества в коробке!", e);
-                showMessage(mDBHelper.defs.descOper+". Ошибка! Невозможно получить введенное количество!");
+                showMessage(mDBHelper.defs.descOper+". Ошибка! Введите количество верно!");
+                return;
             }
-        }else {
-            showLongMessage("Ошибка! Введите количество верно!");
+        }
+
+        if (!AppUtils.isIncomeOper(mDBHelper.defs.get_Id_o())) { //entered number should be checked
+            if (AppUtils.isOutComeOper(mDBHelper.defs.get_Id_o())) {//entered number should be equal
+                if (enteredNumber != fb.QB) {
+                    MessageUtils.showToast(this,"Ошибка! Количество должно быть равно оприходованному!", false);
+                    return;
+                }
+            }else{
+                if (enteredNumber > (fb.QB - fb.RQ)){
+                    MessageUtils.showToast(this,"Ошибка! Введите количество верно!", false);
+                    return;
+                }
+            }
+        }
+
+        boolean newBM ;
+
+        try {
+            Button bScan = (Button) findViewById(R.id.bScan);
+            bScan.setText("Scan!");
+            tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
+            editTextRQ = (EditText) findViewById(R.id.editTextRQ);
+            editTextRQ.setEnabled(false);
+            if (StringUtils.isNotEmpty(fb._id)) {                                            //коробка есть и не полная, добавить в prods
+                newBM = (fb.RQ != 0);                                           //новая операция по существующей коробке
+                fb.RQ = enteredNumber;
+                if (mDBHelper.addProds(fb)) {
+                    if (newBM)
+                        showMessage(mDBHelper.defs.descOper+". В коробку добавлено "+enteredNumber);
+
+                    setTextViews();
+                    mDBHelper.lastBoxCheck(fo);
+                }else {
+                    showLongMessage(mDBHelper.defs.descOper+". Повторный прием коробки в смену! Повторный прием возможен в другую смену.");
+                }
+
+            }else {
+                if (!mDBHelper.addBoxes(fo,enteredNumber)) {            //---Вызов метода добавления коробки и продс
+                    showLongMessage(mDBHelper.defs.descOper+". Ошибка! Коробка не добавлена в БД!");
+                } else {
+                    setTextViews();
+                    mDBHelper.lastBoxCheck(fo);
+                }
+            }
+            if (mdevice != null){//внешний usb сканер
+                final     EditText            input = (EditText) findViewById(R.id.barCodeInput);
+                input.requestFocus();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, mDBHelper.defs.descOper+". Ошибка при получении количества в коробке!", e);
+            showMessage(mDBHelper.defs.descOper+". Ошибка! Невозможно получить введенное количество!");
         }
     }
 
