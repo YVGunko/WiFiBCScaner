@@ -16,11 +16,13 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 
 import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
+import com.example.yg.wifibcscaner.utils.DateTimeUtils;
 
 import java.util.List;
 
@@ -43,7 +45,6 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
     }
 
     private class SyncIncoData extends AsyncTask<String, Integer, String> {
-        ProgressBar pbar;
         Integer counter;
 
         @Override
@@ -117,6 +118,18 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_out_docs);
         mDBHelper = DataBaseHelper.getInstance(this);
+
+        Button btn = (Button) findViewById(R.id.daysToView);
+        if (!mDBHelper.checkSuperUser(mDBHelper.defs.get_idUser())) {
+            btn.findViewById(R.id.daysToView).setVisibility(View.INVISIBLE);
+            if (SharedPrefs.getInstance(getApplicationContext()) != null) {
+                SharedPrefs.getInstance(getApplicationContext()).setOutDocsDays(1);
+            }
+        } else {
+            if (SharedPrefs.getInstance(getApplicationContext()) != null) {
+                btn.setText(SharedPrefs.getInstance(getApplicationContext()).getOutDocsDays() + " дн.");
+            }
+        }
 
         String[] from = new String[]{OutDocs.COLUMN_number, OutDocs.COLUMN_DT, OutDocs.COLUMN_comment};
         int[] to = new int[]{R.id.tvNumber, R.id.tvNumBox, R.id.tvText};
@@ -202,7 +215,7 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
                     }
                     result = selectedTitle +scAdapter.getCursor().getString(1)+" "+mDBHelper.defs.descDep;
                 }
-
+                /*
                 if (!(mDBHelper.defs.get_Id_o()==mDBHelper.defs.get_idOperFirst() || mDBHelper.defs.get_Id_o()==mDBHelper.defs.get_idOperLast())
                         && mDBHelper.defs.getDivision_code().equals(mDBHelper.tepDivision)) {
                     //Если не производство и ТЭП - установить бригаду из строки таблицы Prods c выбранной накладной
@@ -227,7 +240,7 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
                         mDBHelper.currentOutDoc.set_comment(mDBHelper.defs.descDep+", "+mDBHelper.defs.descUser);
                         mDBHelper.updateOutDocCommentById(mDBHelper.currentOutDoc.get_comment(), mDBHelper.currentOutDoc.get_id());
                     }
-                }
+                }*/
                 OutDocsActivity.this.setTitle(result);
             }
         });
@@ -253,6 +266,20 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
         } else {
             MessageUtils messageUtils = new MessageUtils();
             messageUtils.showMessage(getApplicationContext(),"Ошибка при добавлении записи.");
+        }
+    }
+    // обработка нажатия кнопки
+    public void onButtonDaysClick(View view) {
+        if (SharedPrefs.getInstance(getApplicationContext()) != null) {
+            Button btn = (Button) findViewById(R.id.daysToView);
+            if (SharedPrefs.getInstance(getApplicationContext()).getOutDocsDays() == 1){
+                SharedPrefs.getInstance(getApplicationContext()).setOutDocsDays(7);
+                btn.setText("7 дн.");
+            } else {
+                SharedPrefs.getInstance(getApplicationContext()).setOutDocsDays(1);
+                btn.setText("1 дн.");
+            }
+            getSupportLoaderManager().getLoader(0).forceLoad();
         }
     }
     @Override

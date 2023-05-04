@@ -9,14 +9,29 @@
 
 
     <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:id="@+id/addOutDoc"
+        android:layout_width="84dp"
+        android:layout_height="84dp"
         android:layout_marginBottom="10dp"
-        android:layout_marginRight="10dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
+        android:gravity="center|center_horizontal|center_vertical"
         android:onClick="onButtonClick"
-        android:text="@string/add_record"></Button>
+        android:text="@string/add_record"
+        android:textSize="36sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintRight_toRightOf="parent"></Button>
+
+    <Button
+        android:id="@+id/daysToView"
+        android:layout_width="84dp"
+        android:layout_height="84dp"
+        android:layout_marginBottom="10dp"
+        android:onClick="onButtonDaysClick"
+        android:text="@string/one_day"
+        android:textSize="18sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"></Button>
+
     <include layout="@layout/content_out_doc" />
 
 </android.support.constraint.ConstraintLayout>

@@ -6,6 +6,7 @@ package com.example.yg.wifibcscaner;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.CursorIndexOutOfBoundsException;
 import android.database.SQLException;
@@ -42,6 +43,7 @@ import com.example.yg.wifibcscaner.utils.DateTimeUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import static com.example.yg.wifibcscaner.utils.AppUtils.getFirstOperFor;
+import static com.example.yg.wifibcscaner.utils.AppUtils.isDepAndSotrOper;
 import static com.example.yg.wifibcscaner.utils.AppUtils.isNotEmpty;
 import static com.example.yg.wifibcscaner.utils.AppUtils.isOneOfFirstOper;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDateLong;
@@ -305,8 +307,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        //db.setForeignKeyConstraintsEnabled(true);
-
+        //mSharedPreferences = mContext.getSharedPreferences("WiFiBCScanerPrefsFile", Context.MODE_PRIVATE);
     }
 
     @Override
@@ -557,20 +558,36 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                     Long date = new Date().getTime();
                     values.put(OutDocs.COLUMN_Id, uuid);
                     values.put(OutDocs.COLUMN_number, docNum+1);
-                    values.put(OutDocs.COLUMN_comment, defs.descDep+", "+defs.descUser);
+
                     values.put(OutDocs.COLUMN_DT, date);
                     values.put(OutDocs.COLUMN_Id_o, defs.get_Id_o());
                     values.put(OutDocs.COLUMN_Division_code, defs.getDivision_code());
                     values.put(OutDocs.COLUMN_idUser, defs.get_idUser());
+
+                    values.put(OutDocs.COLUMN_ID_SOTR, isDepAndSotrOper(defs.get_Id_o()) ? defs.get_Id_s() : 0);
+                    values.put(OutDocs.COLUMN_ID_DEPS, isDepAndSotrOper(defs.get_Id_o()) ? defs.get_Id_d() : 0);
+                    if (isDepAndSotrOper(defs.get_Id_o())) {
+                        values.put(OutDocs.COLUMN_comment, defs.descDep+", "+defs.descSotr.substring(0, defs.descSotr.indexOf(" ")));
+                    }else{
+                        values.put(OutDocs.COLUMN_comment, defs.descOper);
+                    }
+
                     if (mDataBase.insertOrThrow(OutDocs.TABLE, null, values)>0) {
                         result = docNum+1;
                         currentOutDoc.set_id(uuid);
                         currentOutDoc.set_number(docNum+1);
-                        currentOutDoc.set_comment(defs.descDep+", "+defs.descUser);
+                        if (isDepAndSotrOper(defs.get_Id_o())) {
+                            currentOutDoc.set_comment(defs.descDep+", "+defs.descUser);
+                        }else{
+                            currentOutDoc.set_comment(defs.descOper);
+                        }
+
                         currentOutDoc.set_DT(getLongDateTimeString(date));
                         currentOutDoc.set_Id_o(defs.get_Id_o());
                         currentOutDoc.setDivision_code(defs.getDivision_code());
                         currentOutDoc.setIdUser(defs.get_idUser());
+                        currentOutDoc.setIdSotr(isDepAndSotrOper(defs.get_Id_o()) ? defs.get_Id_s() : 0);
+                        currentOutDoc.setIdDeps(isDepAndSotrOper(defs.get_Id_o()) ? defs.get_Id_d() : 0);
                     }
                 }
             }catch (Exception e) {
@@ -622,6 +639,11 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     }
     public Cursor listOutDocs() {
         Date curDate = new Date();
+        long dateFrom = DateTimeUtils.getStartOfDayLong(DateTimeUtils.addDays(curDate, 1));
+        long dateTill = DateTimeUtils.getStartOfDayLong(DateTimeUtils.addDays(curDate, 1));
+        if (SharedPrefs.getInstance(mContext) != null) {
+            dateFrom = DateTimeUtils.getStartOfDayLong(DateTimeUtils.addDays(curDate, -SharedPrefs.getInstance(mContext).getOutDocsDays()+1));
+        }
         Cursor cursor = null;
         try {
                 if (checkSuperUser(defs.get_idUser())) {
@@ -629,8 +651,8 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                         mDataBase = this.getReadableDatabase();
                     cursor = mDataBase.rawQuery("SELECT _id, number, comment, strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as DT, Id_o, division_code, idUser, idSotr, idDeps " +
                                     " FROM OutDocs where _id<>0 and division_code=? and Id_o=?" +
-                                    " AND date(DT / 1000,'unixepoch') BETWEEN date("+DateTimeUtils.getStartOfDayLong(DateTimeUtils.addDays(curDate,1))+
-                                    " / 1000,'unixepoch') AND  date("+DateTimeUtils.getStartOfDayLong(DateTimeUtils.addDays(curDate,1))+" / 1000,'unixepoch')"+
+                                    " AND date(DT / 1000,'unixepoch') BETWEEN date("+dateFrom+
+                                    " / 1000,'unixepoch') AND  date("+dateTill+" / 1000,'unixepoch')"+
                                     " ORDER BY number desc",
                             new String[]{String.valueOf(defs.getDivision_code()), String.valueOf(defs.get_Id_o())});
                 }
@@ -639,8 +661,8 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                         mDataBase = this.getReadableDatabase();
                     cursor = mDataBase.rawQuery("SELECT _id, number, comment, strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as DT, Id_o, division_code, idUser, idSotr, idDeps " +
                                     " FROM OutDocs where _id<>0 and division_code=? and Id_o=? and idUser=?" +
-                                    " AND date(DT / 1000,'unixepoch') BETWEEN date("+DateTimeUtils.getStartOfDayLong(DateTimeUtils.addDays(curDate,1))+
-                                    " / 1000,'unixepoch') AND  date("+DateTimeUtils.getStartOfDayLong(DateTimeUtils.addDays(curDate,1))+" / 1000,'unixepoch')"+
+                                    " AND date(DT / 1000,'unixepoch') BETWEEN date("+dateFrom+
+                                    " / 1000,'unixepoch') AND  date("+dateTill+" / 1000,'unixepoch')"+
                                     " ORDER BY number desc",
                             new String[]{String.valueOf(defs.getDivision_code()), String.valueOf(defs.get_Id_o()), String.valueOf(defs.get_idUser())});
                 }

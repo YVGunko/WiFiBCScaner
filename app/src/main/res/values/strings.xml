@@ -21,7 +21,8 @@
     <string name="listFirstColumn">Заказ. Клиент.</string>
     <string name="listSecondColumn">Номенклатура.</string>
     <string name="title_activity_out_docs">OutDocsActivity</string>
-    <string name="add_record">Добавить запись</string>
+    <string name="add_record">+</string>
+    <string name="one_day">1 дн.</string>
     <string name="delete_record">Удалить запись</string>
     <string name="title_activity_out_doc">OutDocActivity</string>
     <string name="action_quik_sync">Синхронизировать накладные</string>

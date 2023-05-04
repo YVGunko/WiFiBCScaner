@@ -5,13 +5,12 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.os.AsyncTask;
+import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -19,8 +18,8 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
-import android.widget.TextView;
 import android.widget.Spinner;
+import android.widget.TextView;
 
 import com.example.yg.wifibcscaner.data.Operation;
 import com.example.yg.wifibcscaner.service.ApiUtils;
@@ -299,8 +298,11 @@ public class SettingsActivity extends AppCompatActivity implements
             public void onClick(DialogInterface dialog, int which) {
                 int length =getResources().getStringArray(R.array.options_db_need_replace).length;
                 if (selectedItems.size() == length) {
-                    SharedPreferences prefs = getSharedPreferences(SharedPrefs.PREFS_NAME, MODE_PRIVATE);
-                    prefs.edit().putBoolean(SharedPrefs.PREF_DB_NEED_REPLACE, true).apply();
+                    if (SharedPrefs.getInstance(getApplicationContext()) != null) {
+                        SharedPrefs.getInstance(getApplicationContext()).setDbNeedReplace(true);
+                    }
+                    //SharedPreferences prefs = getSharedPreferences(SharedPrefs.PREFS_NAME, MODE_PRIVATE);
+                    //prefs.edit().putBoolean(SharedPrefs.PREF_DB_NEED_REPLACE, true).apply();
                     triggerRebirth(SettingsActivity.this);
                 } else
                 {
@@ -537,8 +539,8 @@ public class SettingsActivity extends AppCompatActivity implements
             if (mDBHelper.currentOutDoc == null) {
                 mDBHelper.currentOutDoc = new OutDocs("", 0,0, "", "01.01.2018 00:00:00",
                         null, mDBHelper.defs.getDivision_code(), mDBHelper.defs.get_idUser(),
-                        isDepAndSotrOper(mDBHelper.defs.get_Id_s()) ? mDBHelper.defs.get_Id_s() : 0,
-                        isDepAndSotrOper(mDBHelper.defs.get_Id_d()) ? mDBHelper.defs.get_Id_d() : 0);
+                        isDepAndSotrOper(mDBHelper.defs.get_Id_o()) ? mDBHelper.defs.get_Id_s() : 0,
+                        isDepAndSotrOper(mDBHelper.defs.get_Id_o()) ? mDBHelper.defs.get_Id_d() : 0);
             } else {
                 mDBHelper.currentOutDoc.set_id("");
                 mDBHelper.currentOutDoc.set_number(0);

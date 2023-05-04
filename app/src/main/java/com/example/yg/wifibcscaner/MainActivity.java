@@ -33,6 +33,7 @@ import android.widget.Toast;
 
 import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.utils.AppUtils;
+import com.example.yg.wifibcscaner.utils.DateTimeUtils;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 import com.honeywell.aidc.AidcManager;
@@ -72,6 +73,7 @@ IntentFilter filterAttached_and_Detached = null;
     private int sId_o = 1;
     private int sId_d = 1;
     private DataBaseHelper mDBHelper;
+
     TextView tVDBInfo, currentDocDetails, currentUser;
     EditText editTextRQ, barCodeInput;
     Button bScan;
@@ -209,9 +211,15 @@ IntentFilter filterAttached_and_Detached = null;
         int currentVersionCode = BuildConfig.VERSION_CODE;
 
         // Get saved version code
-        SharedPreferences prefs = getSharedPreferences(SharedPrefs.PREFS_NAME, MODE_PRIVATE);
-        int savedVersionCode = prefs.getInt(SharedPrefs.PREF_VERSION_CODE_KEY, SharedPrefs.DOESNT_EXIST);
-        boolean savedDbNeedReplace = prefs.getBoolean(SharedPrefs.PREF_DB_NEED_REPLACE, SharedPrefs.DOESNT_EXIST==-1);
+        boolean savedDbNeedReplace = false;
+        int savedVersionCode = 0;
+        if (SharedPrefs.getInstance(getApplicationContext()) != null) {
+            savedDbNeedReplace = SharedPrefs.getInstance(getApplicationContext()).getDbNeedReplace();
+            savedVersionCode = SharedPrefs.getInstance(getApplicationContext()).getCodeVersion();
+        }
+        //SharedPreferences prefs = getSharedPreferences(SharedPrefs.PREFS_NAME, MODE_PRIVATE);
+        //int savedVersionCode = prefs.getInt(SharedPrefs.PREF_VERSION_CODE_KEY, SharedPrefs.DOESNT_EXIST);
+        //boolean savedDbNeedReplace = prefs.getBoolean(SharedPrefs.PREF_DB_NEED_REPLACE, SharedPrefs.DOESNT_EXIST==-1);
 
         // Check for first run or upgrade
         if (!savedDbNeedReplace & currentVersionCode == savedVersionCode) {
@@ -220,8 +228,12 @@ IntentFilter filterAttached_and_Detached = null;
 
         } else {
             mDBHelper = DataBaseHelper.getInstance(this, currentVersionCode, true);
-            prefs.edit().putInt(SharedPrefs.PREF_VERSION_CODE_KEY, currentVersionCode).apply();
-            prefs.edit().putBoolean(SharedPrefs.PREF_DB_NEED_REPLACE, !savedDbNeedReplace).apply();
+            if (SharedPrefs.getInstance(getApplicationContext()) != null) {
+                SharedPrefs.getInstance(getApplicationContext()).setDbNeedReplace(!savedDbNeedReplace);
+                SharedPrefs.getInstance(getApplicationContext()).setCodeVersion(currentVersionCode);
+            }
+            //prefs.edit().putInt(SharedPrefs.PREF_VERSION_CODE_KEY, currentVersionCode).apply();
+            //prefs.edit().putBoolean(SharedPrefs.PREF_DB_NEED_REPLACE, !savedDbNeedReplace).apply();
             return true;
         }
     }
@@ -390,38 +402,11 @@ IntentFilter filterAttached_and_Detached = null;
             case R.id.action_update:
                 startActivity(new Intent(this,UpdateActivity.class));
                 return true;
-            case R.id.action_db_need_replace:
-                try {
-                    openDbReplaceDialog();
-                } catch (Exception e) {
-                    Log.d(mDBHelper.LOG_TAG, "Запрос на очистку БД: " + e.getMessage());
-                }
-                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
-    private void openDbReplaceDialog() {
-        AlertDialog.Builder quitDialog = new AlertDialog.Builder(
-                MainActivity.this);
-        final boolean curState = SharedPrefs.getDefaults(SharedPrefs.PREF_DB_NEED_REPLACE, MainActivity.this);
-        quitDialog.setTitle("Очистить базу данных: Вы уверены? CurState ".concat(String.valueOf(curState)));
 
-        quitDialog.setPositiveButton("Да!", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                SharedPrefs.setDefaults(SharedPrefs.PREF_DB_NEED_REPLACE, true, MainActivity.this);
-            }
-        });
-
-        quitDialog.setNegativeButton("Нет.", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                // TODO Auto-generated method stub
-            }
-        });
-        quitDialog.show();
-    }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);

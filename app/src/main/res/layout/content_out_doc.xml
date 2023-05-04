@@ -5,20 +5,26 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="com.example.yg.wifibcscaner.OutDocsActivity"
-    tools:showIn="@layout/activity_out_doc">
+    tools:showIn="@layout/activity_out_docs">
 
     <ListView
         android:id="@+id/lvData"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent">
     </ListView>
     <TextView
         android:id="@+id/tvNumber"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_vertical"
-        android:layout_marginLeft="10dp"
+        android:textColor="@color/colorPrimaryDark"
+        android:textStyle="bold"
+        android:gravity="end"
+        android:textAlignment="viewEnd"
+        android:layout_marginStart="10dp"
         app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toLeftOf="@id/tvNumBox"
+        app:layout_constraintTop_toTopOf="parent"
         android:text=""
         android:textSize="18sp">
     </TextView>
@@ -26,9 +32,14 @@
         android:id="@+id/tvNumBox"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_vertical"
+        android:textColor="@color/colorPrimaryDark"
+        android:textStyle="bold"
+        android:gravity="start"
+        android:textAlignment="viewStart"
         app:layout_constraintLeft_toRightOf="@+id/tvNumber"
-        android:layout_marginLeft="10dp"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginStart="10dp"
         android:text=""
         android:textSize="18sp">
     </TextView>
@@ -38,10 +49,12 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_vertical"
-        android:layout_marginLeft="10dp"
+        android:layout_marginStart="10dp"
         android:text=""
         android:textSize="18sp"
-        app:layout_constraintLeft_toRightOf="@+id/tvNumBox">
+        app:layout_constraintTop_toBottomOf="@+id/tvNumBox"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent">
 
     </TextView>
 </android.support.constraint.ConstraintLayout>
