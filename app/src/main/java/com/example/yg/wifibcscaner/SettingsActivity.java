@@ -26,6 +26,7 @@ import com.example.yg.wifibcscaner.data.Operation;
 import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.service.PartBoxService;
+import com.example.yg.wifibcscaner.utils.AppUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,9 +35,12 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+import static com.example.yg.wifibcscaner.utils.AppUtils.isDepAndSotrOper;
+
 public class SettingsActivity extends AppCompatActivity implements
         AdapterView.OnItemSelectedListener {
 
+    private static final String TAG = "SettingsActivity";
     private PartBoxService boxesService;
     EditText host_v;
     TextView select_label, opers_select_label, labelSotr, labelDivision2;
@@ -88,8 +92,6 @@ public class SettingsActivity extends AppCompatActivity implements
         spinnerSotr.setOnItemSelectedListener(this);
         // Выборка настроек по умолчанию
 
-        MessageUtils messageUtils = new MessageUtils();
-
         mDBHelper.selectDefsTable();
         try {
             String url = mDBHelper.defs.getUrl();
@@ -98,7 +100,8 @@ public class SettingsActivity extends AppCompatActivity implements
             ocl_check(findViewById(R.id.check));
         }
         catch(Exception e){
-            messageUtils.showMessage(getApplicationContext(),e.getMessage());
+            Log.e(TAG, "onCreate -> " ,e);
+            MessageUtils.showToast(getApplicationContext(), "Настройки не загружены.", false);
         }
 
 
@@ -124,7 +127,6 @@ public class SettingsActivity extends AppCompatActivity implements
     }
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        MessageUtils messageUtils = new MessageUtils();
         // получим идентификатор выбранного пункта меню
         int id = item.getItemId();
         // Операции для выбранного пункта меню
@@ -140,14 +142,14 @@ public class SettingsActivity extends AppCompatActivity implements
                                 for (user user : response.body())
                                     mDBHelper.insertUser(user);
                                 if (response.body().size() != 0) {
-                                    Log.d("UpdateActivity", "Ответ сервера на запрос новых users: " + response.body().size());
+                                    Log.d(TAG, "Ответ сервера на запрос новых users: " + response.body().size());
                                 }
                             }
                         }
 
                         @Override
                         public void onFailure(Call<List<user>> call, Throwable t) {
-                            Log.d("UpdateActivity", "Ответ сервера на запрос новых users: " + t.getMessage());
+                            Log.d(TAG, "Ответ сервера на запрос новых users: " + t.getMessage());
                         }
                     });
 
@@ -155,25 +157,23 @@ public class SettingsActivity extends AppCompatActivity implements
                         // TODO Обработать результат. Записать поле sent... если успешно
                         @Override
                         public void onResponse(Call<List<Operation>> call, Response<List<Operation>> response) {
-                            MessageUtils messageUtils = new MessageUtils();
                             //Log.d("1","Ответ сервера на запрос новых операций: " + response.body());
                             if(response.isSuccessful()) {
                                 for(Operation operation : response.body())
                                     mDBHelper.insertOpers(operation);
-                                messageUtils.showMessage(getApplicationContext(), "Ок! Новые операции приняты!");
+                                MessageUtils.showToast(getApplicationContext(), "Ок! Новые операции приняты!", false);
                                 loadOpers_spinnerData();
                                 opers_select_label = (TextView) findViewById(R.id.opers_select_label);
                                 opers_select_label.setText(mDBHelper.getOpers_Name_by_id(mDBHelper.defs.get_Id_o()));
                             }else {
-                                messageUtils.showLongMessage(getApplicationContext(), "Ошибка при приеме операций!");
+                                MessageUtils.showToast(getApplicationContext(), "Ошибка при приеме операций!", false);
                             }
                         }
 
                         @Override
                         public void onFailure(Call<List<Operation>> call, Throwable t) {
-                            MessageUtils messageUtils = new MessageUtils();
-                            messageUtils.showLongMessage(getApplicationContext(), t.getMessage()+". Ошибка при приеме операций!");
-                            Log.d("UpdateActivity","Ответ сервера на запрос новых операций: " + t.getMessage());
+                            MessageUtils.showToast(getApplicationContext(), "Ошибка при приеме операций!", false);
+                            Log.d(TAG,"Ответ сервера на запрос новых операций: " + t.getMessage());
                         }
                     });
 
@@ -181,24 +181,22 @@ public class SettingsActivity extends AppCompatActivity implements
                         // TODO Обработать результат. Записать поле sent... если успешно
                         @Override
                         public void onResponse(Call<List<Sotr>> call, Response<List<Sotr>> response) {
-                            MessageUtils messageUtils = new MessageUtils();
                             //Log.d("UpdateActivity","Ответ сервера на запрос новых сотрудников: " + response.body());
                             if(response.isSuccessful()) {
                                 for(Sotr sotr : response.body())
                                     mDBHelper.insertSotr(sotr);
-                                messageUtils.showMessage(getApplicationContext(), "Ок! Новые сотрудники приняты!");
+                                MessageUtils.showToast(getApplicationContext(), "Ок! Новые сотрудники приняты!", false);
                                 loadSpinnerSotrData();
                                 labelSotr = (TextView) findViewById(R.id.labelSotr);
                                 labelSotr.setText(mDBHelper.getSotr_Name_by_id(mDBHelper.defs.get_Id_s()));
                             }else {
-                                messageUtils.showLongMessage(getApplicationContext(), "Ошибка при приеме сотрудников!");
+                                MessageUtils.showToast(getApplicationContext(), "Ошибка при приеме сотрудников!", false);
                             }
                         }
 
                         @Override
                         public void onFailure(Call<List<Sotr>> call, Throwable t) {
-                            MessageUtils messageUtils = new MessageUtils();
-                            messageUtils.showLongMessage(getApplicationContext(), t.getMessage()+". Ошибка при приеме сотрудников!");
+                            MessageUtils.showToast(getApplicationContext(), "Ошибка при приеме сотрудников!", false);
                             Log.d("UpdateActivity","Ответ сервера на запрос новых сотрудников: " + t.getMessage());
                         }
                     });
@@ -208,30 +206,28 @@ public class SettingsActivity extends AppCompatActivity implements
                         // TODO Обработать результат. Записать поле sent... если успешно
                         @Override
                         public void onResponse(Call<List<Deps>> call, Response<List<Deps>> response) {
-                            MessageUtils messageUtils = new MessageUtils();
                             //Log.d("UpdateActivity","Ответ сервера на запрос новых бригад: " + response.body());
                             if(response.isSuccessful()) {
                                 for(Deps deps : response.body())
                                     mDBHelper.insertDeps(deps);
-                                messageUtils.showMessage(getApplicationContext(), "Ок! Новые бригады приняты!");
+                                MessageUtils.showToast(getApplicationContext(), "Ок! Новые бригады приняты!", false);
                                 loadSpinnerData();
                                 select_label = (TextView) findViewById(R.id.select_label);
                                 select_label.setText(mDBHelper.getDeps_Name_by_id(mDBHelper.defs.get_Id_d()));
                             }else {
-                                messageUtils.showLongMessage(getApplicationContext(), "Ошибка при приеме бригад!");
+                                MessageUtils.showToast(getApplicationContext(), "Ошибка при приеме бригад!", false);
                             }
                         }
 
                         @Override
                         public void onFailure(Call<List<Deps>> call, Throwable t) {
-                            MessageUtils messageUtils = new MessageUtils();
-                            messageUtils.showLongMessage(getApplicationContext(), t.getMessage()+". Ошибка при приеме бригад!");
+                            MessageUtils.showToast(getApplicationContext(), "Ошибка при приеме бригад!", false);
                             Log.d("UpdateActivity","Ответ сервера на запрос новых бригад: " + t.getMessage());
                         }
                     });
 
                 } catch (Exception e) {
-                    messageUtils.showLongMessage(getApplicationContext(), "Ошибка при приеме заказов!");
+                    MessageUtils.showToast(getApplicationContext(), "Ошибка при приеме заказов!", false);
                     Log.d("UpdateActivity","Ответ сервера на запрос новых заказов: " + e.getMessage());
                 }
                 // Loading spinner data from database
@@ -308,8 +304,7 @@ public class SettingsActivity extends AppCompatActivity implements
                     triggerRebirth(SettingsActivity.this);
                 } else
                 {
-                    MessageUtils messageUtils = new MessageUtils();
-                    messageUtils.showLongMessage(getApplicationContext(),"Операция не выполнена!");
+                    MessageUtils.showToast(getApplicationContext(),"Операция не выполнена!", false);
                 }
             }
         });
@@ -323,8 +318,7 @@ public class SettingsActivity extends AppCompatActivity implements
         quitDialog.show();
     }
     public void ocl_check(View v) { //Вызов активности проверки подключения к серверу
-        MessageUtils messageUtils = new MessageUtils();
-        messageUtils.showLongMessage(getApplicationContext(),"Connecting please wait....");
+        MessageUtils.showToast(getApplicationContext(),"Поиск сервера....", true);
         checkConnection();
     }
 
@@ -335,18 +329,16 @@ public class SettingsActivity extends AppCompatActivity implements
 
                 @Override
                 public void onResponse(Call<Object> call, Response<Object> response) {
-                    MessageUtils messageUtils = new MessageUtils();
                     if(!response.isSuccessful()) {
-                        messageUtils.showLongMessage(getApplicationContext(),"Введенный URL недоступен! Введите верный!");
+                        MessageUtils.showToast(getApplicationContext(),"Введенный URL недоступен! Введите верный!", false);
                         host_v.requestFocus();
                     }else {
-                        messageUtils.showLongMessage(getApplicationContext(),"Соединение установлено!");
+                        MessageUtils.showToast(getApplicationContext(),"Соединение установлено!", false);
                     }
                 }
                 @Override
                 public void onFailure(Call<Object> call, Throwable t) {
-                    MessageUtils messageUtils = new MessageUtils();
-                    messageUtils.showLongMessage(getApplicationContext(),"Введенный URL недоступен! Введите верный!");
+                    MessageUtils.showToast(getApplicationContext(),"Введенный URL недоступен! Введите верный!", false);
                     host_v.requestFocus();
                 }
             });
@@ -422,7 +414,6 @@ public class SettingsActivity extends AppCompatActivity implements
     public void onItemSelected(AdapterView<?> parent, View view, int position,
                                long id) {
 // On selecting a spinner item
-        MessageUtils messageUtils = new MessageUtils();
         Spinner sp = (Spinner) parent;
         if(sp.getId() == R.id.spinnerDivision) {
             if (position != 0) {
@@ -453,7 +444,7 @@ public class SettingsActivity extends AppCompatActivity implements
                 catch (Exception e){
                     Log.d(mDBHelper.LOG_TAG, "Error : " + e.getMessage());
                 }
-                messageUtils.showMessage(getApplicationContext(),"Вы выбрали: " + label);
+                //MessageUtils.showToast(getApplicationContext(),"Вы выбрали: " + label, false);
             }
         }
 
@@ -465,7 +456,7 @@ public class SettingsActivity extends AppCompatActivity implements
                 opers_select_label = (TextView) findViewById(R.id.opers_select_label);
                 opers_select_label.setText(label);
                // Showing selected spinner item
-                messageUtils.showMessage(getApplicationContext(),"Вы выбрали: " + label);
+                //messageUtils.showMessage(getApplicationContext(),"Вы выбрали: " + label);
                 try {
                     loadSpinnerData();
                     select_label = (TextView) findViewById(R.id.select_label);
@@ -491,14 +482,14 @@ public class SettingsActivity extends AppCompatActivity implements
                 select_label = (TextView) findViewById(R.id.select_label);
                 select_label.setText(mlabel);
                // Showing selected spinner item
-                messageUtils.showMessage(getApplicationContext(), "Вы выбрали: " + mlabel);
+                //messageUtils.showMessage(getApplicationContext(), "Вы выбрали: " + mlabel);
                 ids=-1;
                 try {
                     loadSpinnerSotrData();
                     labelSotr = (TextView) findViewById(R.id.labelSotr);
                     labelSotr.setText(spinnerSotr.getItemAtPosition(0).toString());}
                 catch (Exception e){
-                    Log.d(mDBHelper.LOG_TAG, "Error : " + e.getMessage());
+                    Log.e(TAG, "Deps selection -> ", e);
                 }
             }
         }
@@ -510,11 +501,9 @@ public class SettingsActivity extends AppCompatActivity implements
                 if (ids != 0) {
                     labelSotr = (TextView) findViewById(R.id.labelSotr);
                     labelSotr.setText(slabel);
-                    // Showing selected spinner item
-                    messageUtils.showMessage(getApplicationContext(),"Вы выбрали: " + slabel);
-                    //mDBHelper.defs.descSotr = slabel;
                 }else{
-                    messageUtils.showMessage(getApplicationContext(),"Ошибка при поиске ID выбранного сотрудника!");
+                    MessageUtils.showToast(getApplicationContext(),"Ошибка при поиске выбранного сотрудника!", false);
+                    Log.w(TAG, "Ошибка при поиске выбранного сотрудника!"+slabel);
                 }
             } else {
                 if (idd != 0) {
@@ -526,11 +515,8 @@ public class SettingsActivity extends AppCompatActivity implements
                         if (ids != 0) {
                             labelSotr = (TextView) findViewById(R.id.labelSotr);
                             labelSotr.setText(slabel);
-                            // Showing selected spinner item
-                            messageUtils.showMessage(getApplicationContext(),"Вы выбрали: " + slabel);
-                            //mDBHelper.defs.descSotr = slabel;
                         }else{
-                            messageUtils.showMessage(getApplicationContext(),"Ошибка при поиске ID выбранного сотрудника!");
+                            Log.w(TAG, "Ошибка при поиске выбранного сотрудника!"+slabel);
                         }
                     }
                     catch (Exception e){
@@ -550,7 +536,9 @@ public class SettingsActivity extends AppCompatActivity implements
         if (ido != mDBHelper.defs.get_Id_o()) {
             if (mDBHelper.currentOutDoc == null) {
                 mDBHelper.currentOutDoc = new OutDocs("", 0,0, "", "01.01.2018 00:00:00",
-                        null, mDBHelper.defs.getDivision_code(), mDBHelper.defs.get_idUser(), mDBHelper.defs.get_Id_s(), mDBHelper.defs.get_Id_d());
+                        null, mDBHelper.defs.getDivision_code(), mDBHelper.defs.get_idUser(),
+                        isDepAndSotrOper(mDBHelper.defs.get_Id_s()) ? mDBHelper.defs.get_Id_s() : 0,
+                        isDepAndSotrOper(mDBHelper.defs.get_Id_d()) ? mDBHelper.defs.get_Id_d() : 0);
             } else {
                 mDBHelper.currentOutDoc.set_id("");
                 mDBHelper.currentOutDoc.set_number(0);
@@ -564,10 +552,8 @@ public class SettingsActivity extends AppCompatActivity implements
                 mDBHelper.currentOutDoc.setIdDeps(0);
             }
         }
-        MessageUtils messageUtils = new MessageUtils();
 
-        if ((division_code == null)||(new String("0").equals(division_code))) {
-            //division_code=mDBHelper.defs.getDivision_code();
+        if (!AppUtils.isNotEmpty(division_code)) {
             division_code="0";
             idd = 0; ids = 0; ido = 0;
         }else{
@@ -582,14 +568,11 @@ public class SettingsActivity extends AppCompatActivity implements
 
         Defs defs = new Defs(idd, ido, ids, ip, "4242",division_code,mDBHelper.defs.getDeviceId());
         if (mDBHelper.updateDefsTable(defs) != 0) {
-            messageUtils.showMessage(getApplicationContext(),"Сохранено.");
+            MessageUtils.showToast(getApplicationContext(),"Сохранено.", false);
         } else {
-            messageUtils.showMessage(getApplicationContext(),"Ошибка при сохранении.");
+            MessageUtils.showToast(getApplicationContext(),"Ошибка при сохранении.", false);
         }
         mDBHelper.selectDefsTable();
-        //loadSpinnerData();
-        //loadSpinnerSotrData();
-        checkConnection();
     }
 
     private class SyncIncoData extends AsyncTask<String, Integer, String> {
@@ -599,7 +582,25 @@ public class SettingsActivity extends AppCompatActivity implements
         protected String doInBackground(String... urls) {
             counter = 0;
             try {
+                ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getDivision().enqueue(new Callback<List<Division>>() {
+                    @Override
+                    public void onResponse(Call<List<Division>> call, Response<List<Division>> response) {
 
+                        if (response.isSuccessful() && !response.body().isEmpty()) {
+                            mDBHelper.insertDivisionInBulk(response.body());
+                            if (response.body().size() != 0) {
+                                Log.d(TAG, "Ответ сервера на запрос новых подразделений: " + response.body().size());
+                            }
+                        }
+                        counter = counter + 5;
+                        publishProgress(1);
+                    }
+
+                    @Override
+                    public void onFailure(Call<List<Division>> call, Throwable t) {
+                        Log.d(TAG, "Ответ сервера на запрос новых сотрудников: " + t.getMessage());
+                    }
+                });
                 ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getOperation("01.01.2018 00:00:00").enqueue(new Callback<List<Operation>>() {
                     @Override
                     public void onResponse(Call<List<Operation>> call, Response<List<Operation>> response) {
@@ -679,8 +680,7 @@ public class SettingsActivity extends AppCompatActivity implements
         @Override
         protected void onProgressUpdate(Integer... values) {
             super.onProgressUpdate(values);
-            MessageUtils messageUtils = new MessageUtils();
-            messageUtils.showLongMessage(getApplicationContext(), "Обновление продолжается... Подождите...");
+            MessageUtils.showToast(getApplicationContext(), "Обновление продолжается... Подождите...", true);
         }
     }
 }

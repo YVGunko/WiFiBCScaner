@@ -363,6 +363,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             }
         if ((newVersion>oldVersion)&(newVersion == 23))
             try {
+                Log.d(TAG, "Версия бд 23. Начало реструктуризации.");
                 db.execSQL("PRAGMA foreign_keys = 0;");
                 db.beginTransaction();
 
@@ -392,6 +393,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 db.execSQL("DROP TABLE sqlitestudio_temp_table;");
 
                 db.setTransactionSuccessful();
+                Log.d(TAG, "Версия бд 23. Окончание реструктуризации.");
             }
             finally {
                 db.endTransaction();
@@ -1001,6 +1003,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                     Log.d(TAG, "Checking for order's last box = " + fo.NB + ", Box checked num =" + c.getString(0));
                     if(fo.NB == c.getInt(0));
                         MessageUtils.showToast(this.mContext, "Это последняя коробка из заказа!", false);
+                        Log.d(TAG, "lastBoxCheck after showToast called. ");
                 }
             } catch (SQLException e) {
                 Log.e(TAG, "lastBoxCheck exception on id -> " + fo._id , e);
