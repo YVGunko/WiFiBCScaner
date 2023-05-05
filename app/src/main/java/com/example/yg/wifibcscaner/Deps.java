@@ -19,6 +19,9 @@ public class Deps {
     private String division_code;
     private int Id_o;
 
+    public Deps() {
+        super();
+    }
 
     public String getDivision_code() {
         return division_code;

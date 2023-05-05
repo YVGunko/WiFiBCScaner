@@ -58,15 +58,15 @@ public class OutDocs {
         this.division_code = division_code;
     }
 
-    public OutDocs(String _id, int _Id_o, int _number, String _comment, String _DT, String _sentToMasterDate, String division_code, int idUser, int idSotr, int idDeps) {
+    public OutDocs(String _id, int _Id_o, int _number, String _comment, String _DT, String division_code, int idUser, int idSotr, int idDeps) {
         this._id = _id;
         this._number = _number;
         this._comment = _comment;
         this._DT = _DT;
         this._Id_o = _Id_o;
         this.idUser = idUser;
-        this._sentToMasterDate = _sentToMasterDate;
         this.division_code = division_code;
+        this._sentToMasterDate = null;
         this.idSotr = idSotr;
         this.idDeps = idDeps;
     }

@@ -538,7 +538,7 @@ public class SettingsActivity extends AppCompatActivity implements
         if (ido != mDBHelper.defs.get_Id_o()) {
             if (mDBHelper.currentOutDoc == null) {
                 mDBHelper.currentOutDoc = new OutDocs("", 0,0, "", "01.01.2018 00:00:00",
-                        null, mDBHelper.defs.getDivision_code(), mDBHelper.defs.get_idUser(),
+                        mDBHelper.defs.getDivision_code(), mDBHelper.defs.get_idUser(),
                         isDepAndSotrOper(mDBHelper.defs.get_Id_o()) ? mDBHelper.defs.get_Id_s() : 0,
                         isDepAndSotrOper(mDBHelper.defs.get_Id_o()) ? mDBHelper.defs.get_Id_d() : 0);
             } else {

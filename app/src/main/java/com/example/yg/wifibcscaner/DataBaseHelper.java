@@ -33,6 +33,7 @@ import java.util.UUID;
 
 import android.database.sqlite.SQLiteStatement;
 import android.os.Environment;
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.example.yg.wifibcscaner.data.Operation;
@@ -252,7 +253,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         selectDefsTable();
         //division = new Division(defs.getDivision_code(),getDivisionsName(defs.getDivision_code()));
         currentOutDoc = new OutDocs(null, 0, 0,null,null,
-                null, defs.getDivision_code(), defs.get_idUser(), defs.get_Id_s(), defs.get_Id_d());
+                defs.getDivision_code(), defs.get_idUser(), defs.get_Id_s(), defs.get_Id_d());
 
     }
 
@@ -653,7 +654,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                                     " FROM OutDocs where _id<>0 and division_code=? and Id_o=?" +
                                     " AND DT BETWEEN "+dateFrom+
                                     " AND "+dateTill+
-                                    " ORDER BY dtorder desc",
+                                    " ORDER BY dtorder desc, number desc",
                             new String[]{String.valueOf(defs.getDivision_code()), String.valueOf(defs.get_Id_o())});
                 }
                 else {
@@ -663,7 +664,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                                     " FROM OutDocs where _id<>0 and division_code=? and Id_o=? and idUser=?" +
                                     " AND date(DT / 1000,'unixepoch') BETWEEN date("+dateFrom+
                                     " / 1000,'unixepoch') AND  date("+dateTill+" / 1000,'unixepoch')"+
-                                    " ORDER BY dtorder desc",
+                                    " ORDER BY dtorder desc, number desc",
                             new String[]{String.valueOf(defs.getDivision_code()), String.valueOf(defs.get_Id_o()), String.valueOf(defs.get_idUser())});
                 }
         } finally {
@@ -2554,6 +2555,116 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             throw new RuntimeException("To catch into upper level.");
         } finally {
             mDataBase.endTransaction();
+        }
+    }
+
+    public void createOutDocsForCurrentOperInBulk(List<OutDocs> list){
+        if (!mDataBase.isOpen()) {
+            mDataBase = this.getReadableDatabase();
+        }
+        try {
+
+            mDataBase.beginTransaction();
+            String sql = "INSERT OR REPLACE INTO OutDocs (_id, Id_o, number, comment, DT, division_code, idUser, idSotr, idDeps) " +
+                    " VALUES (?,?,?,?,?,?,?,?,?);";
+
+            SQLiteStatement statement = mDataBase.compileStatement(sql);
+
+            for (OutDocs o : list) {
+                statement.clearBindings();
+                statement.bindString(1, o.get_id());
+                statement.bindLong(2, o.get_Id_o());
+                statement.bindLong(3, o.get_number());
+                if (o.get_comment() == null)
+                    statement.bindString(4, "");
+                else
+                    statement.bindString(4, o.get_comment());
+                statement.bindLong(5, getDateTimeLong(o.get_DT()));
+                statement.bindString(6, o.getDivision_code());
+                statement.bindLong(7, o.getIdUser());
+                statement.bindLong(8, o.getIdSotr());
+                statement.bindLong(9, o.getIdDeps());
+                statement.executeInsert();
+            }
+
+            mDataBase.setTransactionSuccessful(); // This commits the transaction if there were no exceptions
+        } catch (Exception e) {
+            Log.w(TAG, e);
+            throw new RuntimeException("To catch into upper level.");
+        } finally {
+            mDataBase.endTransaction();
+        }
+    }
+    public List<Integer> getAllDepIdByDivAndOper(@NonNull String code, @NonNull int iD) {
+        ArrayList<Integer> result = new ArrayList<>();
+        Cursor cursor = null;
+
+        if (!mDataBase.isOpen()) {
+            mDataBase = this.getReadableDatabase();
+        }
+        try {
+            cursor = mDataBase.rawQuery("SELECT _id,Id_deps,Name_Deps,DT,division_code,Id_o FROM Deps " +
+                    " where division_code=? AND Id_o=? ", new String [] {String.valueOf(code), String.valueOf(iD)});
+
+            if ((cursor != null) & (cursor.getCount() != 0)) {
+                cursor.moveToFirst();
+                while (!cursor.isAfterLast()) {
+                    result.add(cursor.getInt(0));
+                    cursor.moveToNext();
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, e);
+        } finally {
+            cursor.close();
+            return result;
+        }
+    }
+    public int getOneSotrIdByDepId(int depId){
+        if (!mDataBase.isOpen()) {
+            mDataBase = this.getReadableDatabase();
+        }
+        Cursor cursor = null;
+        int result = 0;
+        try {
+                cursor = mDataBase.rawQuery("SELECT _id FROM Sotr WHERE Id_d=? LIMIT 1", new String [] {String.valueOf(depId)});
+                if ((cursor != null) & (cursor.getCount() != 0)) {
+                    cursor.moveToFirst();
+                    result = cursor.getInt(0);
+                }
+        } catch (Exception e) {
+            Log.w(TAG, e);
+        } finally {
+            cursor.close();
+            return result;
+        }
+    }
+    public int getNextOutDocNumber () {
+        if (!mDataBase.isOpen()) {
+            mDataBase = this.getReadableDatabase();
+        }
+        Cursor cursor = null;
+        int result = 0;
+
+        try {
+            if (checkSuperUser(defs.get_idUser())) {
+                String query = "SELECT max(number) FROM OutDocs where division_code=? and Id_o=?";
+                cursor = mDataBase.rawQuery(query,
+                        new String[]{String.valueOf(defs.getDivision_code()), String.valueOf(defs.get_Id_o())});
+            } else {
+                String query = "SELECT max(number) FROM OutDocs where division_code=? and Id_o=? and idUser=?";
+                cursor = mDataBase.rawQuery(query,
+                        new String[]{String.valueOf(defs.getDivision_code()), String.valueOf(defs.get_Id_o()), String.valueOf(defs.get_idUser())});
+            }
+            if ((cursor != null) & (cursor.getCount() != 0)) {
+                cursor.moveToFirst();
+                result = cursor.getInt(0) + 1;
+            }
+        } catch (Exception e) {
+            Log.w(TAG, e);
+        } finally {
+            cursor.close();
+            return result;
         }
     }
 }

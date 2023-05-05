@@ -24,11 +24,20 @@ import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.utils.DateTimeUtils;
 
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+
+import static com.example.yg.wifibcscaner.DataBaseHelper.getUUID;
+import static com.example.yg.wifibcscaner.utils.AppUtils.isDepAndSotrOper;
+import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDayTimeString;
 
 public class OutDocsActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
     //Переменная для работы с БД
@@ -119,12 +128,53 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
         setContentView(R.layout.activity_out_docs);
         mDBHelper = DataBaseHelper.getInstance(this);
 
-        Button btn = (Button) findViewById(R.id.daysToView);
+        Button btnDays = (Button) findViewById(R.id.daysToView);
         if (!mDBHelper.checkSuperUser(mDBHelper.defs.get_idUser())) {
-            btn.findViewById(R.id.daysToView).setVisibility(View.INVISIBLE);
+            btnDays.findViewById(R.id.daysToView).setVisibility(View.INVISIBLE);
             if (SharedPrefs.getInstance(getApplicationContext()) != null) {
                 SharedPrefs.getInstance(getApplicationContext()).setOutDocsDays(1);
             }
+
+            Button btnAdd = (Button) findViewById(R.id.addOutDoc);
+            btnAdd.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View view) {
+                    AlertDialog.Builder adb = new AlertDialog.Builder(OutDocsActivity.this);
+                    adb.setTitle("Создать накладные...");
+                    adb.setMessage("Хотите добавить накладные для всех бригад " +mDBHelper.defs.descOper);
+                    adb.setNegativeButton("Нет", null);
+                    adb.setPositiveButton("Да", new AlertDialog.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            //for current Div and Oper select all Deps and first Sotr of the Dep.
+                            List<OutDocs> listOutDocs = new ArrayList<>();
+                            int sotrId;
+                            final String dateToSet = getDayTimeString(new Date());
+                            String depName;
+                            String sotrName;
+                            int nextOutDocNumber = mDBHelper.getNextOutDocNumber();
+                            for (Integer depId : mDBHelper.getAllDepIdByDivAndOper(mDBHelper.defs.getDivision_code(), mDBHelper.defs.get_Id_o())){
+                                sotrId = mDBHelper.getOneSotrIdByDepId(depId);
+                                if (sotrId != 0) {
+                                    depName = mDBHelper.getDeps_Name_by_id(depId);
+                                    sotrName = mDBHelper.getSotr_Name_by_id(sotrId);
+                                    if (StringUtils.isNotEmpty(sotrName)) sotrName = sotrName.substring(0, sotrName.indexOf(" "));
+
+                                    listOutDocs.add(new OutDocs(getUUID(), mDBHelper.defs.get_Id_o(), nextOutDocNumber,
+                                            ((StringUtils.isNotEmpty(depName) ? depName : "") + (StringUtils.isNotEmpty(sotrName) ? ", "+sotrName : "")),
+                                            dateToSet, mDBHelper.defs.getDivision_code(), mDBHelper.defs.get_idUser(),
+                                            sotrId, depId));
+                                    nextOutDocNumber++;
+                                }
+                            }
+                            mDBHelper.createOutDocsForCurrentOperInBulk(listOutDocs);
+                            getSupportLoaderManager().getLoader(0).forceLoad();
+                        }
+                    });
+                    adb.show();
+                    return true;
+                }
+            });
+
         } else {
             if (SharedPrefs.getInstance(getApplicationContext()) != null) {
                 setDaysButtonState ();
@@ -179,7 +229,7 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
                 if (mDBHelper.currentOutDoc == null) {
                     mDBHelper.currentOutDoc = new OutDocs(scAdapter.getCursor().getString(0), scAdapter.getCursor().getInt(4),
                             scAdapter.getCursor().getInt(1), scAdapter.getCursor().getString(2), scAdapter.getCursor().getString(3),
-                            null,scAdapter.getCursor().getString(5),scAdapter.getCursor().getInt(6),
+                            scAdapter.getCursor().getString(5),scAdapter.getCursor().getInt(6),
                             scAdapter.getCursor().getInt(7), scAdapter.getCursor().getInt(8));
 
                 } else {
@@ -215,32 +265,6 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
                     }
                     result = selectedTitle +scAdapter.getCursor().getString(1)+" "+mDBHelper.defs.descDep;
                 }
-                /*
-                if (!(mDBHelper.defs.get_Id_o()==mDBHelper.defs.get_idOperFirst() || mDBHelper.defs.get_Id_o()==mDBHelper.defs.get_idOperLast())
-                        && mDBHelper.defs.getDivision_code().equals(mDBHelper.tepDivision)) {
-                    //Если не производство и ТЭП - установить бригаду из строки таблицы Prods c выбранной накладной
-                    final int iDep = mDBHelper.getId_dByOutdoc(mDBHelper.currentOutDoc.get_id());
-                    if ((iDep != 0)&&(iDep!=mDBHelper.defs.get_Id_d())){
-                        mDBHelper.defs.set_Id_d(iDep);
-
-                        final int iSotr = mDBHelper.getId_sByOutDocId(mDBHelper.currentOutDoc.get_id());
-                        if ((iSotr != 0)&&(iSotr!=mDBHelper.defs.get_Id_d())) {
-                            mDBHelper.defs.set_Id_s(iSotr);
-                            Defs defs = new Defs(iDep, mDBHelper.defs.get_Id_o(), mDBHelper.defs.get_Id_s(),
-                                    mDBHelper.defs.get_Host_IP(), mDBHelper.defs.get_Port(),
-                                    mDBHelper.defs.getDivision_code(), mDBHelper.defs.get_idUser(), mDBHelper.defs.getDeviceId());
-                            if (mDBHelper.updateDefsTable(defs) != 0) {
-                                mDBHelper.selectDefsTable();
-                                MessageUtils.showToast(getApplicationContext(), "Сохранено." + mDBHelper.defs.descDep, false);
-                            } else {
-                                MessageUtils.showToast(getApplicationContext(), "Ошибка при сохранении.", false);
-                            }
-                        }
-                    }else {
-                        mDBHelper.currentOutDoc.set_comment(mDBHelper.defs.descDep+", "+mDBHelper.defs.descUser);
-                        mDBHelper.updateOutDocCommentById(mDBHelper.currentOutDoc.get_comment(), mDBHelper.currentOutDoc.get_id());
-                    }
-                }*/
                 OutDocsActivity.this.setTitle(result);
             }
         });
