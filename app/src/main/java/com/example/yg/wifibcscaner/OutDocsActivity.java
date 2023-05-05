@@ -127,7 +127,7 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
             }
         } else {
             if (SharedPrefs.getInstance(getApplicationContext()) != null) {
-                btn.setText(SharedPrefs.getInstance(getApplicationContext()).getOutDocsDays() + " дн.");
+                setDaysButtonState ();
             }
         }
 
@@ -268,17 +268,26 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
             messageUtils.showMessage(getApplicationContext(),"Ошибка при добавлении записи.");
         }
     }
+    private void setDaysButtonState (){
+        Button btn = (Button) findViewById(R.id.daysToView);
+        if (SharedPrefs.getInstance(getApplicationContext()).getOutDocsDays() == 1){
+            btn.setText(R.string.seven_days);
+        } else {
+            btn.setText(R.string.one_day);
+        }
+    }
+    private void invertSharedPrefsDaysState (){
+        if (SharedPrefs.getInstance(getApplicationContext()).getOutDocsDays() == 1){
+            SharedPrefs.getInstance(getApplicationContext()).setOutDocsDays(7);
+        } else {
+            SharedPrefs.getInstance(getApplicationContext()).setOutDocsDays(1);
+        }
+    }
     // обработка нажатия кнопки
     public void onButtonDaysClick(View view) {
         if (SharedPrefs.getInstance(getApplicationContext()) != null) {
-            Button btn = (Button) findViewById(R.id.daysToView);
-            if (SharedPrefs.getInstance(getApplicationContext()).getOutDocsDays() == 1){
-                SharedPrefs.getInstance(getApplicationContext()).setOutDocsDays(7);
-                btn.setText("7 дн.");
-            } else {
-                SharedPrefs.getInstance(getApplicationContext()).setOutDocsDays(1);
-                btn.setText("1 дн.");
-            }
+            invertSharedPrefsDaysState ();
+            setDaysButtonState();
             getSupportLoaderManager().getLoader(0).forceLoad();
         }
     }

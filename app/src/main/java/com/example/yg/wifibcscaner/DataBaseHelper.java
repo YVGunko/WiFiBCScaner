@@ -649,21 +649,21 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 if (checkSuperUser(defs.get_idUser())) {
                     if (!mDataBase.isOpen())
                         mDataBase = this.getReadableDatabase();
-                    cursor = mDataBase.rawQuery("SELECT _id, number, comment, strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as DT, Id_o, division_code, idUser, idSotr, idDeps " +
+                    cursor = mDataBase.rawQuery("SELECT _id, number, comment, strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as DT, Id_o, division_code, idUser, idSotr, idDeps, DT as dtorder " +
                                     " FROM OutDocs where _id<>0 and division_code=? and Id_o=?" +
-                                    " AND date(DT / 1000,'unixepoch') BETWEEN date("+dateFrom+
-                                    " / 1000,'unixepoch') AND  date("+dateTill+" / 1000,'unixepoch')"+
-                                    " ORDER BY number desc",
+                                    " AND DT BETWEEN "+dateFrom+
+                                    " AND "+dateTill+
+                                    " ORDER BY dtorder desc",
                             new String[]{String.valueOf(defs.getDivision_code()), String.valueOf(defs.get_Id_o())});
                 }
                 else {
                     if (!mDataBase.isOpen())
                         mDataBase = this.getReadableDatabase();
-                    cursor = mDataBase.rawQuery("SELECT _id, number, comment, strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as DT, Id_o, division_code, idUser, idSotr, idDeps " +
+                    cursor = mDataBase.rawQuery("SELECT _id, number, comment, strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as DT, Id_o, division_code, idUser, idSotr, idDeps, DT as dtorder " +
                                     " FROM OutDocs where _id<>0 and division_code=? and Id_o=? and idUser=?" +
                                     " AND date(DT / 1000,'unixepoch') BETWEEN date("+dateFrom+
                                     " / 1000,'unixepoch') AND  date("+dateTill+" / 1000,'unixepoch')"+
-                                    " ORDER BY number desc",
+                                    " ORDER BY dtorder desc",
                             new String[]{String.valueOf(defs.getDivision_code()), String.valueOf(defs.get_Id_o()), String.valueOf(defs.get_idUser())});
                 }
         } finally {
@@ -673,7 +673,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             }else {
                 Log.d(LOG_TAG, "listOutDocs cursor is NULL! " );
                 mDataBase = this.getReadableDatabase();
-                cursor = mDataBase.rawQuery("SELECT _id, number, comment, strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as DT, Id_o, division_code, idUser, idSotr, idDeps " +
+                cursor = mDataBase.rawQuery("SELECT _id, number, comment, strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as DT, Id_o, division_code, idUser, idSotr, idDeps, DT as dtorder " +
                                 " FROM OutDocs where _id=0",
                         null);
             }

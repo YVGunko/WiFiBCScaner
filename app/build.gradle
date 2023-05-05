@@ -6,7 +6,7 @@ android {
     defaultConfig {
         applicationId "com.example.yg.wifibcscaner"
         //noinspection ExpiredTargetSdkVersion
-        minSdkVersion 17
+        minSdkVersion 21
         targetSdkVersion 26
         versionCode 23
         versionName '3.4'

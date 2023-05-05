@@ -22,7 +22,10 @@
     <string name="listSecondColumn">Номенклатура.</string>
     <string name="title_activity_out_docs">OutDocsActivity</string>
     <string name="add_record">+</string>
+    <string name="add_record_hint">Добавить накладную</string>
     <string name="one_day">1 дн.</string>
+    <string name="seven_days">7 дн.</string>
+    <string name="days_buton_hint">Показывать за 1 день или за 7</string>
     <string name="delete_record">Удалить запись</string>
     <string name="title_activity_out_doc">OutDocActivity</string>
     <string name="action_quik_sync">Синхронизировать накладные</string>
