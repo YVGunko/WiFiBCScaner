@@ -4,6 +4,8 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.database.Cursor;
 import android.os.AsyncTask;
+import android.os.Build;
+import android.support.annotation.RequiresApi;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
@@ -40,6 +42,7 @@ import static com.example.yg.wifibcscaner.utils.AppUtils.isDepAndSotrOper;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDayTimeString;
 
 public class OutDocsActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
+    private static final String TAG = "OutDocsActivity";
     //Переменная для работы с БД
     private DataBaseHelper mDBHelper;
     ListView lvData;
@@ -144,29 +147,20 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
                     adb.setMessage("Хотите добавить накладные для всех бригад " +mDBHelper.defs.descOper);
                     adb.setNegativeButton("Нет", null);
                     adb.setPositiveButton("Да", new AlertDialog.OnClickListener() {
+                        @RequiresApi(api = Build.VERSION_CODES.O)
                         public void onClick(DialogInterface dialog, int which) {
-                            //for current Div and Oper select all Deps and first Sotr of the Dep.
-                            List<OutDocs> listOutDocs = new ArrayList<>();
-                            int sotrId;
-                            final String dateToSet = getDayTimeString(new Date());
-                            String depName;
-                            String sotrName;
                             int nextOutDocNumber = mDBHelper.getNextOutDocNumber();
-                            for (Integer depId : mDBHelper.getAllDepIdByDivAndOper(mDBHelper.defs.getDivision_code(), mDBHelper.defs.get_Id_o())){
-                                sotrId = mDBHelper.getOneSotrIdByDepId(depId);
-                                if (sotrId != 0) {
-                                    depName = mDBHelper.getDeps_Name_by_id(depId);
-                                    sotrName = mDBHelper.getSotr_Name_by_id(sotrId);
-                                    if (StringUtils.isNotEmpty(sotrName)) sotrName = sotrName.substring(0, sotrName.indexOf(" "));
-
-                                    listOutDocs.add(new OutDocs(getUUID(), mDBHelper.defs.get_Id_o(), nextOutDocNumber,
-                                            ((StringUtils.isNotEmpty(depName) ? depName : "") + (StringUtils.isNotEmpty(sotrName) ? ", "+sotrName : "")),
-                                            dateToSet, mDBHelper.defs.getDivision_code(), mDBHelper.defs.get_idUser(),
-                                            sotrId, depId));
-                                    nextOutDocNumber++;
-                                }
+                            if (nextOutDocNumber == 0) {
+                                Log.e(TAG, "mDBHelper.getNextOutDocNumber() returned 0");
+                                MessageUtils.showToast(getApplicationContext(), "Ошибка нумерации. Накладные не будут созданы!", true);
+                                return ;
                             }
-                            mDBHelper.createOutDocsForCurrentOperInBulk(listOutDocs);
+
+                            if (!mDBHelper.createOutDocsForCurrentOper(nextOutDocNumber)) {
+                                Log.e(TAG, "mDBHelper.createOutDocsForCurrentOper(nextOutDocNumber) returned 0");
+                                MessageUtils.showToast(getApplicationContext(), "Ошибка при создании документов. Накладные не будут созданы!", true);
+                                return ;
+                            };
                             getSupportLoaderManager().getLoader(0).forceLoad();
                         }
                     });

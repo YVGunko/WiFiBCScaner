@@ -1,10 +1,19 @@
 package com.example.yg.wifibcscaner.utils;
 
+import android.os.Build;
+import android.support.annotation.RequiresApi;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
+
+import static java.time.temporal.TemporalAdjusters.firstDayOfYear;
+import static java.time.temporal.TemporalAdjusters.lastDayOfYear;
 
 /**
  * Created by YG on 2020-03-21.
@@ -47,70 +56,78 @@ public class DateTimeUtils {
     private static final String Y0_PATTERN = "01.01.yyyy 00:00:00";
     private static final String DAY_PATTERN = "dd.MM.yyyy";
 
-    public static long getDayTimeLong(Date date) {
+    public static long getDayTimeLong(final Date date) {
         return org.apache.commons.lang3.time.DateUtils.truncate(date, Calendar.LONG_FORMAT).getTime();
     }
-    public static Date getStartOfDayDate(Date date) {
+    public static Date getStartOfDayDate(final Date date) {
         return org.apache.commons.lang3.time.DateUtils.truncate(date, Calendar.DATE);
     }
-    public static long getStartOfDayLong(Date date) {
+    public static long getStartOfDayLong(final Date date) {
         return org.apache.commons.lang3.time.DateUtils.truncate(date, Calendar.DATE).getTime();
     }
-    public static String getDayTimeString(Date date) {
+    public static String getDayTimeString(final Date date) {
         return org.apache.commons.lang3.time.DateFormatUtils.format(date, DT_PATTERN);
     }
-    public static String getDayTimeString(long lDate) {
+    public static String getDayTimeString(final long lDate) {
         return org.apache.commons.lang3.time.DateFormatUtils.format(lDate, DT_PATTERN);
     }
-    public static String getStartOfDayString(Date date) {
+    public static String getStartOfDayString(final Date date) {
         return org.apache.commons.lang3.time.DateFormatUtils.format(date, DAY_PATTERN);
     }
-    public static String getStartOfDayString(long lDate) {
+    public static String getStartOfDayString(final long lDate) {
         return org.apache.commons.lang3.time.DateFormatUtils.format(lDate, D0_PATTERN);
     }
-    public static String getLongDateTimeString(long lDate) {
+    public static String getLongDateTimeString(final long lDate) {
         return org.apache.commons.lang3.time.DateFormatUtils.format(lDate, DT_PATTERN);
     }
-    public static String getStartOfYearString(long lDate) {
+    public static String getStartOfYearString(final long lDate) {
         return org.apache.commons.lang3.time.DateFormatUtils.format(lDate, Y0_PATTERN);
     }
-    public static long getLongStartOfDayLong(long lDate) {
+    public static long getLongStartOfDayLong(final long lDate) {
         return org.apache.commons.lang3.time.DateUtils.truncate(lDate, Calendar.DATE).getTime();
     }
+
     public static Date getStartOfYear(){
         Calendar cal = Calendar.getInstance();
         cal.set(Calendar.DAY_OF_YEAR, 1);
         return cal.getTime();
     }
-    public static Date lastDayOfMonth(Date date) {
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    public static Long getFirstDayOfYear() {
+        LocalDate now = LocalDate.now(); // 2015-11-23
+        LocalDate firstDay = now.with(firstDayOfYear()); // 2015-01-01
+        return toMillis(firstDay);
+    }
+
+    public static Date lastDayOfMonth(final Date date) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);
         cal.set(Calendar.DAY_OF_MONTH, 31);
         return cal.getTime();
     }
-    public static Date firstDayOfMonth(Date date) {
+    public static Date firstDayOfMonth(final Date date) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);
         cal.set(Calendar.DAY_OF_MONTH, 1);
         return cal.getTime();
     }
-    public static Date addDays(Date date, int days) {
+    public static Date addDays(final Date date, final int days) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);
         cal.add(Calendar.DATE, days);
         return cal.getTime();
     }
-    public static int numberOfDaysInMonth(Date date) {
+    public static int numberOfDaysInMonth(final Date date) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);
         return cal.getActualMaximum(Calendar.DAY_OF_MONTH);
     }
-    public static int currentDayOfMonth(Date date) {
+    public static int currentDayOfMonth(final Date date) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);
         return cal.get(Calendar.DAY_OF_MONTH);
     }
-    public static long getDateLong (String sDate){
+    public static long getDateLong (final String sDate){
         try {
             SimpleDateFormat sdf = new SimpleDateFormat(DAY_PATTERN);
             Date date = sdf.parse(sDate);
@@ -120,7 +137,7 @@ public class DateTimeUtils {
             return 0;
         }
     }
-    public static long getDateTimeLong (String sDate){
+    public static long getDateTimeLong (final String sDate){
         try {
             SimpleDateFormat sdf = new SimpleDateFormat(DT_PATTERN);
             Date date = sdf.parse(sDate);
@@ -130,4 +147,16 @@ public class DateTimeUtils {
             return 0;
         }
     }
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    public static LocalDateTime toLocalDate(final Date dateToConvert) {
+        return dateToConvert.toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDateTime();
+    }
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    public static long toMillis(final LocalDateTime localDateTime) {
+        return localDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();}
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    public static long toMillis(final LocalDate localDate) {
+        return localDate.atTime(0,0) .atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();}
 }
