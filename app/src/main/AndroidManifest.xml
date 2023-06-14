@@ -23,7 +23,7 @@
         <activity android:name=".LoginActivity" />
         <activity android:name=".dbService" />
         <activity android:name=".BoxesActivity" />
-        <activity android:name=".SettingsActivity" />
+        <activity android:name=".activity.SettingsActivity" />
         <activity android:name=".OrdersActivity" />
         <activity android:name=".ProdsActivity" />
         <activity android:name=".OutDocsActivity" />

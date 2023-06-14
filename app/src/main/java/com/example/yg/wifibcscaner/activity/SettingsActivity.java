@@ -1,4 +1,4 @@
-package com.example.yg.wifibcscaner;
+package com.example.yg.wifibcscaner.activity;
 
 import android.annotation.SuppressLint;
 import android.content.ComponentName;
@@ -21,10 +21,20 @@ import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import com.example.yg.wifibcscaner.BuildConfig;
+import com.example.yg.wifibcscaner.DataBaseHelper;
+import com.example.yg.wifibcscaner.Defs;
+import com.example.yg.wifibcscaner.Deps;
+import com.example.yg.wifibcscaner.Division;
+import com.example.yg.wifibcscaner.OutDocs;
+import com.example.yg.wifibcscaner.R;
+import com.example.yg.wifibcscaner.SharedPrefs;
+import com.example.yg.wifibcscaner.Sotr;
 import com.example.yg.wifibcscaner.data.Operation;
 import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.service.PartBoxService;
+import com.example.yg.wifibcscaner.user;
 import com.example.yg.wifibcscaner.utils.AppUtils;
 
 import java.util.ArrayList;
@@ -76,7 +86,7 @@ public class SettingsActivity extends AppCompatActivity implements
             devId = "unKnown";
         }
 
-        strTitle = "Настройки"+". v."+BuildConfig.VERSION_NAME+"."+BuildConfig.VERSION_CODE+". Id."+ devId;
+        strTitle = "Настройки"+". v."+ BuildConfig.VERSION_NAME+"."+BuildConfig.VERSION_CODE+". Id."+ devId;
 
         // Spinner element
         opers_spinner = (Spinner) findViewById(R.id.opers_spinner);
@@ -241,7 +251,7 @@ public class SettingsActivity extends AppCompatActivity implements
 
                 } catch (Exception e) {
 
-                    Log.d(mDBHelper.LOG_TAG, "Ответ сервера на запрос новых заказов: " + e.getMessage());
+                    Log.d(TAG, "Ответ сервера на запрос новых заказов: " + e.getMessage());
                 }
                 return true;
 
@@ -250,7 +260,7 @@ public class SettingsActivity extends AppCompatActivity implements
                     openDbReplaceDialog();
                 } catch (Exception e) {
 
-                    Log.d(mDBHelper.LOG_TAG, "Запрос на очистку БД: " + e.getMessage());
+                    Log.d(TAG, "Запрос на очистку БД: " + e.getMessage());
                 }
                 return true;
             default:
@@ -258,13 +268,7 @@ public class SettingsActivity extends AppCompatActivity implements
         }
 
     }
-    private void resetApplication() {
-        Intent i = getBaseContext().getPackageManager().getLaunchIntentForPackage(
-                getBaseContext().getPackageName() );
-        i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        startActivity(i);
-        finish();
-    }
+
     private static void triggerRebirth(Context context) {
         PackageManager packageManager = context.getPackageManager();
         Intent intent = packageManager.getLaunchIntentForPackage(context.getPackageName());
@@ -430,21 +434,21 @@ public class SettingsActivity extends AppCompatActivity implements
                     opers_select_label = (TextView) findViewById(R.id.select_label);
                     opers_select_label.setText(spinner.getItemAtPosition(0).toString());}
                 catch (Exception e){
-                    Log.d(mDBHelper.LOG_TAG, "Error : " + e.getMessage());
+                    Log.d(TAG, "Error : " + e.getMessage());
                 }
                 try {
                     loadSpinnerData();
                     select_label = (TextView) findViewById(R.id.select_label);
                     select_label.setText(spinner.getItemAtPosition(0).toString());}
                 catch (Exception e){
-                    Log.d(mDBHelper.LOG_TAG, "Error : " + e.getMessage());
+                    Log.d(TAG, "Error : " + e.getMessage());
                 }
                 try {
                     loadSpinnerSotrData();
                     labelSotr = (TextView) findViewById(R.id.labelSotr);
                     labelSotr.setText(spinnerSotr.getItemAtPosition(0).toString());}
                 catch (Exception e){
-                    Log.d(mDBHelper.LOG_TAG, "Error : " + e.getMessage());
+                    Log.d(TAG, "Error : " + e.getMessage());
                 }
                 //MessageUtils.showToast(getApplicationContext(),"Вы выбрали: " + label, false);
             }
@@ -464,14 +468,14 @@ public class SettingsActivity extends AppCompatActivity implements
                     select_label = (TextView) findViewById(R.id.select_label);
                     select_label.setText(spinner.getItemAtPosition(0).toString());}
                 catch (Exception e){
-                    Log.d(mDBHelper.LOG_TAG, "Error : " + e.getMessage());
+                    Log.d(TAG, "Error : " + e.getMessage());
                 }
                 try {
                     loadSpinnerSotrData();
                     labelSotr = (TextView) findViewById(R.id.labelSotr);
                     labelSotr.setText(spinnerSotr.getItemAtPosition(0).toString());}
                 catch (Exception e){
-                    Log.d(mDBHelper.LOG_TAG, "Error : " + e.getMessage());
+                    Log.d(TAG, "Error : " + e.getMessage());
                 }
             }
         }
@@ -522,7 +526,7 @@ public class SettingsActivity extends AppCompatActivity implements
                         }
                     }
                     catch (Exception e){
-                        Log.d(mDBHelper.LOG_TAG, "Error : " + e.getMessage());
+                        Log.d(TAG, "Error : " + e.getMessage());
                     }
                 }
             }

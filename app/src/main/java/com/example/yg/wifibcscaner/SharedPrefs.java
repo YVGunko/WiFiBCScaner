@@ -2,7 +2,11 @@ package com.example.yg.wifibcscaner;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.preference.PreferenceManager;
+import android.support.annotation.RequiresApi;
+
+import com.example.yg.wifibcscaner.utils.DateTimeUtils;
 
 import static android.content.Context.MODE_PRIVATE;
 
@@ -13,6 +17,7 @@ public class SharedPrefs {
     final static String FIRST_OPER_ONE = "first_oper_1";
     final static String FIRST_OPER_TWO = "first_oper_2";
     final static String OUTDOCS_DAYS = "outDocsDays";
+    final static String OUTDOCS_NUMERATION_START_DATE = "outDocsNumStartDate";
     final static int DOESNT_EXIST = -1;
 
     private SharedPreferences sharedPref;
@@ -80,5 +85,18 @@ public class SharedPrefs {
     }
     public int getOutDocsDays() {
         return sharedPref.getInt(OUTDOCS_DAYS, 1);
+    }
+    public void setOutdocsNumerationStartDate(long value) {
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putLong(OUTDOCS_NUMERATION_START_DATE, value);
+        editor.apply();
+    }
+    /*
+    * I'd like to return first date of year as default or date that was set manually in case it's latter then first.
+    * */
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    public long getOutdocsNumerationStartDate() {
+        long result = sharedPref.getLong(OUTDOCS_NUMERATION_START_DATE, DateTimeUtils.getFirstDayOfYear());
+        return ( result > DateTimeUtils.getFirstDayOfYear() ) ? result : DateTimeUtils.getFirstDayOfYear();
     }
 }

@@ -273,6 +273,7 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
     getSupportLoaderManager().initLoader(0,null,this);
     }
     // обработка нажатия кнопки
+    @RequiresApi(api = Build.VERSION_CODES.O)
     public void onButtonClick(View view) {
         int docNum = mDBHelper.outDocsAddRec();
         // добавляем запись
@@ -282,8 +283,7 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
 
             OutDocsActivity.this.setTitle(selectedTitle +String.valueOf(docNum));
         } else {
-            MessageUtils messageUtils = new MessageUtils();
-            messageUtils.showMessage(getApplicationContext(),"Ошибка при добавлении записи.");
+            MessageUtils.showToast(getApplicationContext(),"Ошибка при добавлении записи.", false);
         }
     }
     private void setDaysButtonState (){

@@ -8,7 +8,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
@@ -31,9 +30,9 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.yg.wifibcscaner.activity.SettingsActivity;
 import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.utils.AppUtils;
-import com.example.yg.wifibcscaner.utils.DateTimeUtils;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 import com.honeywell.aidc.AidcManager;
@@ -51,9 +50,7 @@ import java.util.Iterator;
 import me.drakeet.support.toast.ToastCompat;
 
 import static android.text.TextUtils.substring;
-import static com.example.yg.wifibcscaner.utils.AppUtils.getFirstOperFor;
 import static com.example.yg.wifibcscaner.utils.AppUtils.isDepAndSotrOper;
-import static com.example.yg.wifibcscaner.utils.AppUtils.isNotEmpty;
 import static com.example.yg.wifibcscaner.utils.AppUtils.isOneOfFirstOper;
 import static com.example.yg.wifibcscaner.utils.AppUtils.isOneScanOnlyOper;
 import static com.example.yg.wifibcscaner.utils.AppUtils.isOutDocOnlyOper;
@@ -286,7 +283,7 @@ IntentFilter filterAttached_and_Detached = null;
         if ((mDBHelper.defs.get_Id_o()==0)||(mDBHelper.defs.getDivision_code().equals("0")))
         {   //Операция не выбрана
             showLongMessage("Нужно зайти в настройки и выбрать операцию, подразделение...");
-            startActivity(new Intent(this,SettingsActivity.class));  //Вызов активности Коробки
+            startActivity(new Intent(this, SettingsActivity.class));  //Вызов активности Коробки
             return;
         }
         if (isOutDocOnlyOper(mDBHelper.defs.get_Id_o())&(
