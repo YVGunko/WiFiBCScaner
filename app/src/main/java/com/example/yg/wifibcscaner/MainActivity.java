@@ -30,7 +30,9 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.yg.wifibcscaner.activity.LoginActivity;
 import com.example.yg.wifibcscaner.activity.SettingsActivity;
+import com.example.yg.wifibcscaner.activity.UpdateActivity;
 import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.utils.AppUtils;
 import com.google.zxing.integration.android.IntentIntegrator;
@@ -276,7 +278,7 @@ IntentFilter filterAttached_and_Detached = null;
     public void ocl_scan(View v) { //Вызов активности Сканирования
         if (mDBHelper.defs.get_idUser()==0){
             showLongMessage("Нужно войти в систему...");
-            startActivity(new Intent(this,LoginActivity.class));
+            startActivity(new Intent(this, LoginActivity.class));
             //if not a superuser check for current user today's outdoc and add new one if not exist.
             return;
         }
@@ -397,7 +399,7 @@ IntentFilter filterAttached_and_Detached = null;
                 startActivity(new Intent(this,OutDocsActivity.class));
                 return true;
             case R.id.action_update:
-                startActivity(new Intent(this,UpdateActivity.class));
+                startActivity(new Intent(this, UpdateActivity.class));
                 return true;
             default:
                 return super.onOptionsItemSelected(item);

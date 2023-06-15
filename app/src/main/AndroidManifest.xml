@@ -20,15 +20,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".LoginActivity" />
-        <activity android:name=".dbService" />
+        <activity android:name=".activity.LoginActivity" />
+        <activity android:name=".activity.dbService" />
         <activity android:name=".BoxesActivity" />
         <activity android:name=".activity.SettingsActivity" />
         <activity android:name=".OrdersActivity" />
         <activity android:name=".ProdsActivity" />
         <activity android:name=".OutDocsActivity" />
-        <activity android:name=".UpdateActivity" />
-        <activity android:name=".lastUpdateActivity" />
+        <activity android:name=".activity.UpdateActivity" />
+        <activity android:name=".activity.lastUpdateActivity" />
     </application>
     <uses-permission android:name="com.honeywell.decode.permission.DECODE" />
     <uses-permission android:name="android.permission.CAMERA" />

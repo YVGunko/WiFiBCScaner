@@ -32,11 +32,10 @@ import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.SharedPrefs;
 import com.example.yg.wifibcscaner.Sotr;
 import com.example.yg.wifibcscaner.data.Operation;
-import com.example.yg.wifibcscaner.lastUpdateActivity;
 import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.service.PartBoxService;
-import com.example.yg.wifibcscaner.user;
+import com.example.yg.wifibcscaner.data.user;
 import com.example.yg.wifibcscaner.utils.AppUtils;
 import com.example.yg.wifibcscaner.utils.DateTimeUtils;
 

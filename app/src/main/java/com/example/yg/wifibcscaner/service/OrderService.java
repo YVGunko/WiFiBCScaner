@@ -23,7 +23,7 @@ import com.example.yg.wifibcscaner.Orders;
 import com.example.yg.wifibcscaner.OutDocs;
 import com.example.yg.wifibcscaner.Prods;
 import com.example.yg.wifibcscaner.Sotr;
-import com.example.yg.wifibcscaner.user;
+import com.example.yg.wifibcscaner.data.user;
 
 public interface OrderService {
 

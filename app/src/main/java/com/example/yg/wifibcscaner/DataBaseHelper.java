@@ -6,7 +6,6 @@ package com.example.yg.wifibcscaner;
 
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.CursorIndexOutOfBoundsException;
 import android.database.SQLException;
@@ -39,7 +38,9 @@ import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
 
+import com.example.yg.wifibcscaner.activity.lastUpdate;
 import com.example.yg.wifibcscaner.data.Operation;
+import com.example.yg.wifibcscaner.data.user;
 import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.utils.AppUtils;
 import com.example.yg.wifibcscaner.utils.DateTimeUtils;
@@ -933,14 +934,14 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 mDataBase = this.getWritableDatabase();
                 ContentValues values = new ContentValues();
                 values.clear();
-                values.put(com.example.yg.wifibcscaner.user.COLUMN_id, user.get_id());
-                values.put(com.example.yg.wifibcscaner.user.COLUMN_Id_s, user.get_Id_s());
-                values.put(com.example.yg.wifibcscaner.user.COLUMN_name, user.getName());
-                values.put(com.example.yg.wifibcscaner.user.COLUMN_pswd, user.getPswd());
-                values.put(com.example.yg.wifibcscaner.user.COLUMN_DT, sDateTimeToLong(user.get_DT()));
-                values.put(com.example.yg.wifibcscaner.user.COLUMN_superUser, user.isSuperUser());
+                values.put(com.example.yg.wifibcscaner.data.user.COLUMN_id, user.get_id());
+                values.put(com.example.yg.wifibcscaner.data.user.COLUMN_Id_s, user.get_Id_s());
+                values.put(com.example.yg.wifibcscaner.data.user.COLUMN_name, user.getName());
+                values.put(com.example.yg.wifibcscaner.data.user.COLUMN_pswd, user.getPswd());
+                values.put(com.example.yg.wifibcscaner.data.user.COLUMN_DT, sDateTimeToLong(user.get_DT()));
+                values.put(com.example.yg.wifibcscaner.data.user.COLUMN_superUser, user.isSuperUser());
 
-                l = mDataBase.insertWithOnConflict(com.example.yg.wifibcscaner.user.TABLE, null, values, 5);
+                l = mDataBase.insertWithOnConflict(com.example.yg.wifibcscaner.data.user.TABLE, null, values, 5);
                 return l;
             } catch (SQLException e) {
                 // TODO: handle exception
