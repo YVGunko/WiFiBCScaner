@@ -8,6 +8,9 @@ import android.support.annotation.RequiresApi;
 
 import com.example.yg.wifibcscaner.utils.DateTimeUtils;
 
+import java.sql.Time;
+import java.util.Date;
+
 import static android.content.Context.MODE_PRIVATE;
 
 public class SharedPrefs {
@@ -97,6 +100,6 @@ public class SharedPrefs {
     @RequiresApi(api = Build.VERSION_CODES.O)
     public long getOutdocsNumerationStartDate() {
         long result = sharedPref.getLong(OUTDOCS_NUMERATION_START_DATE, DateTimeUtils.getFirstDayOfYear());
-        return ( result > DateTimeUtils.getFirstDayOfYear() ) ? result : DateTimeUtils.getFirstDayOfYear();
+        return ( result > DateTimeUtils.getFirstDayOfYear() & result <= new Date().getTime() ) ? result : DateTimeUtils.getFirstDayOfYear();
     }
 }

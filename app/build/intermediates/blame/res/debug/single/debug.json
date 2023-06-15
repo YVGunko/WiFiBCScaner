@@ -1,0 +1,162 @@
+[
+    {
+        "merged": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/build/intermediates/res/merged/debug/menu_settings_menu.xml.flat",
+        "source": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/res/menu/settings_menu.xml"
+    },
+    {
+        "merged": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/build/intermediates/res/merged/debug/layout_activity_db_service.xml.flat",
+        "source": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/res/layout/activity_db_service.xml"
+    },
+    {
+        "merged": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/build/intermediates/res/merged/debug/drawable_ic_notifications_black_24dp.xml.flat",
+        "source": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/res/drawable/ic_notifications_black_24dp.xml"
+    },
+    {
+        "merged": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/build/intermediates/res/merged/debug/layout_activity_last_update.xml.flat",
+        "source": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/res/layout/activity_last_update.xml"
+    },
+    {
+        "merged": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/build/intermediates/res/merged/debug/mipmap-xhdpi_ic_launcher.png.flat",
+        "source": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/res/mipmap-xhdpi/ic_launcher.png"
+    },
+    {
+        "merged": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/build/intermediates/res/merged/debug/layout_activity_update.xml.flat",
+        "source": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/res/layout/activity_update.xml"
+    },
+    {
+        "merged": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/build/intermediates/res/merged/debug/drawable_ic_launcher_background.xml.flat",
+        "source": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/res/drawable/ic_launcher_background.xml"
+    },
+    {
+        "merged": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/build/intermediates/res/merged/debug/menu_boxes_menu.xml.flat",
+        "source": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/res/menu/boxes_menu.xml"
+    },
+    {
+        "merged": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/build/intermediates/res/merged/debug/raw_beepscan.wav.flat",
+        "source": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/res/raw/beepscan.wav"
+    },
+    {
+        "merged": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/build/intermediates/res/merged/debug/layout_activity_settings.xml.flat",
+        "source": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/res/layout/activity_settings.xml"
+    },
+    {
+        "merged": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/build/intermediates/res/merged/debug/mipmap-xxxhdpi_ic_launcher.png.flat",
+        "source": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png"
+    },
+    {
+        "merged": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/build/intermediates/res/merged/debug/mipmap-hdpi_ic_launcher_round.png.flat",
+        "source": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/res/mipmap-hdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/build/intermediates/res/merged/debug/layout_activity_boxes.xml.flat",
+        "source": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/res/layout/activity_boxes.xml"
+    },
+    {
+        "merged": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/build/intermediates/res/merged/debug/raw_beeperror.mp3.flat",
+        "source": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/res/raw/beeperror.mp3"
+    },
+    {
+        "merged": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/build/intermediates/res/merged/debug/mipmap-xhdpi_ic_launcher_round.png.flat",
+        "source": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/build/intermediates/res/merged/debug/menu_update_menu.xml.flat",
+        "source": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/res/menu/update_menu.xml"
+    },
+    {
+        "merged": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/build/intermediates/res/merged/debug/mipmap-hdpi_ic_launcher.png.flat",
+        "source": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/res/mipmap-hdpi/ic_launcher.png"
+    },
+    {
+        "merged": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/build/intermediates/res/merged/debug/layout_list_item.xml.flat",
+        "source": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/res/layout/list_item.xml"
+    },
+    {
+        "merged": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/build/intermediates/res/merged/debug/menu_menu_out_docs.xml.flat",
+        "source": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/res/menu/menu_out_docs.xml"
+    },
+    {
+        "merged": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/build/intermediates/res/merged/debug/mipmap-xxhdpi_ic_launcher.png.flat",
+        "source": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/res/mipmap-xxhdpi/ic_launcher.png"
+    },
+    {
+        "merged": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/build/intermediates/res/merged/debug/layout_activity_out_docs.xml.flat",
+        "source": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/res/layout/activity_out_docs.xml"
+    },
+    {
+        "merged": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/build/intermediates/res/merged/debug/mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml"
+    },
+    {
+        "merged": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/build/intermediates/res/merged/debug/mipmap-mdpi_ic_launcher_round.png.flat",
+        "source": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/res/mipmap-mdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/build/intermediates/res/merged/debug/layout_content_out_doc.xml.flat",
+        "source": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/res/layout/content_out_doc.xml"
+    },
+    {
+        "merged": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/build/intermediates/res/merged/debug/layout_activity_prods.xml.flat",
+        "source": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/res/layout/activity_prods.xml"
+    },
+    {
+        "merged": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/build/intermediates/res/merged/debug/layout_activity_main.xml.flat",
+        "source": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/res/layout/activity_main.xml"
+    },
+    {
+        "merged": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/build/intermediates/res/merged/debug/layout_adapter_item.xml.flat",
+        "source": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/res/layout/adapter_item.xml"
+    },
+    {
+        "merged": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/build/intermediates/res/merged/debug/mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml"
+    },
+    {
+        "merged": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/build/intermediates/res/merged/debug/mipmap-xxxhdpi_ic_launcher_round.png.flat",
+        "source": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/build/intermediates/res/merged/debug/menu_orders_menu.xml.flat",
+        "source": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/res/menu/orders_menu.xml"
+    },
+    {
+        "merged": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/build/intermediates/res/merged/debug/layout_activity_orders.xml.flat",
+        "source": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/res/layout/activity_orders.xml"
+    },
+    {
+        "merged": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/build/intermediates/res/merged/debug/menu_menu_main.xml.flat",
+        "source": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/res/menu/menu_main.xml"
+    },
+    {
+        "merged": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/build/intermediates/res/merged/debug/drawable_ic_dashboard_black_24dp.xml.flat",
+        "source": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/res/drawable/ic_dashboard_black_24dp.xml"
+    },
+    {
+        "merged": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/build/intermediates/res/merged/debug/raw_beepsucsess.wav.flat",
+        "source": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/res/raw/beepsucsess.wav"
+    },
+    {
+        "merged": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/build/intermediates/res/merged/debug/mipmap-mdpi_ic_launcher.png.flat",
+        "source": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/res/mipmap-mdpi/ic_launcher.png"
+    },
+    {
+        "merged": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/build/intermediates/res/merged/debug/layout_activity_login.xml.flat",
+        "source": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/res/layout/activity_login.xml"
+    },
+    {
+        "merged": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/build/intermediates/res/merged/debug/mipmap-xxhdpi_ic_launcher_round.png.flat",
+        "source": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/build/intermediates/res/merged/debug/drawable_ic_home_black_24dp.xml.flat",
+        "source": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/res/drawable/ic_home_black_24dp.xml"
+    },
+    {
+        "merged": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/build/intermediates/res/merged/debug/layout_activity_version.xml.flat",
+        "source": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/res/layout/activity_version.xml"
+    },
+    {
+        "merged": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/build/intermediates/res/merged/debug/drawable-v24_ic_launcher_foreground.xml.flat",
+        "source": "/Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/res/drawable-v24/ic_launcher_foreground.xml"
+    }
+]

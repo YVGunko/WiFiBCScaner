@@ -1,5 +1,7 @@
 package com.example.yg.wifibcscaner;
 
+import android.app.Activity;
+import android.app.Application;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
@@ -14,6 +16,7 @@ import android.widget.ProgressBar;
 import com.example.yg.wifibcscaner.data.Operation;
 import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
+import com.example.yg.wifibcscaner.utils.DateTimeUtils;
 
 import java.util.Date;
 import java.util.List;
@@ -23,8 +26,7 @@ import retrofit2.Response;
 import android.view.Menu;
 import android.view.MenuItem;
 
-import static com.example.yg.wifibcscaner.DataBaseHelper.getDayTimeLong;
-import static com.example.yg.wifibcscaner.DataBaseHelper.getStartOfDayString;
+import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDayTimeLong;
 
 public class UpdateActivity extends AppCompatActivity {
     private static final String TAG = "UpdateActivity";
@@ -284,7 +286,7 @@ public class UpdateActivity extends AppCompatActivity {
                             if (!mDBHelper.globalUpdateDate.equals("")) {
                                 strUpdateDate = mDBHelper.globalUpdateDate;
                             } else {
-                                strUpdateDate = mDBHelper.getLongDateTimeString(mDBHelper.getTableUpdateDate("Boxes"));
+                                strUpdateDate = DateTimeUtils.getLongDateTimeString(mDBHelper.getTableUpdateDate("Boxes"));
                             }
                             ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getBoxesByDate(strUpdateDate, mDBHelper.defs.get_idUser(), mDBHelper.defs.getDeviceId()).enqueue(new Callback<List<Boxes>>() {
                                 // TODO Обработать результат. Записать поле sent... если успешно
@@ -320,7 +322,7 @@ public class UpdateActivity extends AppCompatActivity {
                             if (!mDBHelper.globalUpdateDate.equals("")) {
                                 strUpdateDate = mDBHelper.globalUpdateDate;
                             } else {
-                                strUpdateDate = mDBHelper.getLongDateTimeString(mDBHelper.getTableUpdateDate("BoxMoves"));
+                                strUpdateDate = DateTimeUtils.getLongDateTimeString(mDBHelper.getTableUpdateDate("BoxMoves"));
                             }
                             ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getBoxMovesByDatePagebleCount(strUpdateDate).enqueue(new Callback<Integer>() {
                                 // Получаем количество страниц. В цикле запускаем = количество запросов.
@@ -378,7 +380,7 @@ public class UpdateActivity extends AppCompatActivity {
                             if (!mDBHelper.globalUpdateDate.equals("")) {
                                 strUpdateDate = mDBHelper.globalUpdateDate;
                             } else {
-                                strUpdateDate = mDBHelper.getLongDateTimeString(mDBHelper.getTableUpdateDate("Prods"));
+                                strUpdateDate = DateTimeUtils.getLongDateTimeString(mDBHelper.getTableUpdateDate("Prods"));
                             }
                             ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getPartBoxByDatePagebleCount(strUpdateDate).enqueue(new Callback<Integer>() {
                                 // Получаем количество страниц. В цикле запускаем = количество запросов.
@@ -511,7 +513,29 @@ public class UpdateActivity extends AppCompatActivity {
             SyncIncoData task = new SyncIncoData();
             task.execute(new String[]{null});
     }
+
     public void setDate(View v) { //Вызов активности выбора даты начала
-        startActivity(new Intent(this,lastUpdateActivity.class)); //Вызов активности lastUpdate
+        Intent intent = new Intent(this,lastUpdateActivity.class); //Вызов активности lastUpdate
+        final long dateFrom = DateTimeUtils.getStartOfDayLong(DateTimeUtils.addDays(new Date(), -1));
+        intent.putExtra("presetDate", dateFrom); // sent your putExtra data here to pass through intent
+        startActivityForResult(intent, 1000);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+
+        if (requestCode == 1000) {
+            if(resultCode == Activity.RESULT_OK){
+                final long longExtra = data.getExtras().getLong("presetDate", 0);
+                if (longExtra == 0) {
+                    Log.d(TAG,"lastUpdateActivity.onActivityResult -> DateTimePicker returned 0");
+                    return;
+                }
+                mDBHelper.globalUpdateDate = DateTimeUtils.getStartOfDayString(longExtra);
+            }
+            if (resultCode == Activity.RESULT_CANCELED) {
+                Log.w(TAG,"lastUpdateActivity.onActivityResult -> RESULT_CANCELED");
+            }
+        }
     }
 }

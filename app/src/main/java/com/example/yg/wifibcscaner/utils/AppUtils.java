@@ -2,6 +2,7 @@ package com.example.yg.wifibcscaner.utils;
 
 import android.database.Cursor;
 import android.os.Build;
+import android.os.Bundle;
 import android.support.annotation.RequiresApi;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -10,6 +11,29 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.Arrays;
 
 public class AppUtils {
+    /*
+    *  @param bundle
+   * @param key
+   * @return
+           */
+    public static Long getLong(Bundle bundle, String key) {
+        if (isEmpty(bundle, key)) {
+            return null;
+        } else {
+            return bundle.getLong(key);
+        }
+    }
+
+    /**
+     * check whether a key is empty
+     *
+     * @param bundle
+     * @param key
+     * @return
+     */
+    public static boolean isEmpty(Bundle bundle, String key) {
+        return bundle == null || !bundle.containsKey(key);
+    }
     @RequiresApi(api = Build.VERSION_CODES.N)
     public static boolean contains(final int[] arr, final int key) {
         return Arrays.stream(arr).anyMatch(i -> i == key);

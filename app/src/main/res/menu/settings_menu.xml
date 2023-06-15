@@ -19,4 +19,9 @@
         android:orderInCategory="100"
         android:title="@string/action_db_need_replace"
         app:showAsAction="never"/>
+    <item
+        android:id="@+id/set_outdocs_number_start_date"
+        android:orderInCategory="100"
+        android:title="@string/set_outdocs_number_start_date"
+        app:showAsAction="never"/>
 </menu>

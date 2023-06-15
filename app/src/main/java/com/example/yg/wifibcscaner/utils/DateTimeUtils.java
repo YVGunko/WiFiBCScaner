@@ -5,6 +5,7 @@ import android.support.annotation.RequiresApi;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -148,10 +149,20 @@ public class DateTimeUtils {
         }
     }
     @RequiresApi(api = Build.VERSION_CODES.O)
-    public static LocalDateTime toLocalDate(final Date dateToConvert) {
+    public static LocalDateTime toLocalDateTime(final Date dateToConvert) {
         return dateToConvert.toInstant()
                 .atZone(ZoneId.systemDefault())
                 .toLocalDateTime();
+    }
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    public static LocalDate toLocalDate(final Date dateToConvert) {
+        return dateToConvert.toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDate();
+    }
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    public static LocalDate toLocalDate(final long dateToConvert) {
+        return Instant.ofEpochMilli(dateToConvert).atZone(ZoneId.systemDefault()).toLocalDate();
     }
     @RequiresApi(api = Build.VERSION_CODES.O)
     public static long toMillis(final LocalDateTime localDateTime) {

@@ -40,4 +40,5 @@
     <string name="dialog_db_need_replace">Очистить базу данных? Восстановление невозможно!</string>
     <string name="QR_invalid">QR код не распознан!</string>
     <string name="wrong_division_order">Это коробка другого подразделения</string>
+    <string name="set_outdocs_number_start_date">Установить дату начала нумерации</string>
 </resources>

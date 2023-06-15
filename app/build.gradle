@@ -1,13 +1,13 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 26
+    compileSdkVersion 29
     project.archivesBaseName = "SProject"
     defaultConfig {
         applicationId "com.example.yg.wifibcscaner"
         //noinspection ExpiredTargetSdkVersion
-        minSdkVersion 21
-        targetSdkVersion 26
+        minSdkVersion 24
+        targetSdkVersion 29
         versionCode 23
         versionName '3.4'
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
@@ -20,8 +20,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = 1.8
-        targetCompatibility = 1.8
+        // Flag to enable support for the new language APIs
+        coreLibraryDesugaringEnabled true
+        // Sets Java compatibility to Java 8
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
     buildToolsVersion '26.0.2'
 }
@@ -47,4 +50,5 @@ dependencies {
     implementation 'io.reactivex:rxandroid:1.2.1'
     implementation project(':DataCollection')
     implementation 'me.drakeet.support:toastcompat:1.1.0'
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.0.5'
 }

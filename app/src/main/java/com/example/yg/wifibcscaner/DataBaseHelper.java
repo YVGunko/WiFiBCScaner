@@ -2479,7 +2479,11 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     public int getNextOutDocNumber () {
         final String queryNextOutDocNumber = "SELECT max(number) FROM OutDocs where division_code=? and Id_o=? AND DT >=? ";
         final String queryNextOutDocNumberForUser = "SELECT max(number) FROM OutDocs where division_code=? and Id_o=? and idUser=? AND DT >=? ";
-        final String dateToStartSince = String.valueOf(SharedPrefs.getInstance(mContext).getOutdocsNumerationStartDate());
+
+        String dateToStartSince = String.valueOf(DateTimeUtils.getFirstDayOfYear());
+        if (SharedPrefs.getInstance(mContext) != null) {
+            dateToStartSince = String.valueOf(SharedPrefs.getInstance(mContext).getOutdocsNumerationStartDate());
+        }
 
         if (!mDataBase.isOpen()) {
             mDataBase = this.getReadableDatabase();

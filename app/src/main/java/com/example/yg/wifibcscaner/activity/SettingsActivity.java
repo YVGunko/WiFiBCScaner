@@ -1,6 +1,7 @@
 package com.example.yg.wifibcscaner.activity;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -31,13 +32,16 @@ import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.SharedPrefs;
 import com.example.yg.wifibcscaner.Sotr;
 import com.example.yg.wifibcscaner.data.Operation;
+import com.example.yg.wifibcscaner.lastUpdateActivity;
 import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.service.PartBoxService;
 import com.example.yg.wifibcscaner.user;
 import com.example.yg.wifibcscaner.utils.AppUtils;
+import com.example.yg.wifibcscaner.utils.DateTimeUtils;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import retrofit2.Call;
@@ -263,12 +267,48 @@ public class SettingsActivity extends AppCompatActivity implements
                     Log.d(TAG, "Запрос на очистку БД: " + e.getMessage());
                 }
                 return true;
+            case R.id.set_outdocs_number_start_date:
+                try {
+                    openDateSetActivity();
+                } catch (Exception e) {
+
+                    Log.d(TAG, "set_outdocs_number_start_date -> " + e.getMessage());
+                }
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
 
     }
 
+    private void openDateSetActivity() {
+        Intent intent = new Intent(this, lastUpdateActivity.class); //Вызов активности lastUpdate
+
+        long dateFrom = DateTimeUtils.getStartOfDayLong(DateTimeUtils.addDays(new Date(), -5));
+
+        intent.putExtra("presetDate", dateFrom); // sent your putExtra data here to pass through intent
+        startActivityForResult(intent, 1000);
+    }
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+
+        if (requestCode == 1000) {
+            if(resultCode == Activity.RESULT_OK){
+                //mDBHelper.globalUpdateDate = data.getStringExtra("presetDate");
+                final long longExtra = data.getExtras().getLong("presetDate", 0);
+                if (longExtra == 0) {
+                    Log.d(TAG,"lastUpdateActivity.onActivityResult -> DateTimePicker returned 0");
+                    return;
+                }
+                if (SharedPrefs.getInstance(getApplicationContext()) != null) {
+                    SharedPrefs.getInstance(getApplicationContext()).setOutdocsNumerationStartDate(longExtra);
+                }
+            }
+            if (resultCode == Activity.RESULT_CANCELED) {
+                Log.w(TAG,"lastUpdateActivity.onActivityResult -> RESULT_CANCELED");
+            }
+        }
+    }
     private static void triggerRebirth(Context context) {
         PackageManager packageManager = context.getPackageManager();
         Intent intent = packageManager.getLaunchIntentForPackage(context.getPackageName());

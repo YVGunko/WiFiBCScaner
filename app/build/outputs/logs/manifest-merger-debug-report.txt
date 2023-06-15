@@ -1,0 +1,214 @@
+-- Merging decision tree log ---
+manifest
+ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:2:1-39:12
+INJECTED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:2:1-39:12
+INJECTED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:2:1-39:12
+INJECTED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:2:1-39:12
+MERGED from [com.android.support:design:27.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/0020c95edaabf32f301169cad1f88fbc/design-27.1.0/AndroidManifest.xml:17:1-22:12
+MERGED from [com.android.support:appcompat-v7:27.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/57968456a2c48abf799d253092932ce9/appcompat-v7-27.1.0/AndroidManifest.xml:17:1-22:12
+MERGED from [com.android.support.constraint:constraint-layout:1.0.2] /Users/yg/.gradle/caches/transforms-2/files-2.1/5bc491f23766bcae3890512d2f6d528e/constraint-layout-1.0.2/AndroidManifest.xml:2:1-11:12
+MERGED from [com.android.support:animated-vector-drawable:27.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/982c8273065aa6142ba03ddbc01b191a/animated-vector-drawable-27.1.0/AndroidManifest.xml:17:1-22:12
+MERGED from [com.android.support:support-vector-drawable:27.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/0737d2c8d2b593c644333cb64a87bde4/support-vector-drawable-27.1.0/AndroidManifest.xml:17:1-22:12
+MERGED from [android.arch.paging:runtime:1.0.1] /Users/yg/.gradle/caches/transforms-2/files-2.1/38271236dce9e36bd5bc23a64361be28/runtime-1.0.1/AndroidManifest.xml:17:1-22:12
+MERGED from [me.dm7.barcodescanner:zbar:1.9] /Users/yg/.gradle/caches/transforms-2/files-2.1/f75ec894b36c5da7adac3bb4f924af76/zbar-1.9/AndroidManifest.xml:2:1-13:12
+MERGED from [me.dm7.barcodescanner:zxing:1.9.8] /Users/yg/.gradle/caches/transforms-2/files-2.1/aace4c0a7b433d71ebd5410f0b458637/zxing-1.9.8/AndroidManifest.xml:2:1-13:12
+MERGED from [io.reactivex:rxandroid:1.2.1] /Users/yg/.gradle/caches/transforms-2/files-2.1/087f16ea1418dec67514b4ce9c0d45e4/rxandroid-1.2.1/AndroidManifest.xml:15:1-21:12
+MERGED from [:DataCollection] /Users/yg/Desktop/Dev/WiFiBCScaner/DataCollection/build/.transforms/2172d84c2514da3bf0f3829406e9a0e8/DataCollection/AndroidManifest.xml:2:1-19:12
+MERGED from [me.drakeet.support:toastcompat:1.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/cd23ceea46dd477b0e027aab79b431a4/toastcompat-1.1.0/AndroidManifest.xml:2:1-11:12
+MERGED from [me.dm7.barcodescanner:core:1.9.8] /Users/yg/.gradle/caches/transforms-2/files-2.1/f10266a6819878a60213192158b164e5/core-1.9.8/AndroidManifest.xml:2:1-13:12
+MERGED from [com.android.support:support-v4:27.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/5641daad47c4e11ace2a84369bbb02cd/support-v4-27.1.0/AndroidManifest.xml:17:1-22:12
+MERGED from [com.android.support:support-fragment:27.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/b936ea70436f2e6d1bd593a1dffb8f66/support-fragment-27.1.0/AndroidManifest.xml:17:1-22:12
+MERGED from [com.android.support:recyclerview-v7:27.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/1d66fe65220ca48af18f15aee0e72cbe/recyclerview-v7-27.1.0/AndroidManifest.xml:17:1-22:12
+MERGED from [com.android.support:support-core-ui:27.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/7ea72e171da740ff24b637d81928c918/support-core-ui-27.1.0/AndroidManifest.xml:17:1-22:12
+MERGED from [com.android.support:support-core-utils:27.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/763545a9c66e33bb324a10bd66595742/support-core-utils-27.1.0/AndroidManifest.xml:17:1-22:12
+MERGED from [com.android.support:transition:27.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/1182db51c5666adbb20e22eac351f265/transition-27.1.0/AndroidManifest.xml:17:1-22:12
+MERGED from [android.arch.lifecycle:livedata:1.1.1] /Users/yg/.gradle/caches/transforms-2/files-2.1/107a7d3b403fc30fca1c4800a659b3b1/livedata-1.1.1/AndroidManifest.xml:17:1-22:12
+MERGED from [android.arch.lifecycle:livedata-core:1.1.1] /Users/yg/.gradle/caches/transforms-2/files-2.1/83a685c91f6c092d5300c972ce427383/livedata-core-1.1.1/AndroidManifest.xml:17:1-22:12
+MERGED from [android.arch.core:runtime:1.1.1] /Users/yg/.gradle/caches/transforms-2/files-2.1/8faddf8fec2fcf4eba11297fbe977fa5/runtime-1.1.1/AndroidManifest.xml:17:1-22:12
+MERGED from [com.android.support:support-media-compat:27.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/1d72a28623556cd48084556c7dc86019/support-media-compat-27.1.0/AndroidManifest.xml:17:1-22:12
+MERGED from [com.android.support:support-compat:27.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/70947edada4358131fdcfe100c0a3de4/support-compat-27.1.0/AndroidManifest.xml:17:1-22:12
+MERGED from [android.arch.lifecycle:runtime:1.1.1] /Users/yg/.gradle/caches/transforms-2/files-2.1/17eec8b38264dddf663e1505f86fed45/runtime-1.1.1/AndroidManifest.xml:17:1-22:12
+MERGED from [android.arch.lifecycle:viewmodel:1.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/c60abdf5958632b825a1d49b57b7558e/viewmodel-1.1.0/AndroidManifest.xml:17:1-22:12
+INJECTED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:2:1-39:12
+INJECTED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:2:1-39:12
+INJECTED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:2:1-39:12
+	package
+		ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:3:5-42
+		INJECTED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml
+		INJECTED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml
+	android:versionName
+		INJECTED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml
+		ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:2:1-39:12
+		INJECTED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml
+	android:versionCode
+		INJECTED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml
+		ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:2:1-39:12
+		INJECTED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml
+	xmlns:android
+		ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:2:11-69
+application
+ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:6:5-32:19
+MERGED from [com.android.support.constraint:constraint-layout:1.0.2] /Users/yg/.gradle/caches/transforms-2/files-2.1/5bc491f23766bcae3890512d2f6d528e/constraint-layout-1.0.2/AndroidManifest.xml:9:5-20
+MERGED from [com.android.support.constraint:constraint-layout:1.0.2] /Users/yg/.gradle/caches/transforms-2/files-2.1/5bc491f23766bcae3890512d2f6d528e/constraint-layout-1.0.2/AndroidManifest.xml:9:5-20
+MERGED from [me.dm7.barcodescanner:zbar:1.9] /Users/yg/.gradle/caches/transforms-2/files-2.1/f75ec894b36c5da7adac3bb4f924af76/zbar-1.9/AndroidManifest.xml:11:5-20
+MERGED from [me.dm7.barcodescanner:zbar:1.9] /Users/yg/.gradle/caches/transforms-2/files-2.1/f75ec894b36c5da7adac3bb4f924af76/zbar-1.9/AndroidManifest.xml:11:5-20
+MERGED from [me.dm7.barcodescanner:zxing:1.9.8] /Users/yg/.gradle/caches/transforms-2/files-2.1/aace4c0a7b433d71ebd5410f0b458637/zxing-1.9.8/AndroidManifest.xml:11:5-20
+MERGED from [me.dm7.barcodescanner:zxing:1.9.8] /Users/yg/.gradle/caches/transforms-2/files-2.1/aace4c0a7b433d71ebd5410f0b458637/zxing-1.9.8/AndroidManifest.xml:11:5-20
+MERGED from [:DataCollection] /Users/yg/Desktop/Dev/WiFiBCScaner/DataCollection/build/.transforms/2172d84c2514da3bf0f3829406e9a0e8/DataCollection/AndroidManifest.xml:13:5-17:19
+MERGED from [:DataCollection] /Users/yg/Desktop/Dev/WiFiBCScaner/DataCollection/build/.transforms/2172d84c2514da3bf0f3829406e9a0e8/DataCollection/AndroidManifest.xml:13:5-17:19
+MERGED from [me.dm7.barcodescanner:core:1.9.8] /Users/yg/.gradle/caches/transforms-2/files-2.1/f10266a6819878a60213192158b164e5/core-1.9.8/AndroidManifest.xml:11:5-20
+MERGED from [me.dm7.barcodescanner:core:1.9.8] /Users/yg/.gradle/caches/transforms-2/files-2.1/f10266a6819878a60213192158b164e5/core-1.9.8/AndroidManifest.xml:11:5-20
+	android:screenOrientation
+		ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:11:9-45
+	android:supportsRtl
+		ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:12:9-35
+	android:label
+		ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:9:9-41
+	android:debuggable
+		ADDED from [:DataCollection] /Users/yg/Desktop/Dev/WiFiBCScaner/DataCollection/build/.transforms/2172d84c2514da3bf0f3829406e9a0e8/DataCollection/AndroidManifest.xml:15:9-35
+	android:roundIcon
+		ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:10:9-54
+	android:icon
+		ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:8:9-43
+	android:allowBackup
+		ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:7:9-35
+	android:theme
+		ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:13:9-40
+activity#com.example.yg.wifibcscaner.MainActivity
+ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:14:9-22:20
+	android:screenOrientation
+		ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:16:13-49
+	android:name
+		ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:15:13-41
+intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
+ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:17:13-21:29
+action#android.intent.action.MAIN
+ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:18:17-69
+	android:name
+		ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:18:25-66
+category#android.intent.category.LAUNCHER
+ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:20:17-77
+	android:name
+		ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:20:27-74
+activity#com.example.yg.wifibcscaner.LoginActivity
+ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:23:9-51
+	android:name
+		ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:23:19-48
+activity#com.example.yg.wifibcscaner.dbService
+ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:24:9-47
+	android:name
+		ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:24:19-44
+activity#com.example.yg.wifibcscaner.BoxesActivity
+ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:25:9-51
+	android:name
+		ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:25:19-48
+activity#com.example.yg.wifibcscaner.activity.SettingsActivity
+ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:26:9-63
+	android:name
+		ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:26:19-60
+activity#com.example.yg.wifibcscaner.OrdersActivity
+ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:27:9-52
+	android:name
+		ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:27:19-49
+activity#com.example.yg.wifibcscaner.ProdsActivity
+ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:28:9-51
+	android:name
+		ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:28:19-48
+activity#com.example.yg.wifibcscaner.OutDocsActivity
+ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:29:9-53
+	android:name
+		ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:29:19-50
+activity#com.example.yg.wifibcscaner.UpdateActivity
+ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:30:9-52
+	android:name
+		ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:30:19-49
+activity#com.example.yg.wifibcscaner.lastUpdateActivity
+ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:31:9-56
+	android:name
+		ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:31:19-53
+uses-permission#com.honeywell.decode.permission.DECODE
+ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:33:5-78
+MERGED from [:DataCollection] /Users/yg/Desktop/Dev/WiFiBCScaner/DataCollection/build/.transforms/2172d84c2514da3bf0f3829406e9a0e8/DataCollection/AndroidManifest.xml:11:5-78
+MERGED from [:DataCollection] /Users/yg/Desktop/Dev/WiFiBCScaner/DataCollection/build/.transforms/2172d84c2514da3bf0f3829406e9a0e8/DataCollection/AndroidManifest.xml:11:5-78
+	android:name
+		ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:33:22-75
+uses-permission#android.permission.CAMERA
+ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:34:5-65
+	android:name
+		ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:34:22-62
+uses-permission#android.permission.INTERNET
+ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:35:5-67
+	android:name
+		ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:35:22-64
+uses-permission#android.permission.READ_PHONE_STATE
+ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:36:5-75
+	android:name
+		ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:36:22-72
+uses-permission#android.permission.WRITE_EXTERNAL_STORAGE
+ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:37:5-81
+	android:name
+		ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml:37:22-78
+uses-sdk
+INJECTED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml
+INJECTED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml
+MERGED from [com.android.support:design:27.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/0020c95edaabf32f301169cad1f88fbc/design-27.1.0/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:design:27.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/0020c95edaabf32f301169cad1f88fbc/design-27.1.0/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:appcompat-v7:27.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/57968456a2c48abf799d253092932ce9/appcompat-v7-27.1.0/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:appcompat-v7:27.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/57968456a2c48abf799d253092932ce9/appcompat-v7-27.1.0/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support.constraint:constraint-layout:1.0.2] /Users/yg/.gradle/caches/transforms-2/files-2.1/5bc491f23766bcae3890512d2f6d528e/constraint-layout-1.0.2/AndroidManifest.xml:5:5-7:41
+MERGED from [com.android.support.constraint:constraint-layout:1.0.2] /Users/yg/.gradle/caches/transforms-2/files-2.1/5bc491f23766bcae3890512d2f6d528e/constraint-layout-1.0.2/AndroidManifest.xml:5:5-7:41
+MERGED from [com.android.support:animated-vector-drawable:27.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/982c8273065aa6142ba03ddbc01b191a/animated-vector-drawable-27.1.0/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:animated-vector-drawable:27.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/982c8273065aa6142ba03ddbc01b191a/animated-vector-drawable-27.1.0/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:support-vector-drawable:27.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/0737d2c8d2b593c644333cb64a87bde4/support-vector-drawable-27.1.0/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:support-vector-drawable:27.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/0737d2c8d2b593c644333cb64a87bde4/support-vector-drawable-27.1.0/AndroidManifest.xml:20:5-44
+MERGED from [android.arch.paging:runtime:1.0.1] /Users/yg/.gradle/caches/transforms-2/files-2.1/38271236dce9e36bd5bc23a64361be28/runtime-1.0.1/AndroidManifest.xml:20:5-44
+MERGED from [android.arch.paging:runtime:1.0.1] /Users/yg/.gradle/caches/transforms-2/files-2.1/38271236dce9e36bd5bc23a64361be28/runtime-1.0.1/AndroidManifest.xml:20:5-44
+MERGED from [me.dm7.barcodescanner:zbar:1.9] /Users/yg/.gradle/caches/transforms-2/files-2.1/f75ec894b36c5da7adac3bb4f924af76/zbar-1.9/AndroidManifest.xml:7:5-9:41
+MERGED from [me.dm7.barcodescanner:zbar:1.9] /Users/yg/.gradle/caches/transforms-2/files-2.1/f75ec894b36c5da7adac3bb4f924af76/zbar-1.9/AndroidManifest.xml:7:5-9:41
+MERGED from [me.dm7.barcodescanner:zxing:1.9.8] /Users/yg/.gradle/caches/transforms-2/files-2.1/aace4c0a7b433d71ebd5410f0b458637/zxing-1.9.8/AndroidManifest.xml:7:5-9:41
+MERGED from [me.dm7.barcodescanner:zxing:1.9.8] /Users/yg/.gradle/caches/transforms-2/files-2.1/aace4c0a7b433d71ebd5410f0b458637/zxing-1.9.8/AndroidManifest.xml:7:5-9:41
+MERGED from [io.reactivex:rxandroid:1.2.1] /Users/yg/.gradle/caches/transforms-2/files-2.1/087f16ea1418dec67514b4ce9c0d45e4/rxandroid-1.2.1/AndroidManifest.xml:19:5-43
+MERGED from [io.reactivex:rxandroid:1.2.1] /Users/yg/.gradle/caches/transforms-2/files-2.1/087f16ea1418dec67514b4ce9c0d45e4/rxandroid-1.2.1/AndroidManifest.xml:19:5-43
+MERGED from [:DataCollection] /Users/yg/Desktop/Dev/WiFiBCScaner/DataCollection/build/.transforms/2172d84c2514da3bf0f3829406e9a0e8/DataCollection/AndroidManifest.xml:7:5-9:41
+MERGED from [:DataCollection] /Users/yg/Desktop/Dev/WiFiBCScaner/DataCollection/build/.transforms/2172d84c2514da3bf0f3829406e9a0e8/DataCollection/AndroidManifest.xml:7:5-9:41
+MERGED from [me.drakeet.support:toastcompat:1.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/cd23ceea46dd477b0e027aab79b431a4/toastcompat-1.1.0/AndroidManifest.xml:7:5-9:41
+MERGED from [me.drakeet.support:toastcompat:1.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/cd23ceea46dd477b0e027aab79b431a4/toastcompat-1.1.0/AndroidManifest.xml:7:5-9:41
+MERGED from [me.dm7.barcodescanner:core:1.9.8] /Users/yg/.gradle/caches/transforms-2/files-2.1/f10266a6819878a60213192158b164e5/core-1.9.8/AndroidManifest.xml:7:5-9:41
+MERGED from [me.dm7.barcodescanner:core:1.9.8] /Users/yg/.gradle/caches/transforms-2/files-2.1/f10266a6819878a60213192158b164e5/core-1.9.8/AndroidManifest.xml:7:5-9:41
+MERGED from [com.android.support:support-v4:27.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/5641daad47c4e11ace2a84369bbb02cd/support-v4-27.1.0/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:support-v4:27.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/5641daad47c4e11ace2a84369bbb02cd/support-v4-27.1.0/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:support-fragment:27.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/b936ea70436f2e6d1bd593a1dffb8f66/support-fragment-27.1.0/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:support-fragment:27.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/b936ea70436f2e6d1bd593a1dffb8f66/support-fragment-27.1.0/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:recyclerview-v7:27.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/1d66fe65220ca48af18f15aee0e72cbe/recyclerview-v7-27.1.0/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:recyclerview-v7:27.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/1d66fe65220ca48af18f15aee0e72cbe/recyclerview-v7-27.1.0/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:support-core-ui:27.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/7ea72e171da740ff24b637d81928c918/support-core-ui-27.1.0/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:support-core-ui:27.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/7ea72e171da740ff24b637d81928c918/support-core-ui-27.1.0/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:support-core-utils:27.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/763545a9c66e33bb324a10bd66595742/support-core-utils-27.1.0/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:support-core-utils:27.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/763545a9c66e33bb324a10bd66595742/support-core-utils-27.1.0/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:transition:27.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/1182db51c5666adbb20e22eac351f265/transition-27.1.0/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:transition:27.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/1182db51c5666adbb20e22eac351f265/transition-27.1.0/AndroidManifest.xml:20:5-44
+MERGED from [android.arch.lifecycle:livedata:1.1.1] /Users/yg/.gradle/caches/transforms-2/files-2.1/107a7d3b403fc30fca1c4800a659b3b1/livedata-1.1.1/AndroidManifest.xml:20:5-44
+MERGED from [android.arch.lifecycle:livedata:1.1.1] /Users/yg/.gradle/caches/transforms-2/files-2.1/107a7d3b403fc30fca1c4800a659b3b1/livedata-1.1.1/AndroidManifest.xml:20:5-44
+MERGED from [android.arch.lifecycle:livedata-core:1.1.1] /Users/yg/.gradle/caches/transforms-2/files-2.1/83a685c91f6c092d5300c972ce427383/livedata-core-1.1.1/AndroidManifest.xml:20:5-44
+MERGED from [android.arch.lifecycle:livedata-core:1.1.1] /Users/yg/.gradle/caches/transforms-2/files-2.1/83a685c91f6c092d5300c972ce427383/livedata-core-1.1.1/AndroidManifest.xml:20:5-44
+MERGED from [android.arch.core:runtime:1.1.1] /Users/yg/.gradle/caches/transforms-2/files-2.1/8faddf8fec2fcf4eba11297fbe977fa5/runtime-1.1.1/AndroidManifest.xml:20:5-44
+MERGED from [android.arch.core:runtime:1.1.1] /Users/yg/.gradle/caches/transforms-2/files-2.1/8faddf8fec2fcf4eba11297fbe977fa5/runtime-1.1.1/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:support-media-compat:27.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/1d72a28623556cd48084556c7dc86019/support-media-compat-27.1.0/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:support-media-compat:27.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/1d72a28623556cd48084556c7dc86019/support-media-compat-27.1.0/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:support-compat:27.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/70947edada4358131fdcfe100c0a3de4/support-compat-27.1.0/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:support-compat:27.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/70947edada4358131fdcfe100c0a3de4/support-compat-27.1.0/AndroidManifest.xml:20:5-44
+MERGED from [android.arch.lifecycle:runtime:1.1.1] /Users/yg/.gradle/caches/transforms-2/files-2.1/17eec8b38264dddf663e1505f86fed45/runtime-1.1.1/AndroidManifest.xml:20:5-44
+MERGED from [android.arch.lifecycle:runtime:1.1.1] /Users/yg/.gradle/caches/transforms-2/files-2.1/17eec8b38264dddf663e1505f86fed45/runtime-1.1.1/AndroidManifest.xml:20:5-44
+MERGED from [android.arch.lifecycle:viewmodel:1.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/c60abdf5958632b825a1d49b57b7558e/viewmodel-1.1.0/AndroidManifest.xml:20:5-44
+MERGED from [android.arch.lifecycle:viewmodel:1.1.0] /Users/yg/.gradle/caches/transforms-2/files-2.1/c60abdf5958632b825a1d49b57b7558e/viewmodel-1.1.0/AndroidManifest.xml:20:5-44
+INJECTED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml
+INJECTED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml
+	android:targetSdkVersion
+		INJECTED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml
+		ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml
+		INJECTED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml
+		ADDED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml
+		INJECTED from /Users/yg/Desktop/Dev/WiFiBCScaner/app/src/main/AndroidManifest.xml
