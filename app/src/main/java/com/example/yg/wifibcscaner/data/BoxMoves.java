@@ -1,4 +1,4 @@
-package com.example.yg.wifibcscaner;
+package com.example.yg.wifibcscaner.data;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;

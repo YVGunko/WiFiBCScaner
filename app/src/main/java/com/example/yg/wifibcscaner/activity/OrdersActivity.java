@@ -1,4 +1,4 @@
-package com.example.yg.wifibcscaner;
+package com.example.yg.wifibcscaner.activity;
 
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
@@ -8,6 +8,9 @@ import android.view.Menu;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
+
+import com.example.yg.wifibcscaner.DataBaseHelper;
+import com.example.yg.wifibcscaner.R;
 
 import java.util.ArrayList;
 import java.util.HashMap;

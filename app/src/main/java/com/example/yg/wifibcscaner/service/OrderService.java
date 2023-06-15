@@ -14,15 +14,15 @@ import retrofit2.http.GET;
 import retrofit2.http.POST;
 import retrofit2.http.Query;
 
-import com.example.yg.wifibcscaner.BoxMoves;
-import com.example.yg.wifibcscaner.Boxes;
-import com.example.yg.wifibcscaner.Deps;
-import com.example.yg.wifibcscaner.Division;
+import com.example.yg.wifibcscaner.data.BoxMoves;
+import com.example.yg.wifibcscaner.data.Boxes;
+import com.example.yg.wifibcscaner.data.Deps;
+import com.example.yg.wifibcscaner.data.Division;
 import com.example.yg.wifibcscaner.data.Operation;
-import com.example.yg.wifibcscaner.Orders;
-import com.example.yg.wifibcscaner.OutDocs;
-import com.example.yg.wifibcscaner.Prods;
-import com.example.yg.wifibcscaner.Sotr;
+import com.example.yg.wifibcscaner.data.Orders;
+import com.example.yg.wifibcscaner.data.OutDocs;
+import com.example.yg.wifibcscaner.data.Prods;
+import com.example.yg.wifibcscaner.data.Sotr;
 import com.example.yg.wifibcscaner.data.user;
 
 public interface OrderService {

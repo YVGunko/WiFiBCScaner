@@ -1,4 +1,4 @@
-package com.example.yg.wifibcscaner;
+package com.example.yg.wifibcscaner.service;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -8,7 +8,6 @@ import android.support.annotation.RequiresApi;
 
 import com.example.yg.wifibcscaner.utils.DateTimeUtils;
 
-import java.sql.Time;
 import java.util.Date;
 
 import static android.content.Context.MODE_PRIVATE;

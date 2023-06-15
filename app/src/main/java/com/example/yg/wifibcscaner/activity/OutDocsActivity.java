@@ -1,4 +1,4 @@
-package com.example.yg.wifibcscaner;
+package com.example.yg.wifibcscaner.activity;
 
 import android.content.Context;
 import android.content.DialogInterface;
@@ -20,25 +20,21 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ListView;
-import android.widget.ProgressBar;
 
+import com.example.yg.wifibcscaner.DataBaseHelper;
+import com.example.yg.wifibcscaner.data.Defs;
+import com.example.yg.wifibcscaner.data.OutDocs;
+import com.example.yg.wifibcscaner.R;
+import com.example.yg.wifibcscaner.service.SharedPrefs;
 import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
-import com.example.yg.wifibcscaner.utils.DateTimeUtils;
 
-import org.apache.commons.lang3.StringUtils;
-
-import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.UUID;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-import static com.example.yg.wifibcscaner.DataBaseHelper.getUUID;
-import static com.example.yg.wifibcscaner.utils.AppUtils.isDepAndSotrOper;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDayTimeString;
 
 public class OutDocsActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {

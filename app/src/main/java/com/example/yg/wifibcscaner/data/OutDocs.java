@@ -1,4 +1,4 @@
-package com.example.yg.wifibcscaner;
+package com.example.yg.wifibcscaner.data;
 
 import com.example.yg.wifibcscaner.utils.AppUtils;
 

@@ -1,6 +1,6 @@
 package com.example.yg.wifibcscaner.service;
 
-import com.example.yg.wifibcscaner.Orders;
+import com.example.yg.wifibcscaner.data.Orders;
 
 import java.util.ArrayList;
 import java.util.List;

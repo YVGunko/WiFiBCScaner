@@ -7,11 +7,10 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.Spinner;
-import android.widget.TextView;
 
 import com.example.yg.wifibcscaner.DataBaseHelper;
 import com.example.yg.wifibcscaner.R;
-import com.example.yg.wifibcscaner.Sotr;
+import com.example.yg.wifibcscaner.data.Sotr;
 import com.example.yg.wifibcscaner.service.MessageUtils;
 
 import java.util.List;

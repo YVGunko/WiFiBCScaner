@@ -1,9 +1,9 @@
 package com.example.yg.wifibcscaner.service;
 
-import com.example.yg.wifibcscaner.BoxMoves;
-import com.example.yg.wifibcscaner.Boxes;
-import com.example.yg.wifibcscaner.OutDocs;
-import com.example.yg.wifibcscaner.Prods;
+import com.example.yg.wifibcscaner.data.BoxMoves;
+import com.example.yg.wifibcscaner.data.Boxes;
+import com.example.yg.wifibcscaner.data.OutDocs;
+import com.example.yg.wifibcscaner.data.Prods;
 
 import java.util.ArrayList;
 import java.util.List;

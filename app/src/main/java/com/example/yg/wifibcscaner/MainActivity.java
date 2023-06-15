@@ -30,10 +30,15 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.yg.wifibcscaner.activity.BoxesActivity;
 import com.example.yg.wifibcscaner.activity.LoginActivity;
+import com.example.yg.wifibcscaner.activity.OrdersActivity;
+import com.example.yg.wifibcscaner.activity.OutDocsActivity;
+import com.example.yg.wifibcscaner.activity.ProdsActivity;
 import com.example.yg.wifibcscaner.activity.SettingsActivity;
 import com.example.yg.wifibcscaner.activity.UpdateActivity;
 import com.example.yg.wifibcscaner.service.MessageUtils;
+import com.example.yg.wifibcscaner.service.SharedPrefs;
 import com.example.yg.wifibcscaner.utils.AppUtils;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
@@ -293,7 +298,7 @@ IntentFilter filterAttached_and_Detached = null;
                         (mDBHelper.currentOutDoc.get_number()==0)))
         {
             //Отгрузка, накладная не выбрана
-            startActivity(new Intent(this,OutDocsActivity.class));
+            startActivity(new Intent(this, OutDocsActivity.class));
             return;
         }
         if (isDepAndSotrOper(mDBHelper.defs.get_Id_o())&(
@@ -387,13 +392,13 @@ IntentFilter filterAttached_and_Detached = null;
                 startActivity(new Intent(this,LoginActivity.class));  //Вызов активности
                 return true;
             case R.id.action_boxes:
-                startActivity(new Intent(this,BoxesActivity.class)); //Вызов активности Коробки
+                startActivity(new Intent(this, BoxesActivity.class)); //Вызов активности Коробки
                 return true;
             case R.id.action_orders:
-                startActivity(new Intent(this,OrdersActivity.class));
+                startActivity(new Intent(this, OrdersActivity.class));
                 return true;
             case R.id.action_prods:
-                startActivity(new Intent(this,ProdsActivity.class));
+                startActivity(new Intent(this, ProdsActivity.class));
                 return true;
             case R.id.action_test:
                 startActivity(new Intent(this,OutDocsActivity.class));
