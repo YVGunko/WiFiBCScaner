@@ -127,43 +127,43 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
         setContentView(R.layout.activity_out_docs);
         mDBHelper = DataBaseHelper.getInstance(this);
 
+        Button btnAdd = (Button) findViewById(R.id.addOutDoc);
+        btnAdd.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View view) {
+                AlertDialog.Builder adb = new AlertDialog.Builder(OutDocsActivity.this);
+                adb.setTitle("Создать накладные...");
+                adb.setMessage("Хотите добавить накладные для всех бригад " +mDBHelper.defs.descOper);
+                adb.setNegativeButton("Нет", null);
+                adb.setPositiveButton("Да", new AlertDialog.OnClickListener() {
+                    @RequiresApi(api = Build.VERSION_CODES.O)
+                    public void onClick(DialogInterface dialog, int which) {
+                        int nextOutDocNumber = mDBHelper.getNextOutDocNumber();
+                        if (nextOutDocNumber == 0) {
+                            Log.e(TAG, "mDBHelper.getNextOutDocNumber() returned 0");
+                            MessageUtils.showToast(getApplicationContext(), "Ошибка нумерации. Накладные не будут созданы!", true);
+                            return ;
+                        }
+
+                        if (!mDBHelper.createOutDocsForCurrentOper(nextOutDocNumber)) {
+                            Log.e(TAG, "mDBHelper.createOutDocsForCurrentOper(nextOutDocNumber) returned 0");
+                            MessageUtils.showToast(getApplicationContext(), "Ошибка при создании документов. Накладные не будут созданы!", true);
+                            return ;
+                        };
+                        getSupportLoaderManager().getLoader(0).forceLoad();
+                    }
+                });
+                adb.show();
+                return true;
+            }
+        });
+
         Button btnDays = (Button) findViewById(R.id.daysToView);
         if (!mDBHelper.checkSuperUser(mDBHelper.defs.get_idUser())) {
             btnDays.findViewById(R.id.daysToView).setVisibility(View.INVISIBLE);
             if (SharedPrefs.getInstance(getApplicationContext()) != null) {
                 SharedPrefs.getInstance(getApplicationContext()).setOutDocsDays(1);
             }
-
-            Button btnAdd = (Button) findViewById(R.id.addOutDoc);
-            btnAdd.setOnLongClickListener(new View.OnLongClickListener() {
-                @Override
-                public boolean onLongClick(View view) {
-                    AlertDialog.Builder adb = new AlertDialog.Builder(OutDocsActivity.this);
-                    adb.setTitle("Создать накладные...");
-                    adb.setMessage("Хотите добавить накладные для всех бригад " +mDBHelper.defs.descOper);
-                    adb.setNegativeButton("Нет", null);
-                    adb.setPositiveButton("Да", new AlertDialog.OnClickListener() {
-                        @RequiresApi(api = Build.VERSION_CODES.O)
-                        public void onClick(DialogInterface dialog, int which) {
-                            int nextOutDocNumber = mDBHelper.getNextOutDocNumber();
-                            if (nextOutDocNumber == 0) {
-                                Log.e(TAG, "mDBHelper.getNextOutDocNumber() returned 0");
-                                MessageUtils.showToast(getApplicationContext(), "Ошибка нумерации. Накладные не будут созданы!", true);
-                                return ;
-                            }
-
-                            if (!mDBHelper.createOutDocsForCurrentOper(nextOutDocNumber)) {
-                                Log.e(TAG, "mDBHelper.createOutDocsForCurrentOper(nextOutDocNumber) returned 0");
-                                MessageUtils.showToast(getApplicationContext(), "Ошибка при создании документов. Накладные не будут созданы!", true);
-                                return ;
-                            };
-                            getSupportLoaderManager().getLoader(0).forceLoad();
-                        }
-                    });
-                    adb.show();
-                    return true;
-                }
-            });
 
         } else {
             if (SharedPrefs.getInstance(getApplicationContext()) != null) {
