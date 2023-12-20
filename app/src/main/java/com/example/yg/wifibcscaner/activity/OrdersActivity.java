@@ -79,12 +79,6 @@ public class OrdersActivity extends AppCompatActivity {
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.orders_menu, menu);
-        return true;
-    }
-
-    @Override
     protected void onResume() {
         super.onResume();
         this.setTitle("Заказы. ");

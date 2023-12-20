@@ -66,7 +66,7 @@ public interface OrderService {
     @GET("/employee")
     Call<List<Sotr>> getSotr(@Query("date") String date);
 
-    @GET("/user")
+    @GET("/user/v2")
     Call<List<user>> getUser(@Query("date") String date);
 
     @GET("/department")

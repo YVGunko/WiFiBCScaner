@@ -112,8 +112,8 @@ public class UpdateActivity extends AppCompatActivity {
                     // TODO Обработать результат. Записать поле sent... если успешно
                     @Override
                     public void onResponse(Call<Long> call, Response<Long> response) {
-                        Log.d(TAG, "serverUpdateTime: " + response.body());
-                        if (response.isSuccessful()) {
+                        if (response.isSuccessful() && response.body() != null) {
+                            Log.d(TAG, "serverUpdateTime: " + response.body());
                             mDBHelper.serverUpdateTime = response.body();
                         }
                     }
@@ -134,7 +134,7 @@ public class UpdateActivity extends AppCompatActivity {
                     // TODO Обработать результат. Записать поле sent... если успешно
                     @Override
                     public void onResponse(Call<List<user>> call, Response<List<user>> response) {
-                        if (response.isSuccessful()) {
+                        if (response.isSuccessful() && !response.body().isEmpty()) {
                             for (user user : response.body())
                                 mDBHelper.insertUser(user);
                             if (response.body().size() != 0) {

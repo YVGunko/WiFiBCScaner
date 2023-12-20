@@ -79,7 +79,9 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     private static final String d0Pattern = "dd.MM.yyyy 00:00:00";
     private static final String y0Pattern = "01.01.yyyy 00:00:00";
     private static final String dayPattern = "dd.MM.yyyy";
-
+    private static final int MIN_ORDER_BOX_NUMBER_TO_FIND_LOST_BOXES = 20;
+    private static final int MIN_BOX_NUMBER_TO_FIND_LOST_BOXES = 5;
+    private static final int MIN_PERCENT_TO_FIND_LOST_BOXES = 5;
 
     public static final String COLUMN_sentToMasterDate = "sentToMasterDate";
     public long serverUpdateTime;
@@ -272,7 +274,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        if ((newVersion>oldVersion)&(newVersion == 20))
+        if ((newVersion>oldVersion)&(oldVersion < 20))
             try {
                 db.execSQL("PRAGMA foreign_keys = 0;");
                 db.beginTransaction();
@@ -317,7 +319,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 db.endTransaction();
                 db.execSQL("PRAGMA foreign_keys = 1;");
             }
-        if ((newVersion>oldVersion)&(newVersion == 23))
+        if ((newVersion>oldVersion)&(oldVersion < 23))
             try {
                 Log.d(TAG, "Версия бд 23. Начало реструктуризации.");
                 db.execSQL("PRAGMA foreign_keys = 0;");
@@ -350,6 +352,33 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
                 db.setTransactionSuccessful();
                 Log.d(TAG, "Версия бд 23. Окончание реструктуризации.");
+            }
+            finally {
+                db.endTransaction();
+                db.execSQL("PRAGMA foreign_keys = 1;");
+            }
+        if ((newVersion>oldVersion)&(newVersion == 24))
+            try {
+                Log.d(TAG, "Версия бд 24. Начало реструктуризации.");
+                db.execSQL("PRAGMA foreign_keys = 0;");
+                db.beginTransaction();
+
+                db.execSQL("CREATE TABLE sqlitestudio_temp_table AS SELECT * FROM user;");
+                db.execSQL("DROP TABLE IF EXISTS user;");
+                db.execSQL("CREATE TABLE user (_id INTEGER PRIMARY KEY UNIQUE,"+
+                        "name VARCHAR (30) UNIQUE NOT NULL,"+
+                        "pswd VARCHAR (32) NOT NULL DEFAULT (012345)," +
+                        "DT INTEGER," +
+                        "superUser BOOLEAN DEFAULT 0,"+
+                        "expired BOOLEAN DEFAULT 0,"+
+                        "Id_s INTEGER REFERENCES Sotr (_id) DEFAULT (0));");
+                db.execSQL("INSERT INTO user (_id,name,pswd,DT,superUser,Id_s,expired)"+
+                        "SELECT _id,name,pswd,DT,superUser,Id_s,0 FROM sqlitestudio_temp_table;");
+
+                db.execSQL("DROP TABLE sqlitestudio_temp_table;");
+
+                db.setTransactionSuccessful();
+                Log.d(TAG, "Версия бд 24. Окончание реструктуризации.");
             }
             finally {
                 db.endTransaction();
@@ -844,7 +873,6 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             if ((c != null) & (c.getCount() != 0)) {
                 c.moveToFirst(); //есть boxes & prods
                 fb._id = c.getString(0);
-                Log.d(TAG, "searchBox Record count = " + c.getCount() + ", _id =" + c.getString(0));
 
                 if (!fb._archive) {
                     if (StringUtils.isNotEmpty(fb._id)) {
@@ -905,10 +933,10 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 c = mDataBase.rawQuery(query, null);
                 if ((c != null) & (c.getCount() != 0)) {            //есть записи в BoxMoves и Prods
                     c.moveToFirst(); //есть boxes & prods
-                    Log.d(TAG, "Checking for order's last box = " + fo.NB + ", Box checked num =" + c.getString(0));
-                    if(fo.NB == c.getInt(0));
-                        MessageUtils.showToast(this.mContext, "Это последняя коробка из заказа!", false);
-                        Log.d(TAG, "lastBoxCheck after showToast called. ");
+                    if(fo.NB == c.getInt(0))
+                        MessageUtils.showToast(this.mContext,
+                                "Это последняя коробка этого размера из заказа!",
+                                false);
                 }
             } catch (SQLException e) {
                 Log.e(TAG, "lastBoxCheck exception on id -> " + fo._id , e);
@@ -918,6 +946,17 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             tryCloseCursor(c);
         }
     }
+
+    /*
+    *                     else if (c.getInt(0) > 0 &
+                                fo.NB > MIN_ORDER_BOX_NUMBER_TO_FIND_LOST_BOXES &
+                                    (fo.NB - c.getInt(0)) < MIN_BOX_NUMBER_TO_FIND_LOST_BOXES &
+                                        ((fo.NB - c.getInt(0))*100/fo.NB) < MIN_PERCENT_TO_FIND_LOST_BOXES) {
+                        MessageUtils.showToast(this.mContext,
+                                "Из заказа осталось коробок: " + (fo.NB - c.getInt(0)),
+                                false);
+                    }
+    * */
     public long sDateToLong (String sDate){
         try {
             SimpleDateFormat sdf = new SimpleDateFormat(dayPattern);
@@ -951,6 +990,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 values.put(com.example.yg.wifibcscaner.data.user.COLUMN_pswd, user.getPswd());
                 values.put(com.example.yg.wifibcscaner.data.user.COLUMN_DT, sDateTimeToLong(user.get_DT()));
                 values.put(com.example.yg.wifibcscaner.data.user.COLUMN_superUser, user.isSuperUser());
+                values.put(com.example.yg.wifibcscaner.data.user.COLUMN_EXPIRED, user.isExpired());
 
                 l = mDataBase.insertWithOnConflict(com.example.yg.wifibcscaner.data.user.TABLE, null, values, 5);
                 return l;
@@ -1374,7 +1414,6 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
     public String lastBox() {
         mDataBase = this.getReadableDatabase();
-        long rowId = 0;
         String product = "Принятых коробок нет.";
         Cursor cursor = null;
         cursor = mDataBase.rawQuery("SELECT max(p.ROWID) as _id FROM Boxes, BoxMoves bm, Prods p, OutDocs o Where Boxes._id=bm.Id_b and bm.Id_o=" + defs.get_Id_o() +
@@ -1382,41 +1421,38 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         if ((cursor != null) & (cursor.getCount() > 0)) {
             Log.d(TAG, "lastbox Records count = " + cursor.getCount());
             cursor.moveToFirst();
-            rowId = cursor.getLong(0);
-        } else {
-            rowId = 1;
-        }
-        if (rowId!=0)
-        try {
-            cursor = mDataBase.rawQuery("SELECT MasterData.Ord, MasterData.Cust, MasterData.Nomen, MasterData.Attrib, MasterData.Q_ord, " +
-                    "Boxes.Q_box, Boxes.N_box, Prods.RQ_box, Deps.Name_Deps, s.Sotr, o.number,  strftime('%d-%m-%Y %H:%M:%S', o.DT/1000, 'unixepoch', 'localtime') as DT" +
-                    " FROM Opers, Boxes, BoxMoves bm, Prods, Deps, MasterData, Sotr s, outDocs o Where MasterData.division_code=?" +
-                    " and Opers._id=" + defs.get_Id_o() + " and Prods.ROWID=" + rowId +
-                    " and Opers._id=bm.Id_o and Prods.Id_bm=bm._id and Boxes._id=bm.Id_b and Boxes.Id_m=MasterData._id and Prods.Id_d=Deps._id" +
-                    " and Prods.Id_s=s._id  and Prods.idOutDocs=o._id"+
-                    " Order by Prods._id desc", new String [] {String.valueOf(defs.getDivision_code())});
-            try {
-                if ((cursor != null) & (cursor.getCount() > 0)) {
-                    cursor.moveToFirst();
-                    product = "№ " + cursor.getString(0);
-                    product += " / " + cursor.getString(1) + "\n";
-                    product += "Подошва: " + cursor.getString(2);
-                    if (AppUtils.isNotEmpty(cursor.getString(3)))
-                        product += ", " + cursor.getString(3);
 
-                    product += "\nЗаказ: " + cursor.getString(4) + ". № кор: " + cursor.getString(6) +
-                            ". Регл: " + cursor.getString(5) + " ";
-                    product += "В кор: " + cursor.getString(7) + "." + "\n";
-                    product += isNotEmpty(cursor.getString(8)) ? cursor.getString(8) + ", " + cursor.getString(9) + "\n" : ""; //Бригада
-                    product += "Накл " + cursor.getString(10) + " от " + cursor.getString(11);
+            try {
+                cursor = mDataBase.rawQuery("SELECT MasterData.Ord, MasterData.Cust, MasterData.Nomen, MasterData.Attrib, MasterData.Q_ord, " +
+                        "Boxes.Q_box, Boxes.N_box, Prods.RQ_box, Deps.Name_Deps, s.Sotr, o.number,  strftime('%d-%m-%Y %H:%M:%S', o.DT/1000, 'unixepoch', 'localtime') as DT" +
+                        " FROM Opers, Boxes, BoxMoves bm, Prods, Deps, MasterData, Sotr s, outDocs o Where MasterData.division_code=?" +
+                        " and Opers._id=" + defs.get_Id_o() + " and Prods.ROWID=" + cursor.getLong(0) +
+                        " and Opers._id=bm.Id_o and Prods.Id_bm=bm._id and Boxes._id=bm.Id_b and Boxes.Id_m=MasterData._id and Prods.Id_d=Deps._id" +
+                        " and Prods.Id_s=s._id  and Prods.idOutDocs=o._id" +
+                        " Order by Prods._id desc", new String[]{String.valueOf(defs.getDivision_code())});
+                try {
+                    if ((cursor != null) & (cursor.getCount() > 0)) {
+                        cursor.moveToFirst();
+                        product = "№ " + cursor.getString(0);
+                        product += " / " + cursor.getString(1) + "\n";
+                        product += "Подошва: " + cursor.getString(2);
+                        if (AppUtils.isNotEmpty(cursor.getString(3)))
+                            product += ", " + cursor.getString(3);
+
+                        product += "\nЗаказ: " + cursor.getString(4) + ". № кор: " + cursor.getString(6) +
+                                ". Регл: " + cursor.getString(5) + " ";
+                        product += "В кор: " + cursor.getString(7) + "." + "\n";
+                        product += isNotEmpty(cursor.getString(8)) ? cursor.getString(8) + ", " + cursor.getString(9) + "\n" : ""; //Бригада
+                        product += "Накл " + cursor.getString(10) + " от " + cursor.getString(11);
+                    }
+                } catch (CursorIndexOutOfBoundsException e) {
+                    Log.e(TAG, "lastBox CursorIndexOutOfBoundsException -> ", e);
+                    return product;
                 }
-            } catch (CursorIndexOutOfBoundsException e){
-                Log.e(TAG, "lastBox CursorIndexOutOfBoundsException -> ", e);
+            } catch (SQLException e) {
+                Log.e(TAG, "lastBox SQLException rawQuery -> ", e);
                 return product;
             }
-        } catch (SQLException e) {
-            Log.e(TAG, "lastBox SQLException rawQuery -> ", e);
-            return product;
         }
         tryCloseCursor(cursor);
         mDataBase.close();
@@ -1464,7 +1500,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 mDataBase = this.getReadableDatabase();
             } else dbWasOpen = true;
 
-            cursor = mDataBase.rawQuery("SELECT name FROM user WHERE _id<>0 order by name", null);
+            cursor = mDataBase.rawQuery("SELECT name FROM user WHERE _id<>0 and NOT expired order by name", null);
             if ((cursor != null) & (cursor.getCount() != 0)) {
                 cursor.moveToFirst();
                 //Закидываем в список строку с позицией 0
