@@ -279,7 +279,7 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
 
             OutDocsActivity.this.setTitle(selectedTitle +String.valueOf(docNum));
         } else {
-            MessageUtils.showToast(getApplicationContext(),"Ошибка при добавлении записи.", false);
+            MessageUtils.showToast(getApplicationContext(),"Ошибка при добавлении записи. Проверьте правильность настроек.", false);
         }
     }
     private void setDaysButtonState (){

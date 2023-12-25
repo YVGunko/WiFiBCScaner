@@ -287,9 +287,9 @@ IntentFilter filterAttached_and_Detached = null;
             //if not a superuser check for current user today's outdoc and add new one if not exist.
             return;
         }
-        if ((mDBHelper.defs.get_Id_o()==0)||(mDBHelper.defs.getDivision_code().equals("0")))
+        if ((mDBHelper.defs.get_Id_o()<=0) || AppUtils.isEmpty(mDBHelper.defs.getDivision_code()))
         {   //Операция не выбрана
-            showLongMessage("Нужно зайти в настройки и выбрать операцию, подразделение...");
+            showLongMessage("Нужно зайти в настройки и выбрать подразделение и операцию");
             startActivity(new Intent(this, SettingsActivity.class));  //Вызов активности Коробки
             return;
         }
@@ -302,8 +302,8 @@ IntentFilter filterAttached_and_Detached = null;
             return;
         }
         if (isDepAndSotrOper(mDBHelper.defs.get_Id_o())&(
-                (mDBHelper.defs.get_Id_d()==0)||
-                (mDBHelper.defs.get_Id_s()==0)||
+                (mDBHelper.defs.get_Id_d()<=0)||
+                (mDBHelper.defs.get_Id_s()<=0)||
                 (mDBHelper.currentOutDoc.get_id()==null)||
                 (mDBHelper.currentOutDoc.get_number()==0)))
         {

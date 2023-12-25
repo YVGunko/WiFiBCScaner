@@ -2564,6 +2564,8 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     public int outDocsAddRec () {
+        if (defs.get_Id_o() <= 0 || defs.get_Id_d() <= 0 || defs.get_Id_s() <= 0) return 0;
+
         final int nextOutDocNumber = getNextOutDocNumber();
         if (nextOutDocNumber == 0) return 0;
 

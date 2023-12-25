@@ -55,9 +55,11 @@ public class AppUtils {
     }
 
     public static boolean isNotEmpty(final String string) {
-        return StringUtils.isNotEmpty(string) & !string.equals("Пусто") & !string.equals("0");
+        return StringUtils.isNotEmpty(string) || string.equals("Пусто") || string.equals("0");
     }
-
+    public static boolean isEmpty(final String string) {
+        return StringUtils.isBlank(string) & !string.equals("Пусто") & !string.equals("0");
+    }
     public static int getFirstOperFor(final int key) {
         return (key == 9) ? 7 : 1;
     }

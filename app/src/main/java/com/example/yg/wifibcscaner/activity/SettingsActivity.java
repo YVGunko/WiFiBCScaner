@@ -57,7 +57,7 @@ public class SettingsActivity extends AppCompatActivity implements
     EditText host_v;
     TextView select_label, opers_select_label, labelSotr, labelDivision2;
     private DataBaseHelper mDBHelper;
-    private int idd,ido,ids, idUser;
+    private int idd, ido, ids;
     private String division_code ;
     String strTitle = "Настройки";
 
@@ -92,14 +92,14 @@ public class SettingsActivity extends AppCompatActivity implements
         strTitle = "Настройки"+". v."+ BuildConfig.VERSION_NAME+"."+BuildConfig.VERSION_CODE+". Id."+ devId;
 
         // Spinner element
-        opers_spinner = (Spinner) findViewById(R.id.opers_spinner);
         spinnerDivision = (Spinner) findViewById(R.id.spinnerDivision);
+        opers_spinner = (Spinner) findViewById(R.id.opers_spinner);
         spinner = (Spinner) findViewById(R.id.spinner);
         spinnerSotr = (Spinner) findViewById(R.id.spinnerSotr);
         // Spinner click listener
 
-        opers_spinner.setOnItemSelectedListener(this);
         spinnerDivision.setOnItemSelectedListener(this);
+        opers_spinner.setOnItemSelectedListener(this);
         spinner.setOnItemSelectedListener(this);
         spinnerSotr.setOnItemSelectedListener(this);
         // Выборка настроек по умолчанию
@@ -284,70 +284,65 @@ public class SettingsActivity extends AppCompatActivity implements
                 }
             });
     }
-    private void loadOpers_spinnerData() {
-        // database handler
-        if (division_code==null) division_code=mDBHelper.defs.getDivision_code();
-        // Spinner Drop down elements
-        List<String> lables = mDBHelper.getAllnameOpers(division_code);
 
-        // Creating adapter for spinner
-        ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
-                android.R.layout.simple_spinner_item, lables);
-
-        // Drop down layout style - list view with radio button
-        dataAdapter
-                .setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-
-        // attaching data adapter to spinner
-        opers_spinner.setAdapter(dataAdapter);
-    }
     private void loadSpinnerDivisionData() {
-        // database handler
-
-        // Spinner Drop down elements
-        List<String> lables = mDBHelper.getAllDivisionsName();
-
-        // Creating adapter for spinner
+        List<String> labels = mDBHelper.getAllDivisionsName();
         ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
-                android.R.layout.simple_spinner_item, lables);
-
-        // Drop down layout style - list view with radio button
+                android.R.layout.simple_spinner_item, labels);
         dataAdapter
                 .setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-
-        // attaching data adapter to spinner
         spinnerDivision.setAdapter(dataAdapter);
+        dataAdapter.notifyDataSetChanged();
+    }
+    private void loadOpers_spinnerData() {
+        if (AppUtils.isEmpty(division_code)) {
+            if (AppUtils.isNotEmpty(mDBHelper.defs.getDivision_code()))
+                division_code = mDBHelper.defs.getDivision_code();
+        }
+        List<String> lables = (AppUtils.isEmpty(division_code))
+                ? new ArrayList<>()
+                    : mDBHelper.getAllnameOpers(division_code);
+        ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
+                android.R.layout.simple_spinner_item, lables);
+        dataAdapter
+                .setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        opers_spinner.setAdapter(dataAdapter);
+        dataAdapter.notifyDataSetChanged();
     }
     private void loadSpinnerData() { //Departments Deps Бригады
-        if (division_code==null) division_code=mDBHelper.defs.getDivision_code();
-        if (ido==0) ido=mDBHelper.defs.get_Id_o();
-        List<String> lables = mDBHelper.getAllnameDeps(division_code, ido);
+        if (AppUtils.isEmpty(division_code)) {
+            if (AppUtils.isNotEmpty(mDBHelper.defs.getDivision_code()))
+                division_code = mDBHelper.defs.getDivision_code();
+        }
+        if (ido<=0) ido=mDBHelper.defs.get_Id_o();
+
+        List<String> lables = (AppUtils.isEmpty(division_code) || ido<=0)
+                ? new ArrayList<>()
+                    : mDBHelper.getAllnameDeps(division_code, ido);
 
         ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
                 android.R.layout.simple_spinner_item, lables);
         dataAdapter
                 .setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        dataAdapter.notifyDataSetChanged();
-
         spinner.setAdapter(dataAdapter);
+        dataAdapter.notifyDataSetChanged();
     }
     private void loadSpinnerSotrData() {
-        // database handler
+        if (AppUtils.isEmpty(division_code)) {
+            if (AppUtils.isNotEmpty(mDBHelper.defs.getDivision_code()))
+                division_code = mDBHelper.defs.getDivision_code();
+        }
+        if (ido<=0) ido=mDBHelper.defs.get_Id_o();
+        if (idd<=0) idd=mDBHelper.defs.get_Id_d();
 
-        // Spinner Drop down elements
-        if (division_code==null) division_code=mDBHelper.defs.getDivision_code();
-        if (idd==0) idd=mDBHelper.defs.get_Id_d();
-        if (ido==0) ido=mDBHelper.defs.get_Id_o();
-        List<String> lables = mDBHelper.getAllnameSotr(division_code, idd, ido);
+        List<String> lables = (AppUtils.isEmpty(division_code) || ido<=0 || idd<=0)
+                ? new ArrayList<>()
+                    : mDBHelper.getAllnameSotr(division_code, idd, ido);
 
-        // Creating adapter for spinner
         ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
                 android.R.layout.simple_spinner_item, lables);
-
-        // Drop down layout style - list view with radio button
         dataAdapter
                 .setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        // attaching data adapter to spinner
         spinnerSotr.setAdapter(dataAdapter);
         dataAdapter.notifyDataSetChanged();
     }
@@ -385,7 +380,7 @@ public class SettingsActivity extends AppCompatActivity implements
                 catch (Exception e){
                     Log.d(TAG, "Error : " + e.getMessage());
                 }
-                //MessageUtils.showToast(getApplicationContext(),"Вы выбрали: " + label, false);
+                MessageUtils.showToast(getApplicationContext(),"Вы выбрали: " + label, false);
             }
         }
 
@@ -474,6 +469,14 @@ public class SettingsActivity extends AppCompatActivity implements
 
     }
     public void ocl_bSave(View v) {
+        if (AppUtils.isEmpty(division_code)) {
+            MessageUtils.showToast(getApplicationContext(),"Выберите подразделение.", true);
+            return;
+        }
+        if (ido <= 0) {
+            MessageUtils.showToast(getApplicationContext(),"Выберите операцию.", true);
+            return;
+        }
         if (ido != mDBHelper.defs.get_Id_o()) {
             if (mDBHelper.currentOutDoc == null) {
                 mDBHelper.currentOutDoc = new OutDocs("", 0,0, "", "01.01.2018 00:00:00",
