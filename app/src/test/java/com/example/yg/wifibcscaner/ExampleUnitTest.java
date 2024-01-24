@@ -1,5 +1,7 @@
 package com.example.yg.wifibcscaner;
 
+import com.example.yg.wifibcscaner.service.ApiUtils;
+import com.example.yg.wifibcscaner.utils.AppUtils;
 import com.example.yg.wifibcscaner.utils.DateTimeUtils;
 
 import org.junit.Test;
@@ -21,5 +23,12 @@ public class ExampleUnitTest {
     public void getStartOfYear_isCorrect() throws Exception {
         System.out.println(DateTimeUtils.getFirstDayOfYear());
         assertEquals("1672520400000", String.valueOf(DateTimeUtils.getFirstDayOfYear()));
+    }
+    @Test
+    public void isEmpty_isCorrect() throws Exception {
+        assertTrue(AppUtils.isEmpty (null));
+        assertTrue(AppUtils.isEmpty ("Пусто"));
+        assertTrue(AppUtils.isEmpty ("0"));
+        assertFalse(AppUtils.isEmpty ("YtПусто"));
     }
 }

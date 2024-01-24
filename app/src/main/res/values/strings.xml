@@ -41,4 +41,6 @@
     <string name="QR_invalid">QR код не распознан!</string>
     <string name="wrong_division_order">Это коробка другого подразделения</string>
     <string name="set_outdocs_number_start_date">Установить дату начала нумерации</string>
+    <string name="add_outdocs_for_all_sotr">Создать накладные для всех сотрудников бригады</string>
+    <string name="add_outdocs_for_all_deps">Создать накладные для всех бригад</string>
 </resources>

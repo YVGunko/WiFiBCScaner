@@ -35,6 +35,11 @@ public class Sotr {
         this.Id_o = Id_o;
     }
 
+    public Sotr(int _id, String _Sotr) {
+        this._id = _id;
+        this._Sotr = _Sotr;
+    }
+
     public int get_Id_o() {
         return Id_o;
     }

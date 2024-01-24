@@ -335,6 +335,58 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
         }
 
     }
+    private boolean addOutDocForAllDeps (){
+        AlertDialog.Builder adb = new AlertDialog.Builder(OutDocsActivity.this);
+        adb.setTitle("Создать накладные...");
+        adb.setMessage("Хотите добавить накладные для всех бригад " +mDBHelper.defs.descOper);
+        adb.setNegativeButton("Нет", null);
+        adb.setPositiveButton("Да", new AlertDialog.OnClickListener() {
+            @RequiresApi(api = Build.VERSION_CODES.O)
+            public void onClick(DialogInterface dialog, int which) {
+                int nextOutDocNumber = mDBHelper.getNextOutDocNumber();
+                if (nextOutDocNumber == 0) {
+                    Log.e(TAG, "mDBHelper.getNextOutDocNumber() returned 0");
+                    MessageUtils.showToast(getApplicationContext(), "Ошибка нумерации. Накладные не будут созданы!", true);
+                    return ;
+                }
+
+                if (!mDBHelper.createOutDocsForCurrentOper(nextOutDocNumber)) {
+                    Log.e(TAG, "mDBHelper.createOutDocsForCurrentOper(nextOutDocNumber) returned 0");
+                    MessageUtils.showToast(getApplicationContext(), "Ошибка при создании документов. Накладные не будут созданы!", true);
+                    return ;
+                };
+                getSupportLoaderManager().getLoader(0).forceLoad();
+            }
+        });
+        adb.show();
+        return true;
+    }
+    private boolean addOutDocForAllSotr (){
+        AlertDialog.Builder adb = new AlertDialog.Builder(OutDocsActivity.this);
+        adb.setTitle("Создать накладные...");
+        adb.setMessage("Хотите добавить накладные для всех сотрудников бригады " +mDBHelper.defs.descDep);
+        adb.setNegativeButton("Нет", null);
+        adb.setPositiveButton("Да", new AlertDialog.OnClickListener() {
+            @RequiresApi(api = Build.VERSION_CODES.O)
+            public void onClick(DialogInterface dialog, int which) {
+                int nextOutDocNumber = mDBHelper.getNextOutDocNumber();
+                if (nextOutDocNumber == 0) {
+                    Log.e(TAG, "mDBHelper.getNextOutDocNumber() returned 0");
+                    MessageUtils.showToast(getApplicationContext(), "Ошибка нумерации. Накладные не будут созданы!", true);
+                    return ;
+                }
+
+                if (!mDBHelper.createOutDocsForCurrentDep(nextOutDocNumber)) {
+                    Log.e(TAG, "mDBHelper.createOutDocsForCurrentDep(nextOutDocNumber) returned 0");
+                    MessageUtils.showToast(getApplicationContext(), "Ошибка при создании документов. Накладные не будут созданы!", true);
+                    return ;
+                };
+                getSupportLoaderManager().getLoader(0).forceLoad();
+            }
+        });
+        adb.show();
+        return true;
+    }
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // получим идентификатор выбранного пункта меню
@@ -345,6 +397,10 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
                 SyncIncoData task = new SyncIncoData();
                 task.execute(new String[] { null });
                 return true;
+            case R.id.add_outdocs_for_all_sotr:
+                return addOutDocForAllSotr ();
+            case R.id.add_outdocs_for_all_deps:
+                return addOutDocForAllDeps();
             default:
                 return super.onOptionsItemSelected(item);
         }

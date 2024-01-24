@@ -2,9 +2,21 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="com.example.yg.wifibcscaner.activity.OutDocsActivity">
+    <group android:id="@+id/api" >
     <item
         android:id="@+id/action_out_docs"
         android:orderInCategory="100"
         android:title="@string/action_out_docs"
         app:showAsAction="never" />
+    </group>
+    <group android:id="@+id/outdoc" >
+    <item
+        android:id="@+id/add_outdocs_for_all_sotr"
+        android:orderInCategory="101"
+        android:title="@string/add_outdocs_for_all_sotr" />
+    <item
+        android:id="@+id/add_outdocs_for_all_deps"
+        android:orderInCategory="102"
+        android:title="@string/add_outdocs_for_all_deps" />
+    </group>
 </menu>

@@ -1803,7 +1803,20 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         mDataBase.close();
         return nm;
     }
-
+    public List<Sotr> getSotrIdByDep(String division_code, int operation_id, int department_id) {
+        ArrayList<Sotr> sotrArrayList = new ArrayList<Sotr>();
+        mDataBase = this.getReadableDatabase();
+        try ( Cursor cursor = mDataBase.rawQuery("SELECT _id, Sotr FROM Sotr " +
+                        "Where division_code=? and Id_o=? and Id_d=? Order by _id",
+                new String [] {String.valueOf(division_code), String.valueOf(operation_id), String.valueOf(department_id)}) ) {
+            while (cursor.moveToNext()) {
+                sotrArrayList.add(new Sotr(cursor.getInt(0), cursor.getString(1)) );
+            }
+            tryCloseCursor(cursor);
+        }
+        mDataBase.close();
+        return sotrArrayList;
+    }
     public List<String> getAllnameSotr(String code, int department_id, int operation_id) {
         ArrayList<String> nameDeps = new ArrayList<String>();
         mDataBase = this.getReadableDatabase();
@@ -2602,10 +2615,32 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
         return createOutDocsForCurrentOperInBulk(listOutDocs);
     }
+    public boolean createOutDocsForCurrentDep(int nextOutDocNumber) {
+        //for current Div and Oper and Dep select all Sotr.
+        List<OutDocs> listOutDocs = new ArrayList<>();
+        int sotrId;
+        final String dateToSet = getDayTimeString(new Date());
+
+        for (Sotr sotr : getSotrIdByDep(defs.getDivision_code(), defs.get_Id_o(), defs.get_Id_d())){
+            if (sotr.get_id() != 0) {
+                listOutDocs.add(prepareOutDoc(nextOutDocNumber, defs.get_Id_d(), defs.descDep, sotr.get_id(), sotr.get_Sotr(), dateToSet));
+                nextOutDocNumber++;
+            }
+        }
+
+        return createOutDocsForCurrentOperInBulk(listOutDocs);
+    }
     private OutDocs prepareOutDoc (final int outDocNumber, final int depId, final int sotrId, final String dateToSet){
         final String depName = (depId != 0) ? getDeps_Name_by_id(depId) : "";
         String sotrName = (sotrId != 0) ? getSotr_Name_by_id(sotrId) : "";
         if (StringUtils.isNotEmpty(sotrName)) sotrName = sotrName.substring(0, sotrName.indexOf(" "));
+        OutDocs outDoc = new OutDocs(getUUID(), defs.get_Id_o(), outDocNumber,
+                ((StringUtils.isNotEmpty(depName) ? depName : "") + (StringUtils.isNotEmpty(sotrName) ? ", "+sotrName : "")),
+                dateToSet, defs.getDivision_code(), defs.get_idUser(),
+                sotrId, depId);
+        return outDoc;
+    }
+    private OutDocs prepareOutDoc (final int outDocNumber, final int depId, final String depName, final int sotrId, final String sotrName, final String dateToSet){
         OutDocs outDoc = new OutDocs(getUUID(), defs.get_Id_o(), outDocNumber,
                 ((StringUtils.isNotEmpty(depName) ? depName : "") + (StringUtils.isNotEmpty(sotrName) ? ", "+sotrName : "")),
                 dateToSet, defs.getDivision_code(), defs.get_idUser(),
