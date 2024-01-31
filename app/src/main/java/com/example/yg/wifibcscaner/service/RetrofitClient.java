@@ -25,8 +25,8 @@ public class RetrofitClient {
                     .create();
             OkHttpClient okHttpClient = new OkHttpClient().newBuilder()
                 .connectTimeout(90, TimeUnit.SECONDS)
-                .readTimeout(120, TimeUnit.SECONDS)
-                .writeTimeout(120, TimeUnit.SECONDS)
+                .readTimeout(180, TimeUnit.SECONDS)
+                .writeTimeout(240, TimeUnit.SECONDS)
                 .build();
             retrofit = new Retrofit.Builder()
                     .client(okHttpClient)
