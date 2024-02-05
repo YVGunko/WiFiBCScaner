@@ -603,21 +603,21 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             } else dbWasOpen = true;
 
             mDataBase = this.getReadableDatabase();
-            cursor = mDataBase.rawQuery("SELECT _id, number, comment, DT, Id_o, division_code, idUser" +
+            //OutDocs(String _id, int _Id_o, int _number, String _comment, String _DT, String division_code, int idUser, int idSotr, int idDeps)
+            cursor = mDataBase.rawQuery("SELECT _id, Id_o, number, comment, DT, division_code, idUser, idSotr, idDeps" +
                     " FROM OutDocs where ((" + COLUMN_sentToMasterDate + " IS NULL) OR (" + COLUMN_sentToMasterDate + " = ''))", null);
-
-            if ((cursor != null) & (cursor.getCount() != 0)) {
-                cursor.moveToFirst();
-
-                //Пробегаем по всем коробкам
-                while (!cursor.isAfterLast()) {
-                    OutDocs readBoxMove = new OutDocs(cursor.getString(0), cursor.getInt(4), cursor.getInt(1), cursor.getString(2),
-                            lDateToString(cursor.getLong(3)), null, cursor.getString(5), cursor.getInt(6));
-                    //Закидываем в список
-                    readBoxMoves.add(readBoxMove);
-                    //Переходим к следующеq
-                    cursor.moveToNext();
-                }
+            while (cursor.moveToNext()) {
+                OutDocs readBoxMove = new OutDocs(cursor.getString(0),
+                        cursor.getInt(1),
+                        cursor.getInt(2),
+                        cursor.getString(3),
+                        lDateToString(cursor.getLong(4)),
+                        cursor.getString(5),
+                        cursor.getInt(6),
+                        cursor.getInt(7),
+                        cursor.getInt(8));
+                //Закидываем в список
+                readBoxMoves.add(readBoxMove);
             }
         }finally {
             tryCloseCursor(cursor);
@@ -625,17 +625,12 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             return readBoxMoves;
         }
     }
-/*
-*             return mDataBase.rawQuery("SELECT o.number, o.comment, count(bm.Id_b) as numbox, sum(p.RQ_box) as quantitybox " +
-                    " FROM Prods p, BoxMoves bm, OutDocs o where bm.Id_o="+String.valueOf(defs.get_Id_o())+" and bm._id=p.Id_bm and p.idOutDocs=o._id"+
-                    " GROUP BY o.number, o.comment\n" +
-                    " ORDER BY o.number desc", null);
-* */
+
     //list all boxes
     public ArrayList<HashMap<String, Integer>> listboxes() {
         ArrayList<HashMap<String, Integer>> readBoxes = new ArrayList<HashMap<String, Integer>>();
         mDataBase = this.getReadableDatabase();
-        Cursor cursor = null;
+        Cursor cursor;
         if (!AppUtils.isDepAndSotrOper(defs.get_Id_o()))
             cursor = mDataBase.rawQuery("SELECT MasterData.Ord, MasterData.Cust, MasterData.Nomen, MasterData.Attrib, MasterData.Q_ord, " +
                     "Boxes.Q_box, Boxes.N_box, Prods.RQ_box, Deps.Name_Deps, s.Sotr, MasterData.Ord_id, Boxes._id, bm._id, Prods._id" +

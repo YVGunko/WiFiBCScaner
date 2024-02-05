@@ -120,76 +120,73 @@ public class BoxesActivity extends AppCompatActivity {
             case R.id.action_sendboxes:
 //ТУт отправляем коробки на сервер
                 try {
-//                    ArrayList<OutDocs> odList = mDBHelper.getOutDocNotSent();
-//                    for (int i=0; i < odList.size(); i = i + 1) {
-                        ApiUtils.getOrderService(mDBHelper.defs.getUrl()).
-                                addOutDoc(mDBHelper.getOutDocNotSent(),mDBHelper.defs.getDeviceId()).enqueue(new Callback<List<OutDocs>>() {
+                    ApiUtils.getOrderService(mDBHelper.defs.getUrl()).
+                            addOutDoc(mDBHelper.getOutDocNotSent(),mDBHelper.defs.getDeviceId()).enqueue(new Callback<List<OutDocs>>() {
 
-                            // TODO Обработать результат. Записать поле sent... если успешно
-                            @Override
-                            public void onResponse(Call<List<OutDocs>> call, Response<List<OutDocs>> response) {
-                                MessageUtils messageUtils = new MessageUtils();
-                                //Log.d("getOrderService","Ответ сервера на запрос синхронизации коробок: " + response.body());
-                                if(response.isSuccessful()) {
-                                    for(OutDocs boxes : response.body())
-                                        mDBHelper.updateOutDocsetSentToMasterDate(boxes);
+                        // TODO Обработать результат. Записать поле sent... если успешно
+                        @Override
+                        public void onResponse(Call<List<OutDocs>> call, Response<List<OutDocs>> response) {
+                            MessageUtils messageUtils = new MessageUtils();
+                            if(response.isSuccessful()) {
+                                for(OutDocs boxes : response.body())
+                                    mDBHelper.updateOutDocsetSentToMasterDate(boxes);
 
-                                    if (response.body().size()!=0) {
-                                        messageUtils.showMessage(getApplicationContext(), "Ок! Накладные выгружены!");
-                                    }
-                                    //Запросить синхронизацию коробок и из частей
-                                }else {
-                                    messageUtils.showLongMessage(getApplicationContext(), "Ошибка при выгрузке накладных!");
+                                if (response.body().size()!=0) {
+                                    messageUtils.showMessage(getApplicationContext(), "Ок! Накладные выгружены!");
                                 }
-                            }
-                            @Override
-                            public void onFailure(Call<List<OutDocs>> call, Throwable t) {
-                                MessageUtils messageUtils = new MessageUtils();
-                                messageUtils.showLongMessage(getApplicationContext(), t.getMessage() + ". Ошибка при выгрузке накладных!");
-                                Log.d("getOrderService", "OutDocs Error: " + t.getMessage());
-                            }
-                        });
-//                    }
+                                try {
+                                    ArrayList<Boxes> boxesList = mDBHelper.getBoxes();
+                                    ArrayList<BoxMoves> boxMovesList = mDBHelper.getBoxMoves();
+                                    ArrayList<Prods> prodsList = mDBHelper.getProds();
+                                    ApiUtils.getBoxesService(mDBHelper.defs.getUrl()).addBoxes(new PartBoxRequest(boxesList, boxMovesList, prodsList),
+                                            mDBHelper.defs.get_idUser(),mDBHelper.defs.getDeviceId()).enqueue(new Callback<PartBoxRequest>() {
+                                        // TODO Обработать результат. Записать поле sent... если успешно
+                                        @Override
+                                        public void onResponse(Call<PartBoxRequest> call, Response<PartBoxRequest> response) {
+                                            MessageUtils messageUtils = new MessageUtils();
+                                            //Log.d("getBoxesService", "PartBoxRequest : " + response.body());
+                                            if (response.isSuccessful()) {
+                                                for (Boxes boxReq : response.body().boxReqList)
+                                                    if (!mDBHelper.updateBoxesSentDate(boxReq))
+                                                        Log.d("getBoxesService", "Ошибка при записи даты в Box.");
+                                                for (BoxMoves pmReq : response.body().movesReqList) {
+                                                    if (!mDBHelper.updateBoxMovesSentDate(pmReq))
+                                                        Log.d("getBoxesService", "Ошибка при записи даты в BoxMoves.");
+                                                    if (pmReq.get_Id_o() == mDBHelper.defs.get_idOperLast())
+                                                        if (!mDBHelper.updateBoxesSetArchiveTrue(pmReq.get_Id_b()))
+                                                            Log.d("getBoxesService", "Ошибка при установке признака архива Box.");
+                                                }
+                                                for (Prods pReq : response.body().partBoxReqList)
+                                                    if (!mDBHelper.updateProdsSentDate(pReq))
+                                                        Log.d("getBoxesService", "Ошибка при записи даты в Prods.");
 
-                    ArrayList<Boxes> boxesList = mDBHelper.getBoxes();
-                    ArrayList<BoxMoves> boxMovesList = mDBHelper.getBoxMoves();
-                    ArrayList<Prods> prodsList = mDBHelper.getProds();
+                                                messageUtils.showMessage(getApplicationContext(), "Ок! Данные успешно выгружены на сервер!");
+                                            } else {
+                                                messageUtils.showLongMessage(getApplicationContext(), "Ошибка при выгрузке данных на сервер!!");
+                                            }
+                                        }
 
-                        ApiUtils.getBoxesService(mDBHelper.defs.getUrl()).addBoxes(new PartBoxRequest(boxesList, boxMovesList, prodsList),
-                                mDBHelper.defs.get_idUser(),mDBHelper.defs.getDeviceId()).enqueue(new Callback<PartBoxRequest>() {
-                            // TODO Обработать результат. Записать поле sent... если успешно
-                            @Override
-                            public void onResponse(Call<PartBoxRequest> call, Response<PartBoxRequest> response) {
-                                MessageUtils messageUtils = new MessageUtils();
-                                //Log.d("getBoxesService", "PartBoxRequest : " + response.body());
-                                if (response.isSuccessful()) {
-                                    for (Boxes boxReq : response.body().boxReqList)
-                                        if (!mDBHelper.updateBoxesSentDate(boxReq))
-                                            Log.d("getBoxesService", "Ошибка при записи даты в Box.");
-                                    for (BoxMoves pmReq : response.body().movesReqList) {
-                                        if (!mDBHelper.updateBoxMovesSentDate(pmReq))
-                                            Log.d("getBoxesService", "Ошибка при записи даты в BoxMoves.");
-                                        if (pmReq.get_Id_o() == mDBHelper.defs.get_idOperLast())
-                                            if (!mDBHelper.updateBoxesSetArchiveTrue(pmReq.get_Id_b()))
-                                                Log.d("getBoxesService", "Ошибка при установке признака архива Box.");
-                                    }
-                                    for (Prods pReq : response.body().partBoxReqList)
-                                        if (!mDBHelper.updateProdsSentDate(pReq))
-                                            Log.d("getBoxesService", "Ошибка при записи даты в Prods.");
-
-                                    messageUtils.showMessage(getApplicationContext(), "Ок! Данные успешно выгружены на сервер!");
-                                } else {
-                                    messageUtils.showLongMessage(getApplicationContext(), "Ошибка при выгрузке данных на сервер!!");
+                                        @Override
+                                        public void onFailure(Call<PartBoxRequest> call, Throwable t) {
+                                            Log.d("getBoxesService error :", t.getMessage());
+                                            MessageUtils messageUtils = new MessageUtils();
+                                            messageUtils.showMessage(getApplicationContext(),  "Ошибка. ТаймАут.");
+                                        }
+                                    });
+                                }catch (Exception e) {
+                                    messageUtils.showMessage(getApplicationContext(), "Ошибка при выгрузке коробок.");
                                 }
+                            }else {
+                                messageUtils.showLongMessage(getApplicationContext(), "Ошибка при выгрузке накладных!");
                             }
-
-                            @Override
-                            public void onFailure(Call<PartBoxRequest> call, Throwable t) {
-                                Log.d("getBoxesService error :", t.getMessage());
-                                MessageUtils messageUtils = new MessageUtils();
-                                messageUtils.showMessage(getApplicationContext(),  "Ошибка. ТаймАут.");
-                            }
-                        });
+                        }
+                        @Override
+                        public void onFailure(Call<List<OutDocs>> call, Throwable t) {
+                            MessageUtils messageUtils = new MessageUtils();
+                            messageUtils.showLongMessage(getApplicationContext(), t.getMessage() + ". Ошибка при выгрузке накладных!");
+                            Log.d("getOrderService", "OutDocs Error: " + t.getMessage());
+                        }
+                    });
                 }catch (Exception e) {
                     MessageUtils messageUtils = new MessageUtils();
                     messageUtils.showMessage(getApplicationContext(), "Отправлено неудачно.");

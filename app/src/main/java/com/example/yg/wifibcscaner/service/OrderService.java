@@ -31,10 +31,6 @@ public interface OrderService {
     Call<List<Orders>> getOrders(@Query("date") String date, @Query("userId") int userId, @Query("deviceId") String deviceId);
     @GET("/boxesByDate")
     Call<List<Boxes>> getBoxesByDate(@Query("date") String date, @Query("userId") int userId, @Query("deviceId") String deviceId);
-    @GET("/bmByDateAndArchive")
-    Call<List<BoxMoves>> getBoxMovesByDate(@Query("date") String date, @Query("userId") int userId, @Query("deviceId") String deviceId);
-    @GET("/pbByDateAndArchive")
-    Call<List<Prods>> getPartBoxByDate(@Query("date") String date, @Query("userId") int userId, @Query("deviceId") String deviceId);
 
     @GET("/bmByDatePageble")
     Call<List<BoxMoves>> getBoxMovesByDatePageble(@Query("date") String date, @Query("userId") int userId, @Query("deviceId") String deviceId, @Query("page") int page);
@@ -44,21 +40,6 @@ public interface OrderService {
     Call<List<Prods>> getPartBoxByDatePageble(@Query("date") String date, @Query("userId") int userId, @Query("deviceId") String deviceId, @Query("page") int page);
     @GET("/pbByDatePagebleCount")
     Call<Integer> getPartBoxByDatePagebleCount(@Query("date") String date);
-
-    @GET("/orderUser")
-    Call<List<Orders>> getOrdersUser(@Query("date") String date, @Query("userId") int userId);
-    @GET("/boxesByDateUser")
-    Call<List<Boxes>> getBoxesByDateUser(@Query("date") String date, @Query("userId") int userId);
-    @GET("/bmByDateUser")
-    Call<List<BoxMoves>> getBoxMovesByDateUser(@Query("date") String date, @Query("userId") int userId);
-    @GET("/pbByDateUser")
-    Call<List<Prods>> getPartBoxByDateUser(@Query("date") String date, @Query("userId") int userId);
-
-    @POST("/orders")
-    Call<List<Orders>> getAllOrders(@Body ArrayList<String> ordersId);
-
-    @POST("/archiveOrders")
-    Call<List<String>> getArchiveOrders(@Body ArrayList<String> ordersId);
 
     @GET("/division")
     Call<List<Division>> getDivision();
@@ -75,11 +56,8 @@ public interface OrderService {
     @GET("/operation")
     Call<List<Operation>> getOperation(@Query("date") String date);
 
-    @POST("/outDocSaveOrUpdate")
+    @POST("/outDocSaveOrUpdate/v3")
     Call<List<OutDocs>> addOutDoc(@Body ArrayList<OutDocs> outDocs, @Query("deviceId") String deviceId);
-
-    @POST("/outDocPost")
-    Call<List<OutDocs>> getOutDocPost(@Body ArrayList<String> odId);
 
     @GET("/outDocGet")
     Call<List<OutDocs>> getOutDocGet(@Query("date") String date);
