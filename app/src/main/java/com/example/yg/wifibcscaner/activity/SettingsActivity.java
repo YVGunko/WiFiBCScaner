@@ -520,14 +520,14 @@ matcher.matches();*/
             MessageUtils.showToast(getApplicationContext(),"Выберите бригаду. Настройки не будут сохранены!", true);
             return;
         } else {
-            idd = mDBHelper.defs.get_Id_d();
+            mDBHelper.defs.set_Id_d(idd);
         }
 
         if (isDepAndSotrOper(mDBHelper.defs.get_Id_o()) & ids<=0) {
             MessageUtils.showToast(getApplicationContext(),"Выберите сотрудника. Настройки не будут сохранены!", true);
             return;
         } else {
-            ids = mDBHelper.defs.get_Id_s();
+            mDBHelper.defs.set_Id_s(ids);
         }
 
         String ip = host_v.getText().toString();
