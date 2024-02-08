@@ -39,6 +39,8 @@ import com.example.yg.wifibcscaner.data.user;
 import com.example.yg.wifibcscaner.utils.AppUtils;
 import com.example.yg.wifibcscaner.utils.DateTimeUtils;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -263,8 +265,23 @@ public class SettingsActivity extends AppCompatActivity implements
         checkConnection();
     }
 
+    /* TODO
+    *
+    * String regex = "^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}$";
+Pattern pattern = Pattern.compile(regex);
+Matcher matcher = pattern.matcher(ip);
+matcher.matches();*/
+    private String getUrlUserEntered() {
+        if (StringUtils.isNotBlank (host_v.getText().toString()) & StringUtils.isNumeric(mDBHelper.defs.get_Port())) {
+            mDBHelper.defs.set_Host_IP(host_v.getText().toString());
+            return "http://" + host_v.getText().toString() + ":" + mDBHelper.defs.get_Port();
+        } else {
+            return "";
+        }
+    }
+
     public void checkConnection() {
-            String url = mDBHelper.defs.getUrl();
+            String url =  (StringUtils.isNotBlank(getUrlUserEntered())) ? getUrlUserEntered() : mDBHelper.defs.getUrl(); //host_v.getText().toString();
             boxesService = ApiUtils.getBoxesService(url);
             boxesService.checkConnection().enqueue(new Callback<Object>() {
 
@@ -470,14 +487,16 @@ public class SettingsActivity extends AppCompatActivity implements
     }
     public void ocl_bSave(View v) {
         if (AppUtils.isEmpty(division_code)) {
-            MessageUtils.showToast(getApplicationContext(),"Выберите подразделение.", true);
+            MessageUtils.showToast(getApplicationContext(),"Выберите подразделение. Настройки не будут сохранены!", true);
             return;
         }
         if (ido <= 0) {
-            MessageUtils.showToast(getApplicationContext(),"Выберите операцию.", true);
+            MessageUtils.showToast(getApplicationContext(),"Выберите операцию. Настройки не будут сохранены!", true);
             return;
         }
         if (ido != mDBHelper.defs.get_Id_o()) {
+            mDBHelper.defs.set_Id_o(ido);
+
             if (mDBHelper.currentOutDoc == null) {
                 mDBHelper.currentOutDoc = new OutDocs("", 0,0, "", "01.01.2018 00:00:00",
                         mDBHelper.defs.getDivision_code(), mDBHelper.defs.get_idUser(),
@@ -497,20 +516,23 @@ public class SettingsActivity extends AppCompatActivity implements
             }
         }
 
-        if (!AppUtils.isNotEmpty(division_code)) {
-            division_code="0";
-            idd = 0; ids = 0; ido = 0;
-        }else{
-            if (ido==0) ido = mDBHelper.defs.get_Id_o();
-            if (ido==-1) idd = 0;
-            if (idd==0) idd = mDBHelper.defs.get_Id_d();
-            if (idd==-1) idd = 0;
-            if (ids==0) ids = mDBHelper.defs.get_Id_s();
-            if (ids==-1) ids = 0;
+        if (isDepAndSotrOper(mDBHelper.defs.get_Id_o()) & idd<=0) {
+            MessageUtils.showToast(getApplicationContext(),"Выберите бригаду. Настройки не будут сохранены!", true);
+            return;
+        } else {
+            idd = mDBHelper.defs.get_Id_d();
         }
+
+        if (isDepAndSotrOper(mDBHelper.defs.get_Id_o()) & ids<=0) {
+            MessageUtils.showToast(getApplicationContext(),"Выберите сотрудника. Настройки не будут сохранены!", true);
+            return;
+        } else {
+            ids = mDBHelper.defs.get_Id_s();
+        }
+
         String ip = host_v.getText().toString();
 
-        Defs defs = new Defs(idd, ido, ids, ip, "4242",division_code,mDBHelper.defs.getDeviceId());
+        Defs defs = new Defs(idd, ido, ids, ip, "4242", division_code, mDBHelper.defs.getDeviceId());
         if (mDBHelper.updateDefsTable(defs) != 0) {
             MessageUtils.showToast(getApplicationContext(),"Сохранено.", false);
         } else {
@@ -619,6 +641,10 @@ public class SettingsActivity extends AppCompatActivity implements
         @Override
         protected void onPostExecute(String result) {
             super.onPostExecute(result);
+            loadSpinnerDivisionData();
+            loadOpers_spinnerData();
+            loadSpinnerData();
+            loadSpinnerSotrData();
         }
 
         @Override
