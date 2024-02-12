@@ -10,3 +10,4 @@
 .externalNativeBuild
 /DataCollection/build/
 /app/proguard-rules.pro
+/app/release/
