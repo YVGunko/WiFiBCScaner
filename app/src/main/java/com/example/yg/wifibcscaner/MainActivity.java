@@ -2,25 +2,18 @@ package com.example.yg.wifibcscaner;
 
 
 import android.app.Activity;
-import android.app.PendingIntent;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
-import android.hardware.usb.UsbDevice;
-import android.hardware.usb.UsbManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.annotation.RequiresApi;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.text.Editable;
 import android.text.Html;
 import android.text.TextUtils;
-import android.text.TextWatcher;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -51,12 +44,8 @@ import com.honeywell.aidc.ScannerUnavailableException;
 
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.HashMap;
-import java.util.Iterator;
-
 import me.drakeet.support.toast.ToastCompat;
 
-import static android.text.TextUtils.substring;
 import static com.example.yg.wifibcscaner.utils.AppUtils.isDepAndSotrOper;
 import static com.example.yg.wifibcscaner.utils.AppUtils.isOneOfFirstOper;
 import static com.example.yg.wifibcscaner.utils.AppUtils.isOneScanOnlyOper;
@@ -64,99 +53,21 @@ import static com.example.yg.wifibcscaner.utils.AppUtils.isOutDocOnlyOper;
 
 
 public class MainActivity extends AppCompatActivity implements BarcodeReader.BarcodeListener {
+    private static MainActivity mInstance;
     private static final String TAG = "MainActivity";
     private static BarcodeReader barcodeReader;
 
-private AidcManager manager;
-UsbManager mUsbManager = null;
-UsbDevice mdevice;
-IntentFilter filterAttached_and_Detached = null;
-
-    //
-    private static final String ACTION_USB_PERMISSION = "com.example.yg.wifibcscaner.USB_PERMISSION";
-    private int sId_o = 1;
-    private int sId_d = 1;
+    private AidcManager manager;
     private DataBaseHelper mDBHelper;
 
     TextView tVDBInfo, currentDocDetails, currentUser;
-    EditText editTextRQ, barCodeInput;
-    Button bScan;
+    EditText editTextRQ;
     DataBaseHelper.foundbox fb;
     DataBaseHelper.foundorder fo;
 
-    //
-    private final BroadcastReceiver barcodeDataReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) {
-                synchronized (this) {
-                    mdevice = (UsbDevice)intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
-
-                    if(mdevice != null){
-                        //
-                        Log.d("1","USB устройство отключено-" + mdevice);
-                        showMessage("USB устройство отключено");
-                    }
-                }
-            }
-            //
-            if (UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action)) {
-                synchronized (this) {
-                    mdevice = (UsbDevice)intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
-                    if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
-
-                        if(mdevice != null){
-                            //
-
-                            Log.d("1","USB устройство подключено-" + mdevice);
-                            showMessage("USB устройство подключено");
-                        }
-                    }
-                    else {
-                        PendingIntent mPermissionIntent;
-                        mPermissionIntent = PendingIntent.getBroadcast(MainActivity.this, 0, new Intent(ACTION_USB_PERMISSION), PendingIntent.FLAG_ONE_SHOT);
-                        mUsbManager.requestPermission(mdevice, mPermissionIntent);
-
-                    }
-
-                }
-            }
-//
-            if (ACTION_USB_PERMISSION.equals(action)) {
-                synchronized (this) {
-                    mdevice = (UsbDevice)intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
-                    if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
-
-                        if(mdevice != null){
-                            //
-                            Log.d("1","USB устройство разрешено-" + mdevice);
-                            showMessage("USB устройство разрешено");
-                        }
-                    }
-
-                }
-            }
-
-        }
-    };
-    private boolean extScanerDetect(){
-        HashMap<String, UsbDevice> deviceList = mUsbManager.getDeviceList();
-        Log.d("1", deviceList.size()+" USB device(s) found.");
-        if (deviceList.size()==0) {
-            showMessage("USB устройство не подключено.");
-            return false;
-        }else {
-            Iterator<UsbDevice> deviceIterator = deviceList.values().iterator();
-            while(deviceIterator.hasNext()) {
-                mdevice = deviceIterator.next();
-                Log.d("1", "" + mdevice);
-                showMessage("USB устройство подключено.");
-            }
-            return true;
-        }
+    public static synchronized MainActivity getInstance() {
+        return mInstance;
     }
-
     private String getDeviceUniqueID(Activity activity){
         String device_unique_id = Settings.Secure.getString(activity.getContentResolver(),
                 Settings.Secure.ANDROID_ID);
@@ -165,6 +76,7 @@ IntentFilter filterAttached_and_Detached = null;
     @Override
     public void onCreate(Bundle state) {
         super.onCreate(state);
+        mInstance = this;
 
         if (!checkFirstRun()) mDBHelper = DataBaseHelper.getInstance(this);
 
@@ -176,17 +88,6 @@ IntentFilter filterAttached_and_Detached = null;
         //tVDBInfo.setText(mDBHelper.lastBox());
         editTextRQ = (EditText) findViewById(R.id.editTextRQ);
         editTextRQ.setEnabled(false);
-        //registerReceiver
-        mUsbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
-
-        //
-        filterAttached_and_Detached = new IntentFilter(UsbManager.ACTION_USB_ACCESSORY_DETACHED);
-        filterAttached_and_Detached.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
-        filterAttached_and_Detached.addAction(ACTION_USB_PERMISSION);
-        //
-        registerReceiver(barcodeDataReceiver, filterAttached_and_Detached);
-        //scaner detect
-        extScanerDetect();
 
         AidcManager.create(this, new AidcManager.CreatedCallback() {
             @Override
@@ -221,9 +122,6 @@ IntentFilter filterAttached_and_Detached = null;
             savedDbNeedReplace = SharedPrefs.getInstance(getApplicationContext()).getDbNeedReplace();
             savedVersionCode = SharedPrefs.getInstance(getApplicationContext()).getCodeVersion();
         }
-        //SharedPreferences prefs = getSharedPreferences(SharedPrefs.PREFS_NAME, MODE_PRIVATE);
-        //int savedVersionCode = prefs.getInt(SharedPrefs.PREF_VERSION_CODE_KEY, SharedPrefs.DOESNT_EXIST);
-        //boolean savedDbNeedReplace = prefs.getBoolean(SharedPrefs.PREF_DB_NEED_REPLACE, SharedPrefs.DOESNT_EXIST==-1);
 
         // Check for first run or upgrade
         if (!savedDbNeedReplace & currentVersionCode == savedVersionCode) {
@@ -236,8 +134,7 @@ IntentFilter filterAttached_and_Detached = null;
                 SharedPrefs.getInstance(getApplicationContext()).setDbNeedReplace(!savedDbNeedReplace);
                 SharedPrefs.getInstance(getApplicationContext()).setCodeVersion(currentVersionCode);
             }
-            //prefs.edit().putInt(SharedPrefs.PREF_VERSION_CODE_KEY, currentVersionCode).apply();
-            //prefs.edit().putBoolean(SharedPrefs.PREF_DB_NEED_REPLACE, !savedDbNeedReplace).apply();
+
             return true;
         }
     }
@@ -331,37 +228,9 @@ IntentFilter filterAttached_and_Detached = null;
         final     EditText            input = (EditText) findViewById(R.id.barCodeInput);
         if (editTextRQ.isEnabled()){
             ocl_bOk(v);
-        }else {
-        if (mdevice != null){//внешний usb сканер
-            showMessage("Режим работы с внешним сканером.");
-            input.setEnabled(true);
-            input.requestFocus();
-            //input.setInputType(InputType.TYPE_NULL);
-            input.addTextChangedListener(new TextWatcher() {
-                @Override
-                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-                    // nothing
-                }
-                @Override
-                public void onTextChanged(CharSequence s, int start, int before, int count) {
-                    String currentbarcode = input.getText().toString();
-                    if( currentbarcode.indexOf("\n") > 0) {
-                        currentbarcode = substring(currentbarcode,0,currentbarcode.indexOf("\n"));
-                        showMessage(currentbarcode);
-                        scanResultHandler(currentbarcode);
-                        input.setText("");
-                        input.requestFocus();
-                    }
-                }
-                @Override
-                public void afterTextChanged(Editable s) {
-                    // nothing
-                }
-            });
         }else {//камера устройства
             input.setEnabled(false);
             if(barcodeReader!=null){
-                //showMessage("Режим работы со встроенным сканером.");
                 try {
                     barcodeReader.softwareTrigger(true);
                 } catch (ScannerNotClaimedException e) {
@@ -373,11 +242,9 @@ IntentFilter filterAttached_and_Detached = null;
                 }
             }
             else{
-                showMessage("Режим работы с камерой.");
                 IntentIntegrator integrator = new IntentIntegrator(this);
                 integrator.initiateScan();
             }
-        }
         }
     }
     @Override
@@ -567,10 +434,6 @@ private static String filter (String str){
                     mDBHelper.lastBoxCheck(fo);
                 }
             }
-            if (mdevice != null){//внешний usb сканер
-                final     EditText            input = (EditText) findViewById(R.id.barCodeInput);
-                input.requestFocus();
-            }
         } catch (Exception e) {
             Log.e(TAG, mDBHelper.defs.descOper+". Ошибка при получении количества в коробке!", e);
             showMessage(mDBHelper.defs.descOper+". Ошибка! Невозможно получить введенное количество!");
@@ -665,7 +528,6 @@ private static String filter (String str){
     protected void onDestroy() {
         // TODO Auto-generated method stub
         super.onDestroy();
-        unregisterReceiver(barcodeDataReceiver);
 
         if (barcodeReader != null) {
             // close BarcodeReader to clean up resources.

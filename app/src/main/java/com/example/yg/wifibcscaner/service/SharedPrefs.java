@@ -5,14 +5,21 @@ import android.content.SharedPreferences;
 import android.os.Build;
 import android.preference.PreferenceManager;
 import android.support.annotation.RequiresApi;
+import android.util.Log;
 
 import com.example.yg.wifibcscaner.utils.DateTimeUtils;
 
 import java.util.Date;
 
 import static android.content.Context.MODE_PRIVATE;
+import static com.example.yg.wifibcscaner.utils.DateTimeUtils.addDays;
+import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDayTimeString;
+import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getStartOfDayLong;
+import static com.example.yg.wifibcscaner.utils.DateTimeUtils.numberOfDaysInMonth;
 
 public class SharedPrefs {
+    private static final String TAG = "SharedPreferenceMan";
+
     final static String PREFS_NAME = "WiFiBCScanerPrefsFile";
     final static String PREF_VERSION_CODE_KEY = "version_code";
     final static String PREF_DB_NEED_REPLACE = "db_need_replace";
@@ -20,12 +27,19 @@ public class SharedPrefs {
     final static String FIRST_OPER_TWO = "first_oper_2";
     final static String OUTDOCS_DAYS = "outDocsDays";
     final static String OUTDOCS_NUMERATION_START_DATE = "outDocsNumStartDate";
+    final static String LAST_SCANNED_ORDER_DESCRIPTION = "last_scanned_order_description";
+    final static String LAST_SCANNED_BOX_DESCRIPTION = "last_scanned_box_description";
+    private final String NEXT_DOWNLOAD_ATTEMPT_TIME = "download_timeout";
+    private final String NEXT_PAGE_TO_LOAD = "next_page_number";
+    private final String UPDATE_DATE = "update_date";
+    final static int TIME_SHIFT = 300000;
     final static int DOESNT_EXIST = -1;
 
     private SharedPreferences sharedPref;
     private Context appContext;
 
     private static SharedPrefs instance;
+    SharedPreferences.Editor editor;
 
     public static synchronized SharedPrefs getInstance(Context applicationContext){
         if(instance == null)
@@ -38,34 +52,8 @@ public class SharedPrefs {
         sharedPref = appContext.getSharedPreferences(
                 "WiFiBCScanerPrefsFile", Context.MODE_PRIVATE );
     }
-/*/
-    public void writeData(float value) {
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putFloat(appContext.getString(R.string.key_data), value);
-        editor.apply();
-    }
-
-    public float readData() {
-        return sharedPref.getFloat(appContext.getString(R.string.key_data), 0);
-    }
-*/
-    public static void setDefaults(String key, String value, Context context) {
-        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putString(key, value);
-        editor.apply(); // or editor.commit() in case you want to write data instantly
-    }
-    public static void setDefaults(String key, boolean value, Context context) {
-        SharedPreferences preferences = context.getApplicationContext().getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-
-        preferences.edit().putBoolean(key, value).apply(); // or editor.commit() in case you want to write data instantly
-    }
-    public static boolean getDefaults(String key, Context context) {
-        SharedPreferences preferences = context.getApplicationContext().getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        return preferences.getBoolean(key, false);
-    }
     public void setDbNeedReplace(boolean value) {
-        SharedPreferences.Editor editor = sharedPref.edit();
+        editor = sharedPref.edit();
         editor.putBoolean(PREF_DB_NEED_REPLACE, value);
         editor.apply();
     }
@@ -73,7 +61,7 @@ public class SharedPrefs {
         return sharedPref.getBoolean(PREF_DB_NEED_REPLACE, false);
     }
     public void setCodeVersion(int value) {
-        SharedPreferences.Editor editor = sharedPref.edit();
+        editor = sharedPref.edit();
         editor.putInt(PREF_VERSION_CODE_KEY, value);
         editor.apply();
     }
@@ -81,7 +69,7 @@ public class SharedPrefs {
         return sharedPref.getInt(PREF_VERSION_CODE_KEY, DOESNT_EXIST);
     }
     public void setOutDocsDays(int value) {
-        SharedPreferences.Editor editor = sharedPref.edit();
+        editor = sharedPref.edit();
         editor.putInt(OUTDOCS_DAYS, value);
         editor.apply();
     }
@@ -89,7 +77,7 @@ public class SharedPrefs {
         return sharedPref.getInt(OUTDOCS_DAYS, 1);
     }
     public void setOutdocsNumerationStartDate(long value) {
-        SharedPreferences.Editor editor = sharedPref.edit();
+        editor = sharedPref.edit();
         editor.putLong(OUTDOCS_NUMERATION_START_DATE, value);
         editor.apply();
     }
@@ -100,5 +88,36 @@ public class SharedPrefs {
     public long getOutdocsNumerationStartDate() {
         long result = sharedPref.getLong(OUTDOCS_NUMERATION_START_DATE, DateTimeUtils.getFirstDayOfYear());
         return ( result > DateTimeUtils.getFirstDayOfYear() & result <= new Date().getTime() ) ? result : DateTimeUtils.getFirstDayOfYear();
+    }
+    /* data load */
+    public void setNextPageToLoadToZero() {
+        editor = sharedPref.edit();
+        editor.putInt(NEXT_PAGE_TO_LOAD, 0);
+        editor.commit();
+    }
+    public int getCurrentPageToLoad() {
+        return sharedPref.getInt(NEXT_PAGE_TO_LOAD, 0);
+    }
+    public void setNextPageToLoadAsInc() {
+        editor = sharedPref.edit();
+        editor.putInt(NEXT_PAGE_TO_LOAD, getCurrentPageToLoad()+1);
+        editor.commit();
+    }
+    public String getUpdateDateString() {
+        return
+                getDayTimeString(
+                        sharedPref.getLong(UPDATE_DATE, getStartOfDayLong(addDays(new Date(), -numberOfDaysInMonth(new Date()))))
+                );
+    }
+    public void setUpdateDateNow() {
+        editor = sharedPref.edit();
+        editor.putLong(UPDATE_DATE, new Date().getTime() - TIME_SHIFT);
+        editor.commit();
+    }
+    public void setLastUpdatedTimestamp() {
+        editor = sharedPref.edit();
+        editor.putLong(NEXT_DOWNLOAD_ATTEMPT_TIME, System.currentTimeMillis());
+        Log.d(TAG, " setLastUpdatedTimestamp -> "+DateTimeUtils.getFormattedDateTime(System.currentTimeMillis()));
+        editor.commit();
     }
 }

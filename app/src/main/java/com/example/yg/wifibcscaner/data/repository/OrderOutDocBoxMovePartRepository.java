@@ -1,5 +1,6 @@
 package com.example.yg.wifibcscaner.data.repository;
 
+import android.content.Context;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
@@ -8,23 +9,25 @@ import com.example.yg.wifibcscaner.DataBaseHelper;
 import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.data.dto.OrderOutDocBoxMovePart;
 import com.example.yg.wifibcscaner.service.ApiUtils;
+import com.example.yg.wifibcscaner.service.SharedPrefs;
+import com.example.yg.wifibcscaner.utils.SharedPreferenceManager;
 import com.example.yg.wifibcscaner.utils.executors.DefaultExecutorSupplier;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-import static android.content.ContentValues.TAG;
-
 public class OrderOutDocBoxMovePartRepository {
+    public Context mContext;
+    private static final String TAG = "orderAndStuffRepo";
     public void downloadData() {
         DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
             try {
-                Log.d(TAG, "downloadData -> update date: " + SharedPreferenceManager.getInstance().getUpdateDateString());
+                Log.d(TAG, "downloadData -> update date: " + SharedPrefs.getInstance(this).getUpdateDateString());
                 Log.d(TAG, "downloadData -> current page to load: " + SharedPreferenceManager.getInstance().getCurrentPageToLoad());
 
                 DataBaseHelper mDbHelper = AppController.getInstance().getDbHelper();
-                SharedPreferenceManager.getInstance().setNextPageToLoadToZero();
+                SharedPrefs.getInstance(getApplicationContext()).setNextPageToLoadToZero();
                 String updateDate = SharedPreferenceManager.getInstance().getUpdateDateString();
                 ApiUtils.getOrderService(mDbHelper.defs.getUrl()).getDataPageableV1(
                         updateDate,
