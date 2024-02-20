@@ -8,6 +8,7 @@ public class Sotr {
     private String division_code;
     private int Id_o;
     private int Id_d;
+    private boolean expired;
 
     public static final String COLUMN_Id_d = "Id_d";
     public static final String COLUMN_Id_o = "Id_o";
@@ -17,8 +18,9 @@ public class Sotr {
     public static final String COLUMN_tn_Sotr = "tn_Sotr";
     public static final String COLUMN_DT = "DT";
     public static final String COLUMN_Division_code = "division_code";
+    public static final String COLUMN_EXPIRED = "expired";
 
-    public Sotr(int _id, String _tn_Sotr, String _Sotr, String _DT, String division_code, int Id_d, int Id_o) {
+    public Sotr(int _id, String _tn_Sotr, String _Sotr, String _DT, String division_code, int Id_d, int Id_o, boolean expired) {
         this._id = _id;
         this._tn_Sotr = _tn_Sotr;
         this._Sotr = _Sotr;
@@ -26,6 +28,7 @@ public class Sotr {
         this.division_code = division_code;
         this.Id_d = Id_d;
         this.Id_o = Id_o;
+        this.expired = expired;
     }
 
     public Sotr(int _id, String division_code, int Id_d, int Id_o) {
@@ -94,5 +97,13 @@ public class Sotr {
 
     public void set_DT(String _DT) {
         this._DT = _DT;
+    }
+
+    public boolean isExpired() {
+        return expired;
+    }
+
+    public void setExpired(boolean expired) {
+        this.expired = expired;
     }
 }

@@ -79,9 +79,6 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     private static final String d0Pattern = "dd.MM.yyyy 00:00:00";
     private static final String y0Pattern = "01.01.yyyy 00:00:00";
     private static final String dayPattern = "dd.MM.yyyy";
-    private static final int MIN_ORDER_BOX_NUMBER_TO_FIND_LOST_BOXES = 20;
-    private static final int MIN_BOX_NUMBER_TO_FIND_LOST_BOXES = 5;
-    private static final int MIN_PERCENT_TO_FIND_LOST_BOXES = 5;
 
     public static final String COLUMN_sentToMasterDate = "sentToMasterDate";
     public long serverUpdateTime;
@@ -357,7 +354,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 db.endTransaction();
                 db.execSQL("PRAGMA foreign_keys = 1;");
             }
-        if ((newVersion>oldVersion)&(newVersion == 24))
+        if ((newVersion>oldVersion)&(oldVersion < 25))
             try {
                 Log.d(TAG, "Версия бд 24. Начало реструктуризации.");
                 db.execSQL("PRAGMA foreign_keys = 0;");
@@ -381,6 +378,35 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 Log.d(TAG, "Версия бд 24. Окончание реструктуризации.");
             }
             finally {
+                db.endTransaction();
+                db.execSQL("PRAGMA foreign_keys = 1;");
+            }
+        if ((newVersion>oldVersion)&(newVersion == 25))
+            try {
+                Log.d(TAG, "Версия бд 25. Начало реструктуризации.");
+                db.execSQL("PRAGMA foreign_keys = 0;");
+                db.beginTransaction();
+
+                db.execSQL("CREATE TABLE sqlitestudio_temp_table AS SELECT * FROM Sotr;");
+                db.execSQL("DROP TABLE IF EXISTS Sotr;");
+                db.execSQL("CREATE TABLE Sotr (_id INTEGER PRIMARY KEY UNIQUE,"+
+                        "tn_Sotr TEXT,"+
+                        "sotr TEXT," +
+                        "DT INTEGER," +
+                        "Id_o INTEGER REFERENCES Opers (_id) DEFAULT (0),"+
+                        "Id_d INTEGER REFERENCES Deps (_id) DEFAULT (0),"+
+                        "division_code VARCHAR (255) REFERENCES Division (code) DEFAULT (0),"+
+                        "expired BOOLEAN DEFAULT 0);");
+                db.execSQL("INSERT INTO Sotr (_id,tn_Sotr,sotr,DT,Id_o,Id_d,division_code,expired)"+
+                        "SELECT _id,tn_Sotr,sotr,DT,Id_o,Id_d,division_code,0 FROM sqlitestudio_temp_table;");
+
+                db.execSQL("DROP TABLE sqlitestudio_temp_table;");
+
+                db.setTransactionSuccessful();
+                Log.d(TAG, "Версия бд 25. Окончание реструктуризации.");
+            } catch (Exception e) {
+                Log.e (TAG, e.getMessage());
+            } finally {
                 db.endTransaction();
                 db.execSQL("PRAGMA foreign_keys = 1;");
             }
@@ -994,7 +1020,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 l = mDataBase.insertWithOnConflict(com.example.yg.wifibcscaner.data.user.TABLE, null, values, 5);
                 return l;
             } catch (SQLException e) {
-                // TODO: handle exception
+                Log.e(TAG, e.getMessage());
                 return 0;
             }
         }finally {
@@ -1015,11 +1041,12 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 values.put(Sotr.COLUMN_Division_code, sotr.getDivision_code());
                 values.put(Sotr.COLUMN_Id_d, sotr.get_Id_d());
                 values.put(Sotr.COLUMN_Id_o, sotr.get_Id_o());
-                //l = mDataBase.insertOrThrow(sotr.TABLE, null, values);
+                values.put(Sotr.COLUMN_EXPIRED, sotr.isExpired());
+
                 l = mDataBase.insertWithOnConflict(Sotr.TABLE, null, values, 5);
                 return l;
             } catch (SQLException e) {
-                // TODO: handle exception
+                Log.e(TAG, e.getMessage());
                 return 0;
             }
         }finally {
@@ -1445,11 +1472,11 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                         product += "Накл " + cursor.getString(10) + " от " + cursor.getString(11);
                     }
                 } catch (CursorIndexOutOfBoundsException e) {
-                    Log.e(TAG, "lastBox CursorIndexOutOfBoundsException -> ", e);
+                    Log.e(TAG, "lastBox CursorIndexOutOfBoundsException -> ".concat(e.getMessage()));
                     return product;
                 }
             } catch (SQLException e) {
-                Log.e(TAG, "lastBox SQLException rawQuery -> ", e);
+                Log.e(TAG, "lastBox SQLException rawQuery -> ".concat(e.getMessage()));
                 return product;
             }
         }
@@ -1816,27 +1843,17 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         mDataBase.close();
         return sotrArrayList;
     }
-    public List<String> getAllnameSotr(String code, int department_id, int operation_id) {
+    public List<String> getAllSotrName(String code, int department_id, int operation_id) {
         ArrayList<String> nameDeps = new ArrayList<String>();
         mDataBase = this.getReadableDatabase();
-        Cursor cursor = mDataBase.rawQuery("SELECT _id,tn_Sotr,Sotr FROM Sotr " +
-                //"Where ((division_code=?) and (Id_o=?) and (Id_d=?)) Order by _id",
-                "Where ((division_code=?) and (Id_o=?) and (Id_d=?))or(_id=0) Order by _id",
-                new String [] {String.valueOf(code), String.valueOf(operation_id), String.valueOf(department_id)});
-        if ((cursor != null) & (cursor.getCount() != 0)) {
-            cursor.moveToFirst();
-            //Закидываем в список строку с позицией 0
-            String readDep ;//= new String;("Выберите сотрудника");
-            //nameDeps.add(readDep);
-            while (!cursor.isAfterLast()) {
-                readDep = String.format("%s %s", cursor.getString(2), cursor.getString(1));
-                //Закидываем в список
-                nameDeps.add(readDep);
-                //Переходим к следующеq
-                cursor.moveToNext();
+        try ( Cursor cursor = mDataBase.rawQuery("SELECT _id,tn_Sotr,Sotr FROM Sotr " +
+                "Where NOT expired and (((division_code=?) and (Id_o=?) and (Id_d=?))) or (_id=0) Order by _id",
+                new String [] {String.valueOf(code), String.valueOf(operation_id), String.valueOf(department_id)}) ) {
+            while (cursor.moveToNext()) {
+                nameDeps.add(String.format("%s, %s", cursor.getString(2), cursor.getString(1)));
             }
+            tryCloseCursor(cursor);
         }
-        tryCloseCursor(cursor);
         mDataBase.close();
         return nameDeps;
     }
@@ -1863,7 +1880,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     public int getSotr_id_by_Name(String nm){
         mDataBase = this.getReadableDatabase();
         int num = 0;
-        if( nm.indexOf(" ") > 0) {
+        if( nm.indexOf(", ") > 0) {
             nm = substring(nm, nm.indexOf("0"), nm.length());
             Cursor cursor = mDataBase.rawQuery("SELECT _id FROM Sotr Where tn_Sotr='" + nm + "'", null);
             if ((cursor != null) & (cursor.getCount() != 0)) {

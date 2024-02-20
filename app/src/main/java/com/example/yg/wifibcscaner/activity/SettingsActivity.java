@@ -272,7 +272,7 @@ Pattern pattern = Pattern.compile(regex);
 Matcher matcher = pattern.matcher(ip);
 matcher.matches();*/
     private String getUrlUserEntered() {
-        if (StringUtils.isNotBlank (host_v.getText().toString()) & StringUtils.isNumeric(mDBHelper.defs.get_Port())) {
+        if (StringUtils.isNotBlank (StringUtils.trim(host_v.getText().toString())) & StringUtils.isNumeric(mDBHelper.defs.get_Port())) {
             mDBHelper.defs.set_Host_IP(host_v.getText().toString());
             return "http://" + host_v.getText().toString() + ":" + mDBHelper.defs.get_Port();
         } else {
@@ -281,8 +281,11 @@ matcher.matches();*/
     }
 
     public void checkConnection() {
-            String url =  (StringUtils.isNotBlank(getUrlUserEntered())) ? getUrlUserEntered() : mDBHelper.defs.getUrl(); //host_v.getText().toString();
+        String url =  (StringUtils.isNotBlank(getUrlUserEntered())) ? getUrlUserEntered() : mDBHelper.defs.getUrl(); //host_v.getText().toString();
+
+        try {
             boxesService = ApiUtils.getBoxesService(url);
+
             boxesService.checkConnection().enqueue(new Callback<Object>() {
 
                 @Override
@@ -300,6 +303,9 @@ matcher.matches();*/
                     host_v.requestFocus();
                 }
             });
+        } catch (Exception e) {
+            MessageUtils.showToast(getApplicationContext(),"Введенный URL недоступен! Введите верный!", false);
+        }
     }
 
     private void loadSpinnerDivisionData() {
@@ -354,7 +360,7 @@ matcher.matches();*/
 
         List<String> lables = (AppUtils.isEmpty(division_code) || ido<=0 || idd<=0)
                 ? new ArrayList<>()
-                    : mDBHelper.getAllnameSotr(division_code, idd, ido);
+                    : mDBHelper.getAllSotrName(division_code, idd, ido);
 
         ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
                 android.R.layout.simple_spinner_item, lables);
