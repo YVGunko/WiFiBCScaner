@@ -5,15 +5,6 @@ package com.example.yg.wifibcscaner.service;
  */
 
 
-import java.util.ArrayList;
-import java.util.List;
-
-import retrofit2.Call;
-import retrofit2.http.Body;
-import retrofit2.http.GET;
-import retrofit2.http.POST;
-import retrofit2.http.Query;
-
 import com.example.yg.wifibcscaner.data.BoxMoves;
 import com.example.yg.wifibcscaner.data.Boxes;
 import com.example.yg.wifibcscaner.data.Deps;
@@ -23,9 +14,29 @@ import com.example.yg.wifibcscaner.data.Orders;
 import com.example.yg.wifibcscaner.data.OutDocs;
 import com.example.yg.wifibcscaner.data.Prods;
 import com.example.yg.wifibcscaner.data.Sotr;
+import com.example.yg.wifibcscaner.data.dto.OrderOutDocBoxMovePart;
 import com.example.yg.wifibcscaner.data.user;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.http.Body;
+import retrofit2.http.GET;
+import retrofit2.http.POST;
+import retrofit2.http.Query;
+
 public interface OrderService {
+
+    @GET("/dataPageable/v1")
+    Call<List<OrderOutDocBoxMovePart>> getDataPageableV1(@Query("date") String date,
+                                               @Query("division_code") String division_code,
+                                               @Query("operationId") long operationId,
+                                               @Query("page") int pageNumber,
+                                               @Query("pageSize") int pageSize);
+
+    @POST("/partBox")
+    Call<PartBoxRequest> addBoxes(@Body PartBoxRequest partBoxRequest, @Query("userId") int userId, @Query("deviceId") String deviceId);
 
     @GET("/order")
     Call<List<Orders>> getOrders(@Query("date") String date, @Query("userId") int userId, @Query("deviceId") String deviceId);

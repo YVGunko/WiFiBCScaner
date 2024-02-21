@@ -23,6 +23,7 @@ import com.example.yg.wifibcscaner.data.Prods;
 import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.data.Sotr;
 import com.example.yg.wifibcscaner.data.Operation;
+import com.example.yg.wifibcscaner.data.dto.OrderOutDocBoxMovePart;
 import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.data.user;
@@ -246,10 +247,12 @@ public class UpdateActivity extends AppCompatActivity {
                     strUpdateDate = mDBHelper.getMaxOrderDate();
                 }
                 //выбрать максимальную дату загрузки заказа из MasterData. Запросить все заказы старше этой даты но только за месяц.
-                ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getOrders(strUpdateDate, mDBHelper.defs.get_idUser(), mDBHelper.defs.getDeviceId()).enqueue(new Callback<List<Orders>>() {
+                ApiUtils.getOrderService(mDBHelper.defs.getUrl())
+                        .getDataPageableV1(strUpdateDate, mDBHelper.defs.getDivision_code(), ((long) mDBHelper.defs.get_Id_o()))
+                        .enqueue(new Callback<List<OrderOutDocBoxMovePart>>() {
                     // TODO Обработать результат. Записать поле sent... если успешно
                     @Override
-                    public void onResponse(Call<List<Orders>> call, Response<List<Orders>> response) {
+                    public void onResponse(Call<List<OrderOutDocBoxMovePart>> call, Response<List<OrderOutDocBoxMovePart>> response) {
                         Log.d(TAG, "Ответ сервера на запрос новых заказов: " + response.body().size());
                         if (response.isSuccessful() && !response.body().isEmpty()) {
                             mDBHelper.insertOrdersInBulk(response.body());
@@ -267,7 +270,7 @@ public class UpdateActivity extends AppCompatActivity {
                     }
 
                     @Override
-                    public void onFailure(Call<List<Orders>> call, Throwable t) {
+                    public void onFailure(Call<List<OrderOutDocBoxMovePart>> call, Throwable t) {
                         Log.d(TAG, "Ответ сервера на запрос новых заказов: " + t.getMessage());
                         publishProgress(-1);
                     }

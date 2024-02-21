@@ -138,7 +138,7 @@ public class BoxesActivity extends AppCompatActivity {
                                     ArrayList<Boxes> boxesList = mDBHelper.getBoxes();
                                     ArrayList<BoxMoves> boxMovesList = mDBHelper.getBoxMoves();
                                     ArrayList<Prods> prodsList = mDBHelper.getProds();
-                                    ApiUtils.getBoxesService(mDBHelper.defs.getUrl()).addBoxes(new PartBoxRequest(boxesList, boxMovesList, prodsList),
+                                    ApiUtils.getOrderService(mDBHelper.defs.getUrl()).addBoxes(new PartBoxRequest(boxesList, boxMovesList, prodsList),
                                             mDBHelper.defs.get_idUser(),mDBHelper.defs.getDeviceId()).enqueue(new Callback<PartBoxRequest>() {
                                         // TODO Обработать результат. Записать поле sent... если успешно
                                         @Override

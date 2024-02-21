@@ -18,15 +18,6 @@ public class Orders {
     private int _N_box;
     private String _DT;
     private Boolean archive;
-
-    public String getDivision_code() {
-        return division_code;
-    }
-
-    public void setDivision_code(String division_code) {
-        this.division_code = division_code;
-    }
-
     private String division_code;
 
     public static final String TABLE_orders = "MasterData";
@@ -43,29 +34,12 @@ public class Orders {
     public static final String COLUMN_Division_code = "division_code";
     public static final String COLUMN_Archive = "archive";
 
- /*   public Orders(int _id,String _Ord_Id,String _Ord,String _Cust,String _Nomen,String _Attrib, int _Q_ord, int _Q_box, int _N_box, String _DT, String division_code) {
-        this._id = _id;
-        this._Ord_Id = _Ord_Id;
-        this._Ord = _Ord;
-        this._Cust = _Cust;
-        this._Nomen = _Nomen;
-        this._Attrib = _Attrib;
-        this._Q_ord = _Q_ord;
-        this._Q_box = _Q_box;
-        this._N_box = _N_box;
-        this._DT = _DT;
-        this.division_code = division_code;
-    }*/
-
-    public Boolean getArchive() {
-        return archive;
-    }
-
-    public void setArchive(Boolean archive) {
-        this.archive = archive;
+    public Orders() {
+        super();
     }
 
     public Orders(int _id, String _Ord_Id, String _Ord, String _Cust, String _Nomen, String _Attrib, int _Q_ord, int _Q_box, int _N_box, String _DT, String division_code, Boolean archive) {
+        super();
         this._id = _id;
         this._Ord_Id = _Ord_Id;
         this._Ord = _Ord;
@@ -159,4 +133,21 @@ public class Orders {
     public void set_DT(String _DT) {
         this._DT = _DT;
     }
+
+    public Boolean getArchive() {
+        return archive;
+    }
+
+    public void setArchive(Boolean archive) {
+        this.archive = archive;
+    }
+
+    public String getDivision_code() {
+        return division_code;
+    }
+
+    public void setDivision_code(String division_code) {
+        this.division_code = division_code;
+    }
+
 }

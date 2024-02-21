@@ -43,4 +43,5 @@
     <string name="set_outdocs_number_start_date">Установить дату начала нумерации</string>
     <string name="add_outdocs_for_all_sotr">Создать накладные для всех сотрудников бригады</string>
     <string name="add_outdocs_for_all_deps">Создать накладные для всех бригад</string>
+    <string name="error_something_went_wrong">Что-то пошло не так</string>
 </resources>

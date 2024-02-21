@@ -29,12 +29,12 @@ import com.example.yg.wifibcscaner.data.Deps;
 import com.example.yg.wifibcscaner.data.Division;
 import com.example.yg.wifibcscaner.data.OutDocs;
 import com.example.yg.wifibcscaner.R;
+import com.example.yg.wifibcscaner.service.OrderService;
 import com.example.yg.wifibcscaner.service.SharedPrefs;
 import com.example.yg.wifibcscaner.data.Sotr;
 import com.example.yg.wifibcscaner.data.Operation;
 import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
-import com.example.yg.wifibcscaner.service.PartBoxService;
 import com.example.yg.wifibcscaner.data.user;
 import com.example.yg.wifibcscaner.utils.AppUtils;
 import com.example.yg.wifibcscaner.utils.DateTimeUtils;
@@ -55,7 +55,7 @@ public class SettingsActivity extends AppCompatActivity implements
         AdapterView.OnItemSelectedListener {
 
     private static final String TAG = "SettingsActivity";
-    private PartBoxService boxesService;
+    private OrderService boxesService;
     EditText host_v;
     TextView select_label, opers_select_label, labelSotr, labelDivision2;
     private DataBaseHelper mDBHelper;
@@ -109,7 +109,7 @@ public class SettingsActivity extends AppCompatActivity implements
         mDBHelper.selectDefsTable();
         try {
             String url = mDBHelper.defs.getUrl();
-            boxesService = ApiUtils.getBoxesService(url);
+            boxesService = ApiUtils.getOrderService(url);
             host_v.setText(mDBHelper.defs.get_Host_IP());
             ocl_check(findViewById(R.id.check));
         }
@@ -284,7 +284,7 @@ matcher.matches();*/
         String url =  (StringUtils.isNotBlank(getUrlUserEntered())) ? getUrlUserEntered() : mDBHelper.defs.getUrl(); //host_v.getText().toString();
 
         try {
-            boxesService = ApiUtils.getBoxesService(url);
+            boxesService = ApiUtils.getOrderService(url);
 
             boxesService.checkConnection().enqueue(new Callback<Object>() {
 
