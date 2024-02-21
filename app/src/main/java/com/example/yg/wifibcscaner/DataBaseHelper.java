@@ -2593,7 +2593,13 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     public int outDocsAddRec () {
-        if (defs.get_Id_o() <= 0 || defs.get_Id_d() <= 0 || defs.get_Id_s() <= 0) return 0;
+        if (isDepAndSotrOper(defs.get_Id_o())) {
+            if (defs.get_Id_o() <= 0 || defs.get_Id_d() <= 0 || defs.get_Id_s() <= 0)
+                return 0;
+        } else {
+            if (defs.get_Id_o() <= 0)
+                return 0;
+        }
 
         final int nextOutDocNumber = getNextOutDocNumber();
         if (nextOutDocNumber == 0) return 0;
@@ -2634,7 +2640,6 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     public boolean createOutDocsForCurrentDep(int nextOutDocNumber) {
         //for current Div and Oper and Dep select all Sotr.
         List<OutDocs> listOutDocs = new ArrayList<>();
-        int sotrId;
         final String dateToSet = getDayTimeString(new Date());
 
         for (Sotr sotr : getSotrIdByDep(defs.getDivision_code(), defs.get_Id_o(), defs.get_Id_d())){
@@ -2647,11 +2652,15 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         return createOutDocsForCurrentOperInBulk(listOutDocs);
     }
     private OutDocs prepareOutDoc (final int outDocNumber, final int depId, final int sotrId, final String dateToSet){
-        final String depName = (depId != 0) ? getDeps_Name_by_id(depId) : "";
         String sotrName = (sotrId != 0) ? getSotr_Name_by_id(sotrId) : "";
         if (StringUtils.isNotEmpty(sotrName)) sotrName = sotrName.substring(0, sotrName.indexOf(" "));
+
+        String description = (depId == 0 & sotrId == 0)
+                ? defs.descOper.concat(", ").concat(defs.descUser)
+                    : (getDeps_Name_by_id(depId).concat(", ").concat(sotrName));
+
         OutDocs outDoc = new OutDocs(getUUID(), defs.get_Id_o(), outDocNumber,
-                ((StringUtils.isNotEmpty(depName) ? depName : "") + (StringUtils.isNotEmpty(sotrName) ? ", "+sotrName : "")),
+                description,
                 dateToSet, defs.getDivision_code(), defs.get_idUser(),
                 sotrId, depId);
         return outDoc;
