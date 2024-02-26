@@ -29,7 +29,7 @@ import retrofit2.http.Query;
 public interface OrderService {
 
     @GET("/dataPageable/v1")
-    Call<List<OrderOutDocBoxMovePart>> getDataPageableV1(@Query("date") String date,
+    Call<OrderOutDocBoxMovePart> getDataPageableV1(@Query("date") String date,
                                                @Query("division_code") String division_code,
                                                @Query("operationId") long operationId,
                                                @Query("page") int pageNumber,

@@ -11,6 +11,7 @@ import android.widget.TextView;
 
 import com.example.yg.wifibcscaner.DataBaseHelper;
 import com.example.yg.wifibcscaner.R;
+import com.example.yg.wifibcscaner.controller.AppController;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,7 +19,7 @@ import java.util.HashMap;
 
 public class OrdersActivity extends AppCompatActivity {
     //Переменная для работы с БД
-    private DataBaseHelper mDBHelper;
+
     private class SyncIncoData extends AsyncTask<Void, Integer, ArrayList<HashMap<String, String>>> {
         TextView pbar;
         Integer counter;
@@ -28,7 +29,7 @@ public class OrdersActivity extends AppCompatActivity {
         protected ArrayList<HashMap<String, String>> doInBackground(Void... urls) {
             counter = 0;
             try {
-                readOrders = mDBHelper.listorders();
+                readOrders = AppController.getInstance().getDbHelper().listorders();
             } catch (Exception e) {
                 Log.d("OrdersActivity","OrdersActivity.mDBHelper.listorders(): " + e.getMessage());
             }
@@ -64,8 +65,6 @@ public class OrdersActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_orders);
-        mDBHelper = DataBaseHelper.getInstance(this);
-//Создаем адаптер        browseOrders();
         SyncIncoData task = new SyncIncoData();
         task.execute();
     }
@@ -73,7 +72,7 @@ public class OrdersActivity extends AppCompatActivity {
     private void browseOrders() {
         String[] from = {"Ord", "Cust"};
         int[] to = {R.id.textView, R.id.textView2};
-        SimpleAdapter adapter = new SimpleAdapter(this, mDBHelper.listorders(), R.layout.adapter_item, from, to);
+        SimpleAdapter adapter = new SimpleAdapter(this, AppController.getInstance().getDbHelper().listorders(), R.layout.adapter_item, from, to);
         ListView listView = (ListView) findViewById(R.id.listView);
         listView.setAdapter(adapter);
     }

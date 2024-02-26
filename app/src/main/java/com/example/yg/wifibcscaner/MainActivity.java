@@ -37,6 +37,7 @@ import com.example.yg.wifibcscaner.activity.OutDocsActivity;
 import com.example.yg.wifibcscaner.activity.ProdsActivity;
 import com.example.yg.wifibcscaner.activity.SettingsActivity;
 import com.example.yg.wifibcscaner.activity.UpdateActivity;
+import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.service.SharedPrefs;
 import com.example.yg.wifibcscaner.utils.AppUtils;
@@ -166,7 +167,9 @@ IntentFilter filterAttached_and_Detached = null;
     public void onCreate(Bundle state) {
         super.onCreate(state);
 
-        if (!checkFirstRun()) mDBHelper = DataBaseHelper.getInstance(this);
+        AppController.getInstance().getDbHelper().openDataBase();
+        mDBHelper = AppController.getInstance().getDbHelper();
+        //if (!checkFirstRun()) mDBHelper = DataBaseHelper.getInstance(this);
 
         setContentView(R.layout.activity_main);
         setRequestedOrientation (ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
@@ -217,9 +220,9 @@ IntentFilter filterAttached_and_Detached = null;
         // Get saved version code
         boolean savedDbNeedReplace = false;
         int savedVersionCode = 0;
-        if (SharedPrefs.getInstance(getApplicationContext()) != null) {
-            savedDbNeedReplace = SharedPrefs.getInstance(getApplicationContext()).getDbNeedReplace();
-            savedVersionCode = SharedPrefs.getInstance(getApplicationContext()).getCodeVersion();
+        if (SharedPrefs.getInstance() != null) {
+            savedDbNeedReplace = SharedPrefs.getInstance().getDbNeedReplace();
+            savedVersionCode = SharedPrefs.getInstance().getCodeVersion();
         }
         //SharedPreferences prefs = getSharedPreferences(SharedPrefs.PREFS_NAME, MODE_PRIVATE);
         //int savedVersionCode = prefs.getInt(SharedPrefs.PREF_VERSION_CODE_KEY, SharedPrefs.DOESNT_EXIST);
