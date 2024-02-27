@@ -1277,182 +1277,172 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     }
     public int getUserIdByName(String nm) {
         Cursor cursor = null;
-        boolean dbWasOpen = false;
-        int num = 0;
         try {
-            if (!mDataBase.isOpen()) {
-                mDataBase = this.getReadableDatabase();
-            } else dbWasOpen = true;
-
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             cursor = mDataBase.rawQuery("SELECT _id FROM user Where name='" + nm + "'", null);
-            if ((cursor != null) & (cursor.getCount() != 0)) {
-                cursor.moveToFirst();
-                num = cursor.getInt(0);
+            if (cursor != null && cursor.moveToFirst()) {
+                return cursor.getInt(0);
             }
+            return 0;
+        }catch (Exception e) {
+            Log.e(TAG, "getUserIdByName -> ".concat(e.getMessage()));
+            return 0;
         } finally {
             tryCloseCursor(cursor);
-            if (!dbWasOpen) mDataBase.close();
-            return num;
         }
     }
     public Boolean checkUserPswdById(int id, String pswd){
         Cursor cursor = null;
-        boolean ret = false;
-        boolean dbWasOpen = false;
         try {
-            if(!mDataBase.isOpen()) {
-                mDataBase = this.getReadableDatabase();
-            } else dbWasOpen = true;
-
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             cursor = mDataBase.rawQuery("SELECT _id FROM user Where _id=? and pswd=?",
                     new String [] {String.valueOf(id), String.valueOf(pswd)});
-            if ((cursor != null) & (cursor.getCount() != 0)) {
-                cursor.moveToFirst();
-                ret = cursor.getInt(0)!=0;
+            if ((cursor != null) && cursor.moveToFirst()) {
+                return cursor.getInt(0) != 0;
             }
+            return false;
+        }catch (Exception e) {
+            Log.e(TAG, "checkUserPswdById -> ".concat(e.getMessage()));
+            return false;
         } finally {
             tryCloseCursor(cursor);
-            if (!dbWasOpen) mDataBase.close();
-            return ret;
         }
     }
     public boolean checkSuperUser (int _id) {
         Cursor cursor = null;
-        boolean ret = false;
-        boolean dbWasOpen = false;
         try {
-            if(!mDataBase.isOpen()) {
-                mDataBase = this.getReadableDatabase();
-            } else dbWasOpen = true;
-
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             cursor = mDataBase.rawQuery("SELECT superUser FROM user Where _id=?",
                     new String [] {String.valueOf(_id)});
-            if ((cursor != null) & (cursor.getCount() != 0)) {
-                cursor.moveToFirst();
-                ret = cursor.getInt(0)!=0;
+            if (cursor != null && cursor.moveToFirst()) {
+                return cursor.getInt(0) != 0;
             }
+            return false;
+        }catch (Exception e) {
+            Log.e(TAG, "checkSuperUser -> ".concat(e.getMessage()));
+            return false;
         } finally {
             tryCloseCursor(cursor);
-            if (!dbWasOpen) mDataBase.close();
-            return ret;
         }
     }
     public boolean checkIfUserTableEmpty () {
         Cursor cursor = null;
-        boolean ret = false;
-        boolean dbWasOpen = false;
         try {
-            if(!mDataBase.isOpen()) {
-                mDataBase = this.getReadableDatabase();
-            } else dbWasOpen = true;
-
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             cursor = mDataBase.rawQuery("SELECT count(*) FROM user Where _id<>0",
                     null);
-            if ((cursor != null) & (cursor.getCount() != 0)) {
-                cursor.moveToFirst();
-                ret = cursor.getInt(0)==0;
+            if (cursor != null && cursor.moveToFirst()) {
+                return cursor.getInt(0)==0;
             }
+            return false;
+        }catch (Exception e) {
+            Log.e(TAG, "checkIfUserTableEmpty -> ".concat(e.getMessage()));
+            return false;
         } finally {
             tryCloseCursor(cursor);
-            if (!dbWasOpen) mDataBase.close();
-            return ret;
         }
     }
-    public String getDivisionsNameByCode(String code){
-        mDataBase = this.getReadableDatabase();
-        String nm = "";
-        Cursor cursor = mDataBase.rawQuery("SELECT name FROM Division Where code=?", new String [] {String.valueOf(code)});
-        if ((cursor != null) & (cursor.getCount() != 0)) {
-            cursor.moveToFirst();
-            nm = cursor.getString(0);
+    public String getDivisionNameByCode(String code){
+        Cursor cursor = null;
+        try {
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
+            cursor = mDataBase.rawQuery("SELECT name FROM Division Where code=?", new String [] {String.valueOf(code)});
+            if (cursor != null && cursor.moveToFirst()) {
+                return cursor.getString(0);
+            }
+            return "";
+        }catch (Exception e) {
+            Log.e(TAG, "getDivisionNameByCode -> ".concat(e.getMessage()));
+            return "";
+        } finally {
+            tryCloseCursor(cursor);
         }
-        cursor.close();
-        mDataBase.close();
-        return nm;
     }
     public String getDivisionsCodeByName(String name){
-        mDataBase = this.getReadableDatabase();
-        String code = "";
-        Cursor cursor = mDataBase.rawQuery("SELECT code FROM Division Where name=?", new String [] {String.valueOf(name)});
-        if ((cursor != null) & (cursor.getCount() != 0)) {
-            cursor.moveToFirst();
-            code = cursor.getString(0);
+        Cursor cursor = null;
+        try {
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
+            cursor = mDataBase.rawQuery("SELECT code FROM Division Where name=?", new String [] {String.valueOf(name)});
+            if (cursor != null && cursor.moveToFirst()) {
+                return cursor.getString(0);
+            }
+            return "";
+        }catch (Exception e) {
+            Log.e(TAG, "getDivisionNameByCode -> ".concat(e.getMessage()));
+            return "";
+        } finally {
+            tryCloseCursor(cursor);
         }
-        cursor.close();
-        mDataBase.close();
-        return code;
     }
     public List<String> getAllnameDeps(String code, int iD) {
         ArrayList<String> nameDeps = new ArrayList<String>();
-        mDataBase = this.getReadableDatabase();
-
-        Cursor cursor = mDataBase.rawQuery("SELECT _id,Id_deps,Name_Deps,division_code,Id_o FROM Deps " +
+        Cursor cursor = null;
+        try {
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
+            cursor = mDataBase.rawQuery("SELECT _id,Id_deps,Name_Deps,division_code,Id_o FROM Deps " +
                 "where (((division_code=?)or(division_code=0)) AND ((Id_o=?)or(Id_o=0))) Order by _id", new String [] {String.valueOf(code), String.valueOf(iD)});
-        //TODO SQL
-        if ((cursor != null) & (cursor.getCount() != 0)) {
-            cursor.moveToFirst();
-            //Закидываем в список строку с позицией 0
-            String readDep;// = new String("Выберите бригаду");
-            //nameDeps.add(readDep);
-            while (!cursor.isAfterLast()) {
-                readDep = cursor.getString(2);
-                //Закидываем в список
-                nameDeps.add(readDep);
-                Log.d(TAG, "getAllnameDeps Name_Deps="+cursor.getString(2)+"division_code= " + cursor.getString(3)+", Id_o ="+ cursor.getString(4) );
-                //Переходим к следующеq
-                cursor.moveToNext();
+            if (cursor != null && cursor.getCount() > 0) {
+                while (cursor.moveToNext()) {
+                    nameDeps.add(cursor.getString(2));
+                }
             }
+            return nameDeps;
+        }catch (Exception e) {
+            Log.e(TAG, "getDivisionNameByCode -> ".concat(e.getMessage()));
+            return nameDeps;
+        } finally {
+            tryCloseCursor(cursor);
         }
-        cursor.close();
-        mDataBase.close();
-        return nameDeps;
     }
     public String getDeps_Name_by_id(int iD){
-        mDataBase = this.getReadableDatabase();
-        String nm = "";
-        Cursor cursor = mDataBase.rawQuery("SELECT Name_Deps FROM Deps Where _id="+ iD, null);
-        if ((cursor != null) & (cursor.getCount() != 0)) {
-            cursor.moveToFirst();
-            nm = cursor.getString(0);
+        Cursor cursor = null;
+        try {
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
+            cursor = mDataBase.rawQuery("SELECT Name_Deps FROM Deps Where _id="+ iD, null);
+            if (cursor != null && cursor.moveToFirst()) {
+                return cursor.getString(0);
+            }
+            return "";
+        }catch (Exception e) {
+            Log.e(TAG, "getDivisionNameByCode -> ".concat(e.getMessage()));
+            return "";
+        } finally {
+            tryCloseCursor(cursor);
         }
-        cursor.close();
-        mDataBase.close();
-        return nm;
     }
     public int getDeps_id_by_Name(String nm){
-        mDataBase = this.getReadableDatabase();
-        int num = 0;
-        Cursor cursor = mDataBase.rawQuery("SELECT _id FROM Deps Where Name_Deps='"+nm+"'", null);
-        if ((cursor != null) & (cursor.getCount() != 0)) {
-            cursor.moveToFirst();
-            num = cursor.getInt(0);
+        Cursor cursor = null;
+        try {
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
+            cursor = mDataBase.rawQuery("SELECT _id FROM Deps Where Name_Deps='"+nm+"'", null);
+                if (cursor != null && cursor.moveToFirst()) {
+                return cursor.getInt(0);
+            }
+            return 0;
+        }catch (Exception e) {
+            Log.e(TAG, "getDeps_id_by_Name -> ".concat(e.getMessage()));
+            return 0;
+        } finally {
+            tryCloseCursor(cursor);
         }
-        cursor.close();
-        mDataBase.close();
-        return num;
     }
     public List<String> getAllnameOpers(String division_code) {
-        ArrayList<String> nameDeps = new ArrayList<String>();
-        mDataBase = this.getReadableDatabase();
-        Cursor cursor = mDataBase.rawQuery("SELECT _id,Opers FROM Opers"+
+        ArrayList<String> nameDeps = new ArrayList<String>(Collections.singleton("Выберите операцию"));
+        Cursor cursor = null;
+        try {
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
+            cursor = mDataBase.rawQuery("SELECT _id,Opers FROM Opers"+
                 " Where (division_code=?)or(division_code=0) Order by _id", new String [] {String.valueOf(division_code)});
-
-        if ((cursor != null) & (cursor.getCount() != 0)) {
-            cursor.moveToFirst();
-            //Закидываем в список строку с позицией 0
-            String readDep = "Выберите операцию";
-            nameDeps.add(readDep);
-            while (!cursor.isAfterLast()) {
-                readDep = cursor.getString(1);
-                //Закидываем в список
-                nameDeps.add(readDep);
-                //Переходим к следующеq
-                cursor.moveToNext();
+            while (cursor.moveToNext()) {
+                nameDeps.add(cursor.getString(1));
             }
+            return nameDeps;
+        }catch (Exception e) {
+            Log.e(TAG, "getAllnameOpers -> ".concat(e.getMessage()));
+            return nameDeps;
+        } finally {
+            tryCloseCursor(cursor);
         }
-        cursor.close();
-        mDataBase.close();
-        return nameDeps;
     }
     public String getOpers_Name_by_id(int iD){
         mDataBase = this.getReadableDatabase();
