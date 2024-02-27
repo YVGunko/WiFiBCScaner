@@ -22,13 +22,17 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class OrderOutDocBoxMovePartRepository {
-    private Context mContext;
     private AtomicInteger nextPage;
     private static int pageSize = 200;
     private static final String TAG = "orderAndStuffRepo";
 
+    private void showToast (String message, boolean duration) {
+        DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
+            MessageUtils.showToast(AppController.getInstance().getApplicationContext(), message, duration);
+        });
+    }
 
-    public void downloadData(String updateDate) {
+    public void downloadData(String updateDate, Context context) {
         DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
             try {
                 nextPage.set(0);
@@ -41,20 +45,17 @@ public class OrderOutDocBoxMovePartRepository {
                         AppController.getInstance().getDbHelper().defs.get_Id_o(),
                         nextPage.getAndIncrement(),
                         pageSize)
-                        .enqueue(downloadDataCallback(updateDate));
+                        .enqueue(downloadDataCallback(updateDate, context));
 
             } catch (Exception e) {
-                Log.e(TAG, "downloadData -> " + R.string.error_something_went_wrong);
-                e.printStackTrace();
-                DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
-                    MessageUtils.showToast(mContext, "Ошибка. downloadData. "+R.string.error_something_went_wrong, true);
-                });
+                Log.e(TAG, "downloadData -> " + R.string.error_something_went_wrong, e);
+                showToast("Ошибка. downloadData. "+R.string.error_something_went_wrong, true);
             }
         });
         return;
     }
 
-    private Callback<OrderOutDocBoxMovePart> downloadDataCallback(String updateDate) {
+    private Callback<OrderOutDocBoxMovePart> downloadDataCallback(String updateDate, Context context) {
         return new Callback<OrderOutDocBoxMovePart>() {
             @RequiresApi(api = Build.VERSION_CODES.N)
             @Override
@@ -65,7 +66,7 @@ public class OrderOutDocBoxMovePartRepository {
                         //no content, so prepare environment to stop current request and prepare for next one
                         nextPage.set(0);
                         DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
-                            MessageUtils.showToast(mContext, "Завершено. Responce code = 204", true);
+                            MessageUtils.showToast(context, "Завершено. Responce code = 204", true);
                         });
                         return;
                     }
@@ -88,7 +89,7 @@ public class OrderOutDocBoxMovePartRepository {
                                         AppController.getInstance().getDbHelper().defs.get_Id_o(),
                                         nextPage.getAndIncrement(),
                                         pageSize)
-                                        .enqueue(downloadDataCallback(updateDate));
+                                        .enqueue(downloadDataCallback(updateDate, context));
                             }
                         } catch (RuntimeException re) {
                             Log.w(TAG, re);
@@ -102,7 +103,7 @@ public class OrderOutDocBoxMovePartRepository {
                 Log.w(TAG, "downloadDataCallback -> API Request failed: " + t.getMessage());
                 nextPage.set(0);
                 DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
-                    MessageUtils.showToast(mContext, "Ошибка. downloadDataCallback. onFailure", true);
+                    MessageUtils.showToast(context, "Ошибка. downloadDataCallback. onFailure", true);
                 });
             }
 

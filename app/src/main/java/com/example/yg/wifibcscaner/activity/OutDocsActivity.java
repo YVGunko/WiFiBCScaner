@@ -22,12 +22,14 @@ import android.widget.Button;
 import android.widget.ListView;
 
 import com.example.yg.wifibcscaner.DataBaseHelper;
+import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.Defs;
 import com.example.yg.wifibcscaner.data.OutDocs;
 import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.service.SharedPrefs;
 import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
+import com.example.yg.wifibcscaner.utils.executors.DefaultExecutorSupplier;
 
 import java.util.List;
 
@@ -52,58 +54,54 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
         return true;
     }
 
-    private class SyncIncoData extends AsyncTask<String, Integer, String> {
+    private void showToast (String message, boolean duration) {
+        DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
+            MessageUtils.showToast(getApplicationContext(), message, duration);
+        });
+    }
+    private class SyncIncoData extends AsyncTask<String, Integer, Integer> {
         Integer counter;
 
         @Override
-        protected String doInBackground(String... urls) {
+        protected Integer doInBackground(String... urls) {
             counter = 0;
             try {
                 ApiUtils.getOrderService(mDBHelper.defs.getUrl()).
                         addOutDoc(mDBHelper.getOutDocNotSent(),mDBHelper.defs.getDeviceId()).enqueue(new Callback<List<OutDocs>>() {
-
-                    // TODO Обработать результат. Записать поле sent... если успешно
                     @Override
                     public void onResponse(Call<List<OutDocs>> call, Response<List<OutDocs>> response) {
-                        MessageUtils messageUtils = new MessageUtils();
-                        Log.d("OutDoc","Ответ сервера на запрос синхронизации накладных: " + response.body().size());
+                        Log.d(TAG,"Ответ сервера на запрос синхронизации накладных: " + response.body().size());
                         if(response.isSuccessful()) {
                             for(OutDocs boxes : response.body())
-                                mDBHelper.updateOutDocsetSentToMasterDate(boxes);
+                                mDBHelper.updateOutDocsetSentToMasterDate(boxes, getApplicationContext());
 
-                            if (response.body().size()!=0) {
-                                messageUtils.showMessage(getApplicationContext(), "Ок! Накладные выгружены!");
-                            }
-                            //Запросить синхронизацию коробок и из частей
+                            counter = response.body().size();
                         }else {
-                            messageUtils.showLongMessage(getApplicationContext(), "Ошибка при выгрузке накладных!");
+                            showToast("Ошибка при выгрузке накладных!", true);
                         }
                     }
                     @Override
                     public void onFailure(Call<List<OutDocs>> call, Throwable t) {
-                        MessageUtils messageUtils = new MessageUtils();
-                        messageUtils.showLongMessage(getApplicationContext(), t.getMessage() + ". Ошибка при выгрузке накладных!");
-                        Log.d("OutDoc", "OutDocs Error: " + t.getMessage());
+                        Log.d(TAG, "OutDocs Error: " + t.getMessage());
+                        showToast("Ошибка при выгрузке накладных!", true);
                     }
                 });
             } catch (Exception e) {
-                //messageUtils.showLongMessage(getApplicationContext(), "Ошибка при приеме заказов!");
-                Log.d("OutDoc","Ответ сервера на запрос новых заказов: " + e.getMessage());
+                Log.d(TAG,"Ответ сервера на запрос новых заказов: " + e.getMessage());
+                showToast("Ошибка при выгрузке накладных!", true);
             }
-            return null;
+            return counter;
         }
 
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            MessageUtils messageUtils = new MessageUtils();
-            messageUtils.showLongMessage(getApplicationContext(), "Синхронизация данных начата.");
+            MessageUtils.showToast(getApplicationContext(), "Синхронизация данных начата.", false);
         }
 
         @Override
-        protected void onPostExecute(String result) {
-            MessageUtils messageUtils = new MessageUtils();
-            messageUtils.showLongMessage(getApplicationContext(), "Синхронизация данных окончена.");
+        protected void onPostExecute(Integer result) {
+            MessageUtils.showToast(getApplicationContext(), "Синхронизация окончена. Отпрвлено накладных: ".concat(String.valueOf(result)), true);
         }
 
         @Override
@@ -125,7 +123,7 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_out_docs);
-        mDBHelper = DataBaseHelper.getInstance(this);
+        mDBHelper = AppController.getInstance().getDbHelper();
 
         Button btnAdd = (Button) findViewById(R.id.addOutDoc);
         btnAdd.setOnLongClickListener(new View.OnLongClickListener() {
@@ -161,12 +159,12 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
         Button btnDays = (Button) findViewById(R.id.daysToView);
         if (!mDBHelper.checkSuperUser(mDBHelper.defs.get_idUser())) {
             btnDays.findViewById(R.id.daysToView).setVisibility(View.INVISIBLE);
-            if (SharedPrefs.getInstance(getApplicationContext()) != null) {
-                SharedPrefs.getInstance(getApplicationContext()).setOutDocsDays(1);
+            if (SharedPrefs.getInstance() != null) {
+                SharedPrefs.getInstance().setOutDocsDays(1);
             }
 
         } else {
-            if (SharedPrefs.getInstance(getApplicationContext()) != null) {
+            if (SharedPrefs.getInstance() != null) {
                 setDaysButtonState ();
             }
         }
@@ -284,22 +282,22 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
     }
     private void setDaysButtonState (){
         Button btn = (Button) findViewById(R.id.daysToView);
-        if (SharedPrefs.getInstance(getApplicationContext()).getOutDocsDays() == 1){
+        if (SharedPrefs.getInstance().getOutDocsDays() == 1){
             btn.setText(R.string.seven_days);
         } else {
             btn.setText(R.string.one_day);
         }
     }
     private void invertSharedPrefsDaysState (){
-        if (SharedPrefs.getInstance(getApplicationContext()).getOutDocsDays() == 1){
-            SharedPrefs.getInstance(getApplicationContext()).setOutDocsDays(7);
+        if (SharedPrefs.getInstance().getOutDocsDays() == 1){
+            SharedPrefs.getInstance().setOutDocsDays(7);
         } else {
-            SharedPrefs.getInstance(getApplicationContext()).setOutDocsDays(1);
+            SharedPrefs.getInstance().setOutDocsDays(1);
         }
     }
     // обработка нажатия кнопки
     public void onButtonDaysClick(View view) {
-        if (SharedPrefs.getInstance(getApplicationContext()) != null) {
+        if (SharedPrefs.getInstance() != null) {
             invertSharedPrefsDaysState ();
             setDaysButtonState();
             getSupportLoaderManager().getLoader(0).forceLoad();

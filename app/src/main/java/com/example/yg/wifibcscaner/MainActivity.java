@@ -2,15 +2,10 @@ package com.example.yg.wifibcscaner;
 
 
 import android.app.Activity;
-import android.app.PendingIntent;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
-import android.hardware.usb.UsbDevice;
-import android.hardware.usb.UsbManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -39,7 +34,6 @@ import com.example.yg.wifibcscaner.activity.SettingsActivity;
 import com.example.yg.wifibcscaner.activity.UpdateActivity;
 import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.service.MessageUtils;
-import com.example.yg.wifibcscaner.service.SharedPrefs;
 import com.example.yg.wifibcscaner.utils.AppUtils;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
@@ -49,12 +43,7 @@ import com.honeywell.aidc.BarcodeReadEvent;
 import com.honeywell.aidc.BarcodeReader;
 import com.honeywell.aidc.ScannerNotClaimedException;
 import com.honeywell.aidc.ScannerUnavailableException;
-
 import org.apache.commons.lang3.StringUtils;
-
-import java.util.HashMap;
-import java.util.Iterator;
-
 import me.drakeet.support.toast.ToastCompat;
 
 import static android.text.TextUtils.substring;
@@ -119,38 +108,6 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
             }
         });
 
-    }
-
-    private boolean checkFirstRun() {
-        // Get current version code
-        int currentVersionCode = BuildConfig.VERSION_CODE;
-
-        // Get saved version code
-        boolean savedDbNeedReplace = false;
-        int savedVersionCode = 0;
-        if (SharedPrefs.getInstance() != null) {
-            savedDbNeedReplace = SharedPrefs.getInstance().getDbNeedReplace();
-            savedVersionCode = SharedPrefs.getInstance().getCodeVersion();
-        }
-        //SharedPreferences prefs = getSharedPreferences(SharedPrefs.PREFS_NAME, MODE_PRIVATE);
-        //int savedVersionCode = prefs.getInt(SharedPrefs.PREF_VERSION_CODE_KEY, SharedPrefs.DOESNT_EXIST);
-        //boolean savedDbNeedReplace = prefs.getBoolean(SharedPrefs.PREF_DB_NEED_REPLACE, SharedPrefs.DOESNT_EXIST==-1);
-
-        // Check for first run or upgrade
-        if (!savedDbNeedReplace & currentVersionCode == savedVersionCode) {
-            // This is just a normal run
-            return false;
-
-        } else {
-            mDBHelper = DataBaseHelper.getInstance(this, currentVersionCode, true);
-            if (SharedPrefs.getInstance(getApplicationContext()) != null) {
-                SharedPrefs.getInstance(getApplicationContext()).setDbNeedReplace(!savedDbNeedReplace);
-                SharedPrefs.getInstance(getApplicationContext()).setCodeVersion(currentVersionCode);
-            }
-            //prefs.edit().putInt(SharedPrefs.PREF_VERSION_CODE_KEY, currentVersionCode).apply();
-            //prefs.edit().putBoolean(SharedPrefs.PREF_DB_NEED_REPLACE, !savedDbNeedReplace).apply();
-            return true;
-        }
     }
 
     @Override
@@ -238,37 +195,9 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
         actionBar.setTitle("Подразделение: "+mDBHelper.defs.descDivision);
         //====this.setTitle(mDBHelper.defs.descOper+", "+snum);
 
-        /* Если сканер подключен - вызывать обработчик для него*/
         final     EditText            input = (EditText) findViewById(R.id.barCodeInput);
         if (editTextRQ.isEnabled()){
             ocl_bOk(v);
-        }else {
-        if (mdevice != null){//внешний usb сканер
-            showMessage("Режим работы с внешним сканером.");
-            input.setEnabled(true);
-            input.requestFocus();
-            //input.setInputType(InputType.TYPE_NULL);
-            input.addTextChangedListener(new TextWatcher() {
-                @Override
-                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-                    // nothing
-                }
-                @Override
-                public void onTextChanged(CharSequence s, int start, int before, int count) {
-                    String currentbarcode = input.getText().toString();
-                    if( currentbarcode.indexOf("\n") > 0) {
-                        currentbarcode = substring(currentbarcode,0,currentbarcode.indexOf("\n"));
-                        showMessage(currentbarcode);
-                        scanResultHandler(currentbarcode);
-                        input.setText("");
-                        input.requestFocus();
-                    }
-                }
-                @Override
-                public void afterTextChanged(Editable s) {
-                    // nothing
-                }
-            });
         }else {//камера устройства
             input.setEnabled(false);
             if(barcodeReader!=null){
@@ -276,19 +205,16 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
                 try {
                     barcodeReader.softwareTrigger(true);
                 } catch (ScannerNotClaimedException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
+                    Log.e( TAG, "ocl_scan exception ".concat(e.getMessage()) );
                 } catch (ScannerUnavailableException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
+                    Log.e( TAG, "ocl_scan exception ".concat(e.getMessage()) );
                 }
             }
             else{
-                showMessage("Режим работы с камерой.");
+                // Режим работы с камерой.
                 IntentIntegrator integrator = new IntentIntegrator(this);
                 integrator.initiateScan();
             }
-        }
         }
     }
     @Override
@@ -430,7 +356,7 @@ private static String filter (String str){
                 enteredNumber = Integer.valueOf(editTextRQ.getText().toString());
             }catch (NumberFormatException e){
                 Log.e(TAG, mDBHelper.defs.descOper+". Ошибка при получении количества в коробке!", e);
-                showMessage(mDBHelper.defs.descOper+". Ошибка! Введите количество верно!");
+                MessageUtils.showToast(this,mDBHelper.defs.descOper+". Ошибка! Введите количество верно!", false);
                 return;
             }
         }
@@ -449,8 +375,6 @@ private static String filter (String str){
             }
         }
 
-        boolean newBM ;
-
         try {
             Button bScan = (Button) findViewById(R.id.bScan);
             bScan.setText("Scan!");
@@ -458,33 +382,36 @@ private static String filter (String str){
             editTextRQ = (EditText) findViewById(R.id.editTextRQ);
             editTextRQ.setEnabled(false);
             if (StringUtils.isNotEmpty(fb._id)) {                                            //коробка есть и не полная, добавить в prods
-                newBM = (fb.RQ != 0);                                           //новая операция по существующей коробке
+                //новая операция по существующей коробке
+                boolean newBM = (fb.RQ != 0);
                 fb.RQ = enteredNumber;
                 if (mDBHelper.addProds(fb)) {
                     if (newBM)
-                        showMessage(mDBHelper.defs.descOper+". В коробку добавлено "+enteredNumber);
+                        MessageUtils.showToast(AppController.getInstance().getApplicationContext(),
+                                mDBHelper.defs.descOper.concat(". В коробку добавлено ").concat(String.valueOf(enteredNumber)),
+                                true);
 
                     setTextViews();
                     mDBHelper.lastBoxCheck(fo);
-                }else {
-                    showLongMessage(mDBHelper.defs.descOper+". Повторный прием коробки в смену! Повторный прием возможен в другую смену.");
-                }
-
-            }else {
-                if (!mDBHelper.addBoxes(fo,enteredNumber)) {            //---Вызов метода добавления коробки и продс
-                    showLongMessage(mDBHelper.defs.descOper+". Ошибка! Коробка не добавлена в БД!");
+                } else
+                    MessageUtils.showToast(AppController.getInstance().getApplicationContext(),
+                        mDBHelper.defs.descOper+". Повторный прием коробки в смену! Повторный прием возможен в другую смену.",
+                        true);
+            } else {
+                if (!mDBHelper.addBoxes(fo,enteredNumber)) {
+                    MessageUtils.showToast(AppController.getInstance().getApplicationContext(),
+                        mDBHelper.defs.descOper+". Ошибка! Коробка не добавлена в БД!",
+                        true);
                 } else {
                     setTextViews();
                     mDBHelper.lastBoxCheck(fo);
                 }
             }
-            if (mdevice != null){//внешний usb сканер
-                final     EditText            input = (EditText) findViewById(R.id.barCodeInput);
-                input.requestFocus();
-            }
         } catch (Exception e) {
             Log.e(TAG, mDBHelper.defs.descOper+". Ошибка при получении количества в коробке!", e);
-            showMessage(mDBHelper.defs.descOper+". Ошибка! Невозможно получить введенное количество!");
+            MessageUtils.showToast(AppController.getInstance().getApplicationContext(),
+                    mDBHelper.defs.descOper+". Ошибка! Невозможно получить введенное количество!",
+                    true);
         }
     }
 
@@ -576,7 +503,6 @@ private static String filter (String str){
     protected void onDestroy() {
         // TODO Auto-generated method stub
         super.onDestroy();
-        unregisterReceiver(barcodeDataReceiver);
 
         if (barcodeReader != null) {
             // close BarcodeReader to clean up resources.

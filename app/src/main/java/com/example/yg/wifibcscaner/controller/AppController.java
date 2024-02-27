@@ -13,6 +13,7 @@ public class AppController extends Application {
     private Resources mResources;
     private DataBaseHelper mDBHelper;
     private SharedPreferences mSharedPreferences;
+    private Context mContext;
 
     /**
      * init all required objects in onCreate
@@ -21,6 +22,7 @@ public class AppController extends Application {
     public void onCreate() {
         super.onCreate();
         mInstance = this;
+        mContext = getApplicationContext();
         mResources = getResources();
         mSharedPreferences = getSharedPreferences(SharedPrefs.getPrefsName(), Context.MODE_PRIVATE);
         mDBHelper = DataBaseHelper.getInstance();
@@ -45,5 +47,9 @@ public class AppController extends Application {
 
     public DataBaseHelper getDbHelper() {
         return mDBHelper;
+    }
+
+    public Context getContext() {
+        return mContext;
     }
 }
