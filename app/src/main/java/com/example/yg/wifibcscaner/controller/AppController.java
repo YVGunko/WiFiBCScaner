@@ -1,18 +1,12 @@
 package com.example.yg.wifibcscaner.controller;
 
-import android.app.AlarmManager;
 import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
-import android.database.sqlite.SQLiteDatabase;
-
 import com.example.yg.wifibcscaner.DataBaseHelper;
 import com.example.yg.wifibcscaner.service.SharedPrefs;
 
-/**
- * Created by Shahbaz Hashmi on 2020-03-20.
- */
 public class AppController extends Application {
 
     private static AppController mInstance;
@@ -28,7 +22,7 @@ public class AppController extends Application {
         super.onCreate();
         mInstance = this;
         mResources = getResources();
-        mSharedPreferences = getSharedPreferences("SharedPreferences", Context.MODE_PRIVATE);
+        mSharedPreferences = getSharedPreferences(SharedPrefs.getPrefsName(), Context.MODE_PRIVATE);
         mDBHelper = DataBaseHelper.getInstance();
     }
 

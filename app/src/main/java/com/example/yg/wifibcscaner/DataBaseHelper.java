@@ -23,6 +23,7 @@ import java.io.OutputStream;
 import java.nio.channels.FileChannel;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -51,6 +52,7 @@ import com.example.yg.wifibcscaner.data.Orders;
 import com.example.yg.wifibcscaner.data.OutDocs;
 import com.example.yg.wifibcscaner.data.Prods;
 import com.example.yg.wifibcscaner.data.Sotr;
+import com.example.yg.wifibcscaner.data.dto.OrderOutDocBoxMovePart;
 import com.example.yg.wifibcscaner.data.user;
 import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.service.SharedPrefs;
@@ -482,40 +484,19 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         }
     }
 
-    public Cursor selectCurrentOutDoc (){
-        boolean dbWasOpen = false;
-        try {
-            if (!mDataBase.isOpen()) {
-                mDataBase = this.getReadableDatabase();
-            } else dbWasOpen = true;
-            return mDataBase.rawQuery("SELECT _id, number, comment, " +
-                    "strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as DT, Id_o, division_code, idUser " +
-                    " FROM OutDocs where Id_o="+ defs.get_Id_o() +
-                    " HAVING MAX(number)", null);
-        } finally {
-            if (!dbWasOpen) mDataBase.close();
-        }
-    }
     public String selectCurrentOutDocDetails (String id){
-        Cursor cursor = null;
-        boolean dbWasOpen = false;
-        String result = "";
+        mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         try {
-            if (!mDataBase.isOpen()) {
-                mDataBase = this.getReadableDatabase();
-            } else dbWasOpen = true;
-            cursor = mDataBase.rawQuery("select p.idOutDocs, count(bm.Id_b) as boxNumber, sum(p.RQ_box) as RQ_box" +
+            Cursor cursor = mDataBase.rawQuery("select p.idOutDocs, count(bm.Id_b) as boxNumber, sum(p.RQ_box) as RQ_box" +
                             " FROM Prods p, BoxMoves bm" +
                             " where p.idOutDocs='"+id+"' and bm._id=p.Id_bm"+
                             " group by p.idOutDocs", null);
-            if ((cursor != null) & (cursor.getCount() != 0)) {
-                cursor.moveToFirst();
-                result = ", Кор: "+cursor.getString(1)+", Под.: "+cursor.getString(2);
-            }
-        } finally {
+            cursor.moveToNext();
+            String result = ", Кор: "+cursor.getString(1)+", Под.: "+cursor.getString(2);
             tryCloseCursor(cursor);
-            if (!dbWasOpen) mDataBase.close();
             return result;
+        } catch (Exception e){
+            return "Ошибка!";
         }
     }
     public Cursor listOutDocs() {
@@ -2570,6 +2551,34 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         } finally {
             mDataBase.endTransaction();
             return result;
+        }
+    }
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    public String saveToDB(OrderOutDocBoxMovePart r) {
+        try {
+            insertOrdersInBulk(r.orderReqList);
+
+            if (r.outDocReqList != null &&
+                    !r.outDocReqList.isEmpty())
+                insertOutDocInBulk(r.outDocReqList);
+
+            if (r.boxReqList != null &&
+                    !r.boxReqList.isEmpty())
+                insertBoxInBulk(r.boxReqList);
+
+            if (r.movesReqList != null &&
+                    !r.movesReqList.isEmpty())
+                insertBoxMoveInBulk(r.movesReqList);
+
+            if (r.partBoxReqList != null &&
+                    !r.partBoxReqList.isEmpty())
+                insertProdInBulk(r.partBoxReqList);
+
+            Log.d(TAG, "saveToDB reached its return point.");
+            return Collections.max(r.orderReqList, Comparator.comparing(Orders::get_DT)).get_DT();
+        } catch (RuntimeException re) {
+            Log.w(TAG, re);
+            throw new RuntimeException("To catch onto method level.");
         }
     }
 }

@@ -11,10 +11,8 @@ import com.example.yg.wifibcscaner.utils.DateTimeUtils;
 
 import java.util.Date;
 
-import static android.content.Context.MODE_PRIVATE;
-
 public class SharedPrefs {
-    final static String PREFS_NAME = "WiFiBCScanerPrefsFile";
+    final static String PREFS_NAME = "sProjectPrefsFile";
     final static String PREF_VERSION_CODE_VERSION = "version_code";
     final static String PREF_DB_NEED_REPLACE = "db_need_replace";
     final static String OUTDOCS_DAYS = "outDocsDays";
@@ -31,6 +29,9 @@ public class SharedPrefs {
         return sharedPref;
     }
 
+    public static String getPrefsName(){
+        return PREFS_NAME;
+    }
     public void setDbNeedReplace(boolean value) {
         editor = AppController.getInstance().getSharedPreferences().edit();
         editor.putBoolean(PREF_DB_NEED_REPLACE, value);
