@@ -1,4 +1,4 @@
-package com.example.yg.wifibcscaner.data;
+package com.example.yg.wifibcscaner.data.model;
 
 /**
  CREATE TABLE Boxes (

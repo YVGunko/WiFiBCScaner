@@ -24,18 +24,18 @@ import android.widget.TextView;
 
 import com.example.yg.wifibcscaner.BuildConfig;
 import com.example.yg.wifibcscaner.DataBaseHelper;
-import com.example.yg.wifibcscaner.data.Defs;
-import com.example.yg.wifibcscaner.data.Deps;
-import com.example.yg.wifibcscaner.data.Division;
-import com.example.yg.wifibcscaner.data.OutDocs;
+import com.example.yg.wifibcscaner.data.model.Defs;
+import com.example.yg.wifibcscaner.data.model.Deps;
+import com.example.yg.wifibcscaner.data.model.Division;
+import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.service.OrderService;
 import com.example.yg.wifibcscaner.service.SharedPrefs;
-import com.example.yg.wifibcscaner.data.Sotr;
-import com.example.yg.wifibcscaner.data.Operation;
+import com.example.yg.wifibcscaner.data.model.Sotr;
+import com.example.yg.wifibcscaner.data.model.Operation;
 import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
-import com.example.yg.wifibcscaner.data.user;
+import com.example.yg.wifibcscaner.data.model.user;
 import com.example.yg.wifibcscaner.utils.AppUtils;
 import com.example.yg.wifibcscaner.utils.DateTimeUtils;
 

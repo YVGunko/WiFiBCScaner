@@ -10,7 +10,7 @@ import android.widget.Spinner;
 
 import com.example.yg.wifibcscaner.DataBaseHelper;
 import com.example.yg.wifibcscaner.R;
-import com.example.yg.wifibcscaner.data.Sotr;
+import com.example.yg.wifibcscaner.data.model.Sotr;
 import com.example.yg.wifibcscaner.service.MessageUtils;
 
 import java.util.List;

@@ -23,8 +23,8 @@ import android.widget.ListView;
 
 import com.example.yg.wifibcscaner.DataBaseHelper;
 import com.example.yg.wifibcscaner.controller.AppController;
-import com.example.yg.wifibcscaner.data.Defs;
-import com.example.yg.wifibcscaner.data.OutDocs;
+import com.example.yg.wifibcscaner.data.model.Defs;
+import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.service.SharedPrefs;
 import com.example.yg.wifibcscaner.service.ApiUtils;

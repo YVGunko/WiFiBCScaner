@@ -1,4 +1,4 @@
-package com.example.yg.wifibcscaner.data;
+package com.example.yg.wifibcscaner.data.model;
 
 public class user {
     public static final String TABLE = "user";

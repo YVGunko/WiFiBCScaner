@@ -1,10 +1,10 @@
 package com.example.yg.wifibcscaner.data.dto;
 
-import com.example.yg.wifibcscaner.data.BoxMoves;
-import com.example.yg.wifibcscaner.data.Boxes;
-import com.example.yg.wifibcscaner.data.Orders;
-import com.example.yg.wifibcscaner.data.OutDocs;
-import com.example.yg.wifibcscaner.data.Prods;
+import com.example.yg.wifibcscaner.data.model.BoxMoves;
+import com.example.yg.wifibcscaner.data.model.Boxes;
+import com.example.yg.wifibcscaner.data.model.Orders;
+import com.example.yg.wifibcscaner.data.model.OutDocs;
+import com.example.yg.wifibcscaner.data.model.Prods;
 
 import java.util.ArrayList;
 import java.util.List;
