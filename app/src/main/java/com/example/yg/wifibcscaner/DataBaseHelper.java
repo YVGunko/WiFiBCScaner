@@ -51,6 +51,9 @@ import com.example.yg.wifibcscaner.data.model.Prods;
 import com.example.yg.wifibcscaner.data.model.Sotr;
 import com.example.yg.wifibcscaner.data.dto.OrderOutDocBoxMovePart;
 import com.example.yg.wifibcscaner.data.model.user;
+import com.example.yg.wifibcscaner.data.repo.DepartmentRepo;
+import com.example.yg.wifibcscaner.data.repo.DivisionRepo;
+import com.example.yg.wifibcscaner.data.repo.OperRepo;
 import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.service.SharedPrefs;
 import com.example.yg.wifibcscaner.service.spBarcode;
@@ -58,6 +61,7 @@ import com.example.yg.wifibcscaner.utils.AppUtils;
 import com.example.yg.wifibcscaner.utils.DateTimeUtils;
 
 import org.apache.commons.lang3.StringUtils;
+import static android.text.TextUtils.substring;
 
 import static com.example.yg.wifibcscaner.utils.AppUtils.getFirstOperFor;
 import static com.example.yg.wifibcscaner.utils.AppUtils.isDepAndSotrOper;
@@ -65,9 +69,11 @@ import static com.example.yg.wifibcscaner.utils.AppUtils.isNotEmpty;
 import static com.example.yg.wifibcscaner.utils.AppUtils.isOneOfFirstOper;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDateLong;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDateTimeLong;
-import static android.text.TextUtils.substring;
+import static com.example.yg.wifibcscaner.utils.AppUtils.tryCloseCursor;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDayTimeString;
-import static java.lang.String.valueOf;
+import static com.example.yg.wifibcscaner.utils.DateTimeUtils.sDateToLong;
+import static com.example.yg.wifibcscaner.utils.DateTimeUtils.sDateTimeToLong;
+import static com.example.yg.wifibcscaner.utils.DateTimeUtils.lDateToString;
 
 public class DataBaseHelper extends SQLiteOpenHelper {
     private static final String TAG = "DataBaseHelper";
@@ -75,12 +81,9 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     private static String DB_PATH = "";
     private static String DB_NAME = "SQR.db";
     private static final String TABLE_MD = "MasterData";
-    private static final String dtPattern = "dd.MM.yyyy HH:mm:ss";
-    private static final String dayPattern = "dd.MM.yyyy";
 
     public static final String COLUMN_sentToMasterDate = "sentToMasterDate";
     public long serverUpdateTime;
-    public String globalUpdateDate = "";
     public static final String puDivision = "00-000002";
     public static final String tepDivision = "00-000025";
 
@@ -92,6 +95,9 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
     public Defs defs;
     public static OutDocs currentOutDoc;
+    private final OperRepo operRepo = new OperRepo();
+    private final DivisionRepo divRepo = new DivisionRepo();
+    private final DepartmentRepo depRepo = new DepartmentRepo();
 
     public class foundbox {
         String barcode; //строка описания
@@ -173,33 +179,9 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         }
         return retString;
     }
-    private String lDateToString (long lDate){
-        Calendar cal = Calendar.getInstance();
-        cal.setTimeInMillis(lDate);
-        Date d = cal.getTime();
-        SimpleDateFormat sdf = new SimpleDateFormat(dtPattern);
-        return sdf.format(d);
-    }
-    private long sDateToLong (String sDate){
-        try {
-            SimpleDateFormat sdf = new SimpleDateFormat(dayPattern);
-            Date date = sdf.parse(sDate);
-            return date.getTime();
-        } catch (ParseException e) {
-            e.printStackTrace();
-            return 0;
-        }
-    }
-    private long sDateTimeToLong (String sDate){
-        try {
-            SimpleDateFormat sdf = new SimpleDateFormat(dtPattern);
-            Date date = sdf.parse(sDate);
-            return date.getTime();
-        } catch (ParseException e) {
-            e.printStackTrace();
-            return 0;
-        }
-    }
+
+
+
     private static DataBaseHelper instance = null;
     /*private constructor to avoid direct instantiation by other classes*/
     private DataBaseHelper(final int DB_VERSION){
@@ -255,11 +237,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             throw new Error("UnableToUpdateDatabase");
         }
     }
-    private static void tryCloseCursor(Cursor c) {
-        if (c != null && !c.isClosed()) {
-            c.close();
-        }
-    }
+
     public synchronized SQLiteDatabase openDataBase() {
         if(mOpenCounter.incrementAndGet() == 1) {
             Log.d(TAG, "DataBaseHelper openDataBase -> incrementAndGet == 1");
@@ -540,7 +518,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         return readBoxes;
     }
 
-    public boolean updateOutDocsetSentToMasterDate (OutDocs od, Context context) {
+    public boolean updateOutDocsetSentToMasterDate (OutDocs od) {
         try {
             mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             ContentValues values = new ContentValues();
@@ -549,7 +527,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             return  (mDataBase.update(OutDocs.TABLE, values,OutDocs.COLUMN_Id +"='"+od.get_id()+"'",null) > 0) ;
         } catch (SQLiteException e) {
             Log.e( TAG, "updateOutDocsetSentToMasterDate exception ".concat(e.getMessage()) );
-            MessageUtils.showToast(context,
+            MessageUtils.showToast(AppController.getInstance().getContext(),
                     "Запись даты отправки накладных. Операция не выполнена!",
                     false);
             return false;
@@ -939,22 +917,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             return 0;
         }
     }
-    public long insertOpers(Operation opers) {
-        try {
-            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-            ContentValues values = new ContentValues();
-            values.clear();
-            values.put(Operation.COLUMN_id, opers.get_id());
-            values.put(Operation.COLUMN_Opers, opers.get_Opers());
-            values.put(Operation.COLUMN_DT, sDateTimeToLong(opers.get_dt()));
-            values.put(Operation.COLUMN_Division, opers.getDivision_code());
 
-            return mDataBase.insertWithOnConflict(Operation.TABLE, null, values, 5);
-        } catch (SQLException e) {
-            Log.e(TAG, e.getMessage());
-            return 0;
-        }
-    }
     public long insertOrders(Orders orders) {
         try {
             mDataBase = AppController.getInstance().getDbHelper().openDataBase();
@@ -1233,25 +1196,6 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         }
     }
 
-    public List<String> getAllDivisionsName() {
-        ArrayList<String> list = new ArrayList<String>();
-        mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-        Cursor cursor = null;
-        try {
-            cursor = mDataBase.rawQuery("SELECT name FROM Division", null);
-            if ((cursor != null) && (cursor.getCount() > 0)) {
-                while (cursor.moveToNext()) {
-                    list.add(cursor.getString(0));
-                }
-            }
-            return list;
-        }catch (Exception e) {
-            Log.e(TAG, "getAllDivisionsName -> ".concat(e.getMessage()));
-            return list;
-        } finally {
-            tryCloseCursor(cursor);
-        }
-    }
     public List<String> getAllUserName() {
         ArrayList<String> alUserName = new ArrayList<String>();
         Cursor cursor = null;
@@ -1339,132 +1283,9 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             tryCloseCursor(cursor);
         }
     }
-    public String getDivisionNameByCode(String code){
-        Cursor cursor = null;
-        try {
-            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-            cursor = mDataBase.rawQuery("SELECT name FROM Division Where code=?", new String [] {String.valueOf(code)});
-            if (cursor != null && cursor.moveToFirst()) {
-                return cursor.getString(0);
-            }
-            return "";
-        }catch (Exception e) {
-            Log.e(TAG, "getDivisionNameByCode -> ".concat(e.getMessage()));
-            return "";
-        } finally {
-            tryCloseCursor(cursor);
-        }
-    }
-    public String getDivisionsCodeByName(String name){
-        Cursor cursor = null;
-        try {
-            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-            cursor = mDataBase.rawQuery("SELECT code FROM Division Where name=?", new String [] {String.valueOf(name)});
-            if (cursor != null && cursor.moveToFirst()) {
-                return cursor.getString(0);
-            }
-            return "";
-        }catch (Exception e) {
-            Log.e(TAG, "getDivisionNameByCode -> ".concat(e.getMessage()));
-            return "";
-        } finally {
-            tryCloseCursor(cursor);
-        }
-    }
-    public List<String> getAllnameDeps(String code, int iD) {
-        ArrayList<String> nameDeps = new ArrayList<String>();
-        Cursor cursor = null;
-        try {
-            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-            cursor = mDataBase.rawQuery("SELECT _id,Id_deps,Name_Deps,division_code,Id_o FROM Deps " +
-                "where (((division_code=?)or(division_code=0)) AND ((Id_o=?)or(Id_o=0))) Order by _id", new String [] {String.valueOf(code), String.valueOf(iD)});
-            if (cursor != null && cursor.getCount() > 0) {
-                while (cursor.moveToNext()) {
-                    nameDeps.add(cursor.getString(2));
-                }
-            }
-            return nameDeps;
-        }catch (Exception e) {
-            Log.e(TAG, "getDivisionNameByCode -> ".concat(e.getMessage()));
-            return nameDeps;
-        } finally {
-            tryCloseCursor(cursor);
-        }
-    }
-    public String getDeps_Name_by_id(int iD){
-        Cursor cursor = null;
-        try {
-            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-            cursor = mDataBase.rawQuery("SELECT Name_Deps FROM Deps Where _id="+ iD, null);
-            if (cursor != null && cursor.moveToFirst()) {
-                return cursor.getString(0);
-            }
-            return "";
-        }catch (Exception e) {
-            Log.e(TAG, "getDivisionNameByCode -> ".concat(e.getMessage()));
-            return "";
-        } finally {
-            tryCloseCursor(cursor);
-        }
-    }
-    public int getDeps_id_by_Name(String nm){
-        Cursor cursor = null;
-        try {
-            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-            cursor = mDataBase.rawQuery("SELECT _id FROM Deps Where Name_Deps='"+nm+"'", null);
-                if (cursor != null && cursor.moveToFirst()) {
-                return cursor.getInt(0);
-            }
-            return 0;
-        }catch (Exception e) {
-            Log.e(TAG, "getDeps_id_by_Name -> ".concat(e.getMessage()));
-            return 0;
-        } finally {
-            tryCloseCursor(cursor);
-        }
-    }
-    public List<String> getAllnameOpers(String division_code) {
-        ArrayList<String> nameDeps = new ArrayList<String>(Collections.singleton("Выберите операцию"));
-        Cursor cursor = null;
-        try {
-            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-            cursor = mDataBase.rawQuery("SELECT _id,Opers FROM Opers"+
-                " Where (division_code=?)or(division_code=0) Order by _id", new String [] {String.valueOf(division_code)});
-            while (cursor.moveToNext()) {
-                nameDeps.add(cursor.getString(1));
-            }
-            return nameDeps;
-        }catch (Exception e) {
-            Log.e(TAG, "getAllnameOpers -> ".concat(e.getMessage()));
-            return nameDeps;
-        } finally {
-            tryCloseCursor(cursor);
-        }
-    }
-    public String getOpers_Name_by_id(int iD){
-        mDataBase = this.getReadableDatabase();
-        String nm = "";
-        Cursor cursor = mDataBase.rawQuery("SELECT Opers FROM Opers Where _id="+ iD, null);
-        if ((cursor != null) & (cursor.getCount() != 0)) {
-            cursor.moveToFirst();
-            nm = cursor.getString(0);
-        }
-        cursor.close();
-        mDataBase.close();
-        return nm;
-    }
-    public int getOpers_id_by_Name(String nm){
-        mDataBase = this.getReadableDatabase();
-        int num = 0;
-        Cursor cursor = mDataBase.rawQuery("SELECT _id FROM Opers Where Opers='"+nm+"'", null);
-        if ((cursor != null) & (cursor.getCount() != 0)) {
-            cursor.moveToFirst();
-            num = cursor.getInt(0);
-        }
-        cursor.close();
-        mDataBase.close();
-        return num;
-    }
+
+
+
     public long updateDefsTable(Defs defs){
         try {
             long l;
@@ -1496,12 +1317,12 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 defs = new Defs(cursor.getInt(0),cursor.getInt(1),cursor.getInt(2),
                         cursor.getString(3),cursor.getString(4),cursor.getInt(5),
                         cursor.getInt(6),cursor.getString(7),cursor.getInt(8),cursor.getString(9));
-                defs.descOper = getOpers_Name_by_id(defs.get_Id_o());
-                defs.descDep = getDeps_Name_by_id(defs.get_Id_d());
+                defs.descOper = operRepo.getOperNameById(defs.get_Id_o());
+                defs.descDep = depRepo.getDepNameById(defs.get_Id_d());
                 defs.descSotr = getSotr_Name_by_id(defs.get_Id_s());
-                defs.descDivision = getDivisionsName(defs.getDivision_code());
+                defs.descDivision = divRepo.getDivisionNameByCode(defs.getDivision_code());
                 defs.descUser = getUserName(defs.get_idUser());
-                defs.descFirstOperForCurrent = getOpers_Name_by_id(getFirstOperFor(defs.get_Id_o()));
+                defs.descFirstOperForCurrent = operRepo.getOperNameById(getFirstOperFor(defs.get_Id_o()));
             }
             tryCloseCursor(cursor);
             mDataBase.close();
@@ -1510,18 +1331,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             return 0;
         }
     }
-    public String getDivisionsName(String code){
-        mDataBase = this.getReadableDatabase();
-        String nm = "";
-        Cursor cursor = mDataBase.rawQuery("SELECT name FROM Division Where code=?", new String [] {String.valueOf(code)});
-        if ((cursor != null) & (cursor.getCount() != 0)) {
-            cursor.moveToFirst();
-            nm = String.format("%s", cursor.getString(0));
-        }
-        tryCloseCursor(cursor);
-        mDataBase.close();
-        return nm;
-    }
+
     public String getUserName(int code){
         mDataBase = this.getReadableDatabase();
         String nm = "";
@@ -1620,27 +1430,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         mDataBase.close();
         return nm;
     }
-    public String getMaxOutDocsDate(){
-        String nm = dtMin;
-        if (!globalUpdateDate.equals("")) {nm = globalUpdateDate; return nm;}
 
-        Cursor cursor = null;
-
-        try {
-            mDataBase = this.getReadableDatabase();
-            cursor = mDataBase.rawQuery("SELECT updateStart, updateEnd, updateSuccess FROM lastUpdate WHERE tableName=?",
-                    new String [] {OutDocs.TABLE});
-            if ((cursor != null) & (cursor.getCount() != 0)) {
-                cursor.moveToFirst();
-                //nm = lDateToString(cursor.getLong(0));
-                if(!cursor.isNull(0)) nm = DateTimeUtils.getStartOfDayString(cursor.getLong(0));
-            }
-        } finally {
-            tryCloseCursor(cursor);
-            mDataBase.close();
-            return nm;
-        }
-    }
     public String getMaxOrderDate(){
         String nm = dtMin;
         if (!globalUpdateDate.equals("")) {nm = globalUpdateDate; return nm;}
@@ -1660,41 +1450,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             return nm;
         }
     }
-    public Long getMaxOrderDateLong(){
-        Long result = ldtMin;
 
-        Cursor cursor = null;
-        try {
-            mDataBase = this.getReadableDatabase();
-            cursor = mDataBase.rawQuery("SELECT updateStart, updateEnd, updateSuccess FROM lastUpdate WHERE tableName=?", new String [] {Orders.TABLE_orders});
-            if ((cursor != null) & (cursor.getCount() != 0)) {
-                cursor.moveToFirst();
-                //nm = lDateToString(cursor.getLong(0));
-                if(!cursor.isNull(0)) result = cursor.getLong(0);
-            }
-        } finally {
-            tryCloseCursor(cursor);
-            mDataBase.close();
-            return result;
-        }
-    }
-    public Long getTableUpdateDate(String Table){
-        Long nm = ldtMin;
-
-        Cursor cursor = null;
-        try {
-            mDataBase = this.getReadableDatabase();
-            cursor = mDataBase.rawQuery("SELECT updateStart, updateEnd, updateSuccess FROM lastUpdate WHERE tableName=?", new String [] {Table});
-            if ((cursor != null) & (cursor.getCount() != 0)) {
-                cursor.moveToFirst();
-                if(!cursor.isNull(0)) nm = cursor.getLong(0);
-            }
-        } finally {
-            tryCloseCursor(cursor);
-            mDataBase.close();
-            return nm;
-        }
-    }
     public String getMaxUserDate(){
         String nm = dtMin;
         if (!globalUpdateDate.equals("")) {nm = globalUpdateDate;
@@ -1733,24 +1489,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             return nm;
         }
     }
-    public String getMaxDepsDate(){
-        String nm = dtMin;
-        if (!globalUpdateDate.equals("")) {nm = globalUpdateDate; return nm;}
 
-        Cursor cursor = null;
-        try {
-            mDataBase = this.getReadableDatabase();
-            cursor = mDataBase.rawQuery("SELECT max(DT) FROM Deps", null);
-            if ((cursor != null) & (cursor.getCount() != 0)) {
-                cursor.moveToFirst();
-                nm = lDateToString(cursor.getLong(0));
-            }
-        } finally {
-            tryCloseCursor(cursor);
-            mDataBase.close();
-            return nm;
-        }
-    }
     public String getMaxOpersDate(){
         String nm = dtMin;
         if (!globalUpdateDate.equals("")) {nm = globalUpdateDate; return nm;}
@@ -1769,82 +1508,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             return nm;
         }
     }
-    public ArrayList<String> getFoundOrdersId(){
-        ArrayList<String> OrdersId = new ArrayList<String>();
-        String readDep;
-        mDataBase = this.getReadableDatabase();
-        Cursor cursor = mDataBase.rawQuery("SELECT Ord_id FROM MasterData", null);
-        if ((cursor != null) & (cursor.getCount() != 0)) {
-            cursor.moveToFirst();
-            while (!cursor.isAfterLast()) {
-                readDep = cursor.getString(0);
-                //Закидываем в список
-                OrdersId.add(readDep);
-                //Переходим к следующеq
-                cursor.moveToNext();
-            }
-        }
-        tryCloseCursor(cursor);
-        mDataBase.close();
-        return OrdersId;
-    }
-    public ArrayList<String> getFoundBoxesId(){
-        ArrayList<String> BoxesId = new ArrayList<String>();
-        String readDep;
-        mDataBase = this.getReadableDatabase();
-        Cursor cursor = mDataBase.rawQuery("SELECT _id FROM Boxes", null);
-        if ((cursor != null) & (cursor.getCount() != 0)) {
-            cursor.moveToFirst();
-            while (!cursor.isAfterLast()) {
-                readDep = cursor.getString(0);
-                //Закидываем в список
-                BoxesId.add(readDep);
-                //Переходим к следующеq
-                cursor.moveToNext();
-            }
-        }
-        tryCloseCursor(cursor);
-        mDataBase.close();
-        return BoxesId;
-    }
-    public ArrayList<String> getFoundBMsId(){
-        ArrayList<String> BoxesId = new ArrayList<String>();
-        String readDep;
-        mDataBase = this.getReadableDatabase();
-        Cursor cursor = mDataBase.rawQuery("SELECT _id FROM BoxMoves", null);
-        if ((cursor != null) & (cursor.getCount() != 0)) {
-            cursor.moveToFirst();
-            while (!cursor.isAfterLast()) {
-                readDep = cursor.getString(0);
-                //Закидываем в список
-                BoxesId.add(readDep);
-                //Переходим к следующеq
-                cursor.moveToNext();
-            }
-        }
-        tryCloseCursor(cursor);
-        mDataBase.close();
-        return BoxesId;
-    }
-    public ArrayList<String> getFoundPBsId(){
-        ArrayList<String> BoxesId = new ArrayList<String>();
-        String readDep;
-        mDataBase = this.getReadableDatabase();
-        Cursor cursor = mDataBase.rawQuery("SELECT _id FROM Prods", null);
-        if ((cursor != null) & (cursor.getCount() != 0)) {
-            cursor.moveToFirst();
-            while (!cursor.isAfterLast()) {
-                readDep = cursor.getString(0);
-                //Закидываем в список
-                BoxesId.add(readDep);
-                //Переходим к следующеq
-                cursor.moveToNext();
-            }
-        }
-        tryCloseCursor(cursor);
-        mDataBase.close();
-        return BoxesId;
-    }
+
     public int getId_dByOutdoc(String idOutDocs){
         int result = 0;
         mDataBase = this.getReadableDatabase();
@@ -2169,58 +1833,9 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             mDataBase.endTransaction();
         }
     }
-    public void insertDivisionInBulk(List<Division> list) {
-        if (!mDataBase.isOpen()) {
-            mDataBase = this.getReadableDatabase();
-        }
-        try {
-            mDataBase.beginTransaction();
-            String sql = "INSERT OR REPLACE INTO "+Division.TABLE+" (code, name) " +
-                    " VALUES (?,?) ";
 
-            SQLiteStatement statement = mDataBase.compileStatement(sql);
 
-            for (Division o : list) {
-                statement.clearBindings();
-                statement.bindString(1, o.getCode());
-                statement.bindString(2, o.getName());
 
-                statement.executeInsert();
-            }
-            mDataBase.setTransactionSuccessful();
-        } catch (Exception e) {
-            Log.w(TAG, e);
-            throw new RuntimeException("To catch into upper level.");
-        } finally {
-            mDataBase.endTransaction();
-        }
-    }
-
-    public List<Integer> getAllDepIdByDivAndOper(@NonNull String code, @NonNull int iD) {
-        ArrayList<Integer> result = new ArrayList<>();
-        Cursor cursor = null;
-
-        if (!mDataBase.isOpen()) {
-            mDataBase = this.getReadableDatabase();
-        }
-        try {
-            cursor = mDataBase.rawQuery("SELECT _id,Id_deps,Name_Deps,DT,division_code,Id_o FROM Deps " +
-                    " where division_code=? AND Id_o=? ", new String [] {code, String.valueOf(iD)});
-
-            if ((cursor != null) & (cursor.getCount() != 0)) {
-                cursor.moveToFirst();
-                while (!cursor.isAfterLast()) {
-                    result.add(cursor.getInt(0));
-                    cursor.moveToNext();
-                }
-            }
-        } catch (Exception e) {
-            Log.w(TAG, e);
-        } finally {
-            cursor.close();
-            return result;
-        }
-    }
     public int getOneSotrIdByDepId(int depId){
         if (!mDataBase.isOpen()) {
             mDataBase = this.getReadableDatabase();
@@ -2315,7 +1930,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         int sotrId;
         final String dateToSet = getDayTimeString(new Date());
 
-        for (Integer depId : getAllDepIdByDivAndOper(defs.getDivision_code(), defs.get_Id_o())){
+        for (Integer depId : depRepo.getAllDepartmentIdByDivisionCodeAndOperationId(defs.getDivision_code(), defs.get_Id_o())){
             sotrId = getOneSotrIdByDepId(depId);
             if (sotrId != 0) {
                 listOutDocs.add(prepareOutDoc(nextOutDocNumber, depId, sotrId, dateToSet));
@@ -2345,7 +1960,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
         String description = (depId == 0 & sotrId == 0)
                 ? defs.descOper.concat(", ").concat(defs.descUser)
-                    : (getDeps_Name_by_id(depId).concat(", ").concat(sotrName));
+                    : (depRepo.getDepNameById(depId).concat(", ").concat(sotrName));
 
         OutDocs outDoc = new OutDocs(getUUID(), defs.get_Id_o(), outDocNumber,
                 description,

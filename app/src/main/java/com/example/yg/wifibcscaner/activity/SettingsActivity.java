@@ -24,11 +24,15 @@ import android.widget.TextView;
 
 import com.example.yg.wifibcscaner.BuildConfig;
 import com.example.yg.wifibcscaner.DataBaseHelper;
+import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.Defs;
 import com.example.yg.wifibcscaner.data.model.Deps;
 import com.example.yg.wifibcscaner.data.model.Division;
 import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.R;
+import com.example.yg.wifibcscaner.data.repo.DepartmentRepo;
+import com.example.yg.wifibcscaner.data.repo.DivisionRepo;
+import com.example.yg.wifibcscaner.data.repo.OperRepo;
 import com.example.yg.wifibcscaner.service.OrderService;
 import com.example.yg.wifibcscaner.service.SharedPrefs;
 import com.example.yg.wifibcscaner.data.model.Sotr;
@@ -55,10 +59,15 @@ public class SettingsActivity extends AppCompatActivity implements
         AdapterView.OnItemSelectedListener {
 
     private static final String TAG = "SettingsActivity";
+
+    private DataBaseHelper mDBHelper = AppController.getInstance().getDbHelper();
     private OrderService boxesService;
+    private final OperRepo operRepo = new OperRepo();
+    private final DivisionRepo divRepo = new DivisionRepo();
+    private final DepartmentRepo depRepo = new DepartmentRepo();
+
     EditText host_v;
     TextView select_label, opers_select_label, labelSotr, labelDivision2;
-    private DataBaseHelper mDBHelper;
     private int idd, ido, ids;
     private String division_code ;
     String strTitle = "Настройки";
@@ -81,7 +90,7 @@ public class SettingsActivity extends AppCompatActivity implements
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
         setRequestedOrientation (ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-        mDBHelper = DataBaseHelper.getInstance(this);
+
         host_v=(EditText) findViewById(R.id.host);
 
         String devId;
@@ -126,11 +135,11 @@ public class SettingsActivity extends AppCompatActivity implements
         loadSpinnerSotrData();
 
         labelDivision2 = (TextView) findViewById(R.id.labelDivision2);
-        labelDivision2.setText(mDBHelper.getDivisionsName(mDBHelper.defs.getDivision_code()));
+        labelDivision2.setText(divRepo.getDivisionNameByCode(mDBHelper.defs.getDivision_code()));
         opers_select_label = (TextView) findViewById(R.id.opers_select_label);
-        opers_select_label.setText(mDBHelper.getOpers_Name_by_id(mDBHelper.defs.get_Id_o()));
+        opers_select_label.setText(operRepo.getOperNameById(mDBHelper.defs.get_Id_o()));
         select_label = (TextView) findViewById(R.id.select_label);
-        select_label.setText(mDBHelper.getDeps_Name_by_id(mDBHelper.defs.get_Id_d()));
+        select_label.setText(depRepo.getDepNameById(mDBHelper.defs.get_Id_d()));
         labelSotr = (TextView) findViewById(R.id.labelSotr);
         labelSotr.setText(mDBHelper.getSotr_Name_by_id(mDBHelper.defs.get_Id_s()));
     }
@@ -197,8 +206,8 @@ public class SettingsActivity extends AppCompatActivity implements
                     Log.d(TAG,"lastUpdateActivity.onActivityResult -> DateTimePicker returned 0");
                     return;
                 }
-                if (SharedPrefs.getInstance(getApplicationContext()) != null) {
-                    SharedPrefs.getInstance(getApplicationContext()).setOutdocsNumerationStartDate(longExtra);
+                if (SharedPrefs.getInstance() != null) {
+                    SharedPrefs.getInstance().setOutdocsNumerationStartDate(longExtra);
                 }
             }
             if (resultCode == Activity.RESULT_CANCELED) {
@@ -239,8 +248,8 @@ public class SettingsActivity extends AppCompatActivity implements
             public void onClick(DialogInterface dialog, int which) {
                 int length =getResources().getStringArray(R.array.options_db_need_replace).length;
                 if (selectedItems.size() == length) {
-                    if (SharedPrefs.getInstance(getApplicationContext()) != null) {
-                        SharedPrefs.getInstance(getApplicationContext()).setDbNeedReplace(true);
+                    if (SharedPrefs.getInstance() != null) {
+                        SharedPrefs.getInstance().setDbNeedReplace(true);
                     }
                     //SharedPreferences prefs = getSharedPreferences(SharedPrefs.PREFS_NAME, MODE_PRIVATE);
                     //prefs.edit().putBoolean(SharedPrefs.PREF_DB_NEED_REPLACE, true).apply();
@@ -309,7 +318,7 @@ matcher.matches();*/
     }
 
     private void loadSpinnerDivisionData() {
-        List<String> labels = mDBHelper.getAllDivisionsName();
+        List<String> labels = divRepo.getAllDivisionName();
         ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
                 android.R.layout.simple_spinner_item, labels);
         dataAdapter
@@ -324,7 +333,7 @@ matcher.matches();*/
         }
         List<String> lables = (AppUtils.isEmpty(division_code))
                 ? new ArrayList<>()
-                    : mDBHelper.getAllnameOpers(division_code);
+                    : operRepo.getAllOperNameByDivisionCode(division_code);
         ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
                 android.R.layout.simple_spinner_item, lables);
         dataAdapter
@@ -341,7 +350,7 @@ matcher.matches();*/
 
         List<String> lables = (AppUtils.isEmpty(division_code) || ido<=0)
                 ? new ArrayList<>()
-                    : mDBHelper.getAllnameDeps(division_code, ido);
+                    : depRepo.getAllDepartmentNameByDivisionCodeAndOperationId(division_code, ido);
 
         ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
                 android.R.layout.simple_spinner_item, lables);
@@ -378,7 +387,7 @@ matcher.matches();*/
             if (position != 0) {
                 String label = parent.getItemAtPosition(position).toString();
 //Выбрать _id Division и записать в Defs;
-                division_code = mDBHelper.getDivisionsCodeByName(label);
+                division_code = divRepo.getDivisionsCodeByName(label);
                 ido=idd=ids=-1;
                 labelDivision2 = (TextView) findViewById(R.id.labelDivision2);
                 labelDivision2.setText(label);
@@ -411,7 +420,7 @@ matcher.matches();*/
             if (position != 0) {
                 String label = parent.getItemAtPosition(position).toString();
 //Выбрать _id Opers и записать в Defs;
-                ido = mDBHelper.getOpers_id_by_Name(label);
+                ido = operRepo.getOperIdByName(label);
                 opers_select_label = (TextView) findViewById(R.id.opers_select_label);
                 opers_select_label.setText(label);
                // Showing selected spinner item
@@ -437,7 +446,7 @@ matcher.matches();*/
             if (position != 0) {
                String mlabel = parent.getItemAtPosition(position).toString();
 //Выбрать _id Deps и записать в Defs;
-                idd = mDBHelper.getDeps_id_by_Name(mlabel);
+                idd = depRepo.getDepIdByName(mlabel);
                 select_label = (TextView) findViewById(R.id.select_label);
                 select_label.setText(mlabel);
                // Showing selected spinner item
@@ -558,7 +567,7 @@ matcher.matches();*/
                     @Override
                     public void onResponse(Call<List<Division>> call, Response<List<Division>> response) {
                         if (response.isSuccessful() && response.body()!=null && !response.body().isEmpty()) {
-                            mDBHelper.insertDivisionInBulk(response.body());
+                            divRepo.insertDivisionInBulk(response.body());
                         }
                         publishProgress(1);
                     }
@@ -573,8 +582,8 @@ matcher.matches();*/
                     public void onResponse(Call<List<Operation>> call, Response<List<Operation>> response) {
 
                         if (response.isSuccessful() && response.body()!=null && !response.body().isEmpty()) {
-                            for (Operation deps : response.body())
-                                mDBHelper.insertOpers(deps);
+                            for (Operation opers : response.body())
+                                operRepo.insertOpers(opers);
                         }
                         publishProgress(3);
                     }

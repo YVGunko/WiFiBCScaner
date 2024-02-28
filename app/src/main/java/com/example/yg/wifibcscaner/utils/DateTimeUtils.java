@@ -1,6 +1,7 @@
 package com.example.yg.wifibcscaner.utils;
 
 import android.os.Build;
+import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
 
 import java.text.ParseException;
@@ -57,6 +58,36 @@ public class DateTimeUtils {
     private static final String Y0_PATTERN = "01.01.yyyy 00:00:00";
     private static final String DAY_PATTERN = "dd.MM.yyyy";
 
+    @NonNull
+    public static String lDateToString (final long lDate){
+        Calendar cal = Calendar.getInstance();
+        cal.setTimeInMillis(lDate);
+        Date d = cal.getTime();
+        SimpleDateFormat sdf = new SimpleDateFormat(DT_PATTERN);
+        return sdf.format(d);
+    }
+    @NonNull
+    public static long sDateTimeToLong (final String sDate){
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat(DT_PATTERN);
+            Date date = sdf.parse(sDate);
+            return date.getTime();
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return 0;
+        }
+    }
+    @NonNull
+    public static long sDateToLong (final String sDate){
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat(DAY_PATTERN);
+            Date date = sdf.parse(sDate);
+            return date.getTime();
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return 0;
+        }
+    }
     public static long getDayTimeLong(final Date date) {
         return org.apache.commons.lang3.time.DateUtils.truncate(date, Calendar.LONG_FORMAT).getTime();
     }

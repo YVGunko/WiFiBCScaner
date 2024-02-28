@@ -10,6 +10,7 @@ import android.widget.Spinner;
 
 import com.example.yg.wifibcscaner.DataBaseHelper;
 import com.example.yg.wifibcscaner.R;
+import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.Sotr;
 import com.example.yg.wifibcscaner.service.MessageUtils;
 
@@ -17,7 +18,7 @@ import java.util.List;
 
 public class LoginActivity extends AppCompatActivity implements
         AdapterView.OnItemSelectedListener {
-    private DataBaseHelper mDBHelper;
+    private DataBaseHelper mDBHelper = AppController.getInstance().getDbHelper();
     private int idUser;
     Spinner spinnerName;
     EditText ePswd;
@@ -25,7 +26,7 @@ public class LoginActivity extends AppCompatActivity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
-        mDBHelper = DataBaseHelper.getInstance(this);
+
         ePswd = (EditText) findViewById(R.id.ePswd);
         spinnerName = (Spinner) findViewById(R.id.spinnerName);
         spinnerName.setOnItemSelectedListener(this);

@@ -79,4 +79,9 @@ public class AppUtils {
         final int[] array = {7, 9};
         return ArrayUtils.contains(array, key);
     }
+    public static void tryCloseCursor(Cursor c) {
+        if (c != null && !c.isClosed()) {
+            c.close();
+        }
+    }
 }

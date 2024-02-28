@@ -12,6 +12,7 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 
+import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.BoxMoves;
 import com.example.yg.wifibcscaner.data.model.Boxes;
 import com.example.yg.wifibcscaner.DataBaseHelper;
@@ -24,10 +25,16 @@ import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.data.model.Sotr;
 import com.example.yg.wifibcscaner.data.model.Operation;
 import com.example.yg.wifibcscaner.data.dto.OrderOutDocBoxMovePart;
+import com.example.yg.wifibcscaner.data.repo.DepartmentRepo;
+import com.example.yg.wifibcscaner.data.repo.DivisionRepo;
+import com.example.yg.wifibcscaner.data.repo.OperRepo;
+import com.example.yg.wifibcscaner.data.repo.OrderOutDocBoxMovePartRepository;
 import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.data.model.user;
 import com.example.yg.wifibcscaner.utils.DateTimeUtils;
+
+import static com.example.yg.wifibcscaner.utils.DateTimeUtils.sDateToLong;
 
 import java.util.Date;
 import java.util.List;
@@ -43,13 +50,17 @@ import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDayTimeLong;
 
 public class UpdateActivity extends AppCompatActivity {
     private static final String TAG = "UpdateActivity";
-    private DataBaseHelper mDBHelper;
+    private DataBaseHelper mDBHelper = AppController.getInstance().getDbHelper();
+    private final OperRepo operRepo = new OperRepo();
+    private final DivisionRepo divRepo = new DivisionRepo();
+    private final DepartmentRepo depRepo = new DepartmentRepo();
+    public String globalUpdateDate = "";
+
     ProgressBar pbar;
     Button buttonStart;
     ListView listView;
     Button buttonSetDate;
     String strUpdateDate = mDBHelper.dtMin;
-    Long lUpdateDate = mDBHelper.ldtMin;
 
     String[] checkNameList = {
             "Сотрудники",
@@ -86,8 +97,8 @@ public class UpdateActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_update);
-        mDBHelper = DataBaseHelper.getInstance(this);
         buttonStart = (Button) findViewById(R.id.buttonStart);
         pbar = (ProgressBar) findViewById(R.id.progressBarpbar);
         listView = (ListView) findViewById(R.id.listView);
@@ -162,7 +173,7 @@ public class UpdateActivity extends AppCompatActivity {
                     public void onResponse(Call<List<Division>> call, Response<List<Division>> response) {
 
                         if (response.isSuccessful() && !response.body().isEmpty()) {
-                            mDBHelper.insertDivisionInBulk(response.body());
+                            divRepo.insertDivisionInBulk(response.body());
                             if (response.body().size() != 0) {
                                 Log.d(TAG, "Ответ сервера на запрос новых подразделений: " + response.body().size());
                             }
@@ -182,7 +193,7 @@ public class UpdateActivity extends AppCompatActivity {
                     public void onResponse(Call<List<Operation>> call, Response<List<Operation>> response) {
                         if (response.isSuccessful()) {
                             for (Operation deps : response.body())
-                                mDBHelper.insertOpers(deps);
+                                operRepo.insertOpers(deps);
                             if (response.body().size() != 0)
                                 Log.d("UpdateActivity", "Ок! Новые операции приняты!");
                         }
@@ -217,7 +228,7 @@ public class UpdateActivity extends AppCompatActivity {
                     }
                 });
 
-                ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getDeps(mDBHelper.getMaxDepsDate()).enqueue(new Callback<List<Deps>>() {
+                ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getDeps(depRepo.getMaxDepsDate(globalUpdateDate)).enqueue(new Callback<List<Deps>>() {
                     // TODO Обработать результат. Записать поле sent... если успешно
                     @Override
                     public void onResponse(Call<List<Deps>> call, Response<List<Deps>> response) {
@@ -237,232 +248,15 @@ public class UpdateActivity extends AppCompatActivity {
                     }
                 });
 
-
-                strUpdateDate = mDBHelper.dtMin;
-                lUpdateDate = mDBHelper.ldtMin;
-
                 if (!mDBHelper.globalUpdateDate.equals("")) {
                     strUpdateDate = mDBHelper.globalUpdateDate;
                 } else {
                     strUpdateDate = mDBHelper.getMaxOrderDate();
                 }
                 //выбрать максимальную дату загрузки заказа из MasterData. Запросить все заказы старше этой даты но только за месяц.
-                ApiUtils.getOrderService(mDBHelper.defs.getUrl())
-                        .getDataPageableV1(strUpdateDate, mDBHelper.defs.getDivision_code(), ((long) mDBHelper.defs.get_Id_o()))
-                        .enqueue(new Callback<List<OrderOutDocBoxMovePart>>() {
-                    // TODO Обработать результат. Записать поле sent... если успешно
-                    @Override
-                    public void onResponse(Call<List<OrderOutDocBoxMovePart>> call, Response<List<OrderOutDocBoxMovePart>> response) {
-                        Log.d(TAG, "Ответ сервера на запрос новых заказов: " + response.body().size());
-                        if (response.isSuccessful() && !response.body().isEmpty()) {
-                            mDBHelper.insertOrdersInBulk(response.body());
-                            //Прописать даты в lastUpdate
-                            if (response.body().size() != 0)
-                                mDBHelper.setLastUpdate(new lastUpdate(Orders.TABLE_orders,
-                                        mDBHelper.serverUpdateTime,
-                                        getDayTimeLong(new Date()),
-                                        true));
-                            counter = counter + 10;
-                            publishProgress(5);
-                        } else {
-                            Log.d(TAG, "getOrders response is empty.");
-                        }
-                    }
+                OrderOutDocBoxMovePartRepository orderOutDocBoxMovePartRepository = new OrderOutDocBoxMovePartRepository();
+                orderOutDocBoxMovePartRepository.downloadData(strUpdateDate);
 
-                    @Override
-                    public void onFailure(Call<List<OrderOutDocBoxMovePart>> call, Throwable t) {
-                        Log.d(TAG, "Ответ сервера на запрос новых заказов: " + t.getMessage());
-                        publishProgress(-1);
-                    }
-                });
-                if (!mDBHelper.globalUpdateDate.equals("")) {
-                    strUpdateDate = mDBHelper.globalUpdateDate;
-                } else {
-                    strUpdateDate = mDBHelper.getMaxOutDocsDate();
-                }
-                ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getOutDocGet(strUpdateDate).enqueue(new Callback<List<OutDocs>>() {
-                    @Override
-                    public void onResponse(Call<List<OutDocs>> call, Response<List<OutDocs>> response) {
-                        MessageUtils messageUtils = new MessageUtils();
-                        Log.d(TAG, "Ответ сервера на запрос новых накладных: " + response.body().size());
-                        if (response.isSuccessful() && !response.body().isEmpty()) {
-                            mDBHelper.insertOutDocInBulk(response.body());
-                            if (response.body().size() != 0) {
-                                Log.d(TAG, "Ок! Новые накладные приняты!");
-                                //Прописать даты в lastUpdate
-                                if (response.body().size() != 0)
-                                    mDBHelper.setLastUpdate(new lastUpdate(OutDocs.TABLE,
-                                            mDBHelper.serverUpdateTime,
-                                            getDayTimeLong(new Date()),
-                                            true));
-                            }
-                            counter = counter + 5;
-                            publishProgress(4);
-
-                            if (!mDBHelper.globalUpdateDate.equals("")) {
-                                strUpdateDate = mDBHelper.globalUpdateDate;
-                            } else {
-                                strUpdateDate = DateTimeUtils.getLongDateTimeString(mDBHelper.getTableUpdateDate("Boxes"));
-                            }
-                            ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getBoxesByDate(strUpdateDate, mDBHelper.defs.get_idUser(), mDBHelper.defs.getDeviceId()).enqueue(new Callback<List<Boxes>>() {
-                                // TODO Обработать результат. Записать поле sent... если успешно
-                                @Override
-                                public void onResponse(Call<List<Boxes>> call, Response<List<Boxes>> response) {
-
-                                    if (response.isSuccessful() && !response.body().isEmpty()) {
-                                        mDBHelper.insertBoxInBulk(response.body());
-
-                                        if (response.body().size() != 0) {
-                                            if (mDBHelper.getTableUpdateDate(Boxes.TABLE_boxes) < mDBHelper.sDateToLong(response.body().get(response.body().size() - 1).get_DT())) {
-                                                mDBHelper.setLastUpdate(new lastUpdate(Boxes.TABLE_boxes,
-                                                        mDBHelper.sDateToLong(response.body().get(response.body().size() - 1).get_DT()),
-                                                        getDayTimeLong(new Date()),
-                                                        true));
-                                                Log.d(TAG, "Записана новая дата в таблицу LastUpdate для Boxes: " + response.body().get(response.body().size() - 1).get_DT());
-                                            }
-                                            Log.d(TAG, "Ответ сервера на запрос синхронизации коробок: " + response.body().size());
-                                        }
-                                        counter = counter + 10;
-                                        publishProgress(6);
-                                        Log.d(TAG, "Last page Boxes: " + response.body().size());
-                                    }
-                                }
-
-                                @Override
-                                public void onFailure(Call<List<Boxes>> call, Throwable t) {
-                                    Log.d("UpdateActivity", "Ответ сервера на запрос синхронизации коробок: " + t.getMessage());
-                                    publishProgress(-1);
-                                }
-                            });
-                            if (!mDBHelper.globalUpdateDate.equals("")) {
-                                strUpdateDate = mDBHelper.globalUpdateDate;
-                            } else {
-                                strUpdateDate = DateTimeUtils.getLongDateTimeString(mDBHelper.getTableUpdateDate("BoxMoves"));
-                            }
-                            ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getBoxMovesByDatePagebleCount(strUpdateDate).enqueue(new Callback<Integer>() {
-                                // Получаем количество страниц. В цикле запускаем = количество запросов.
-                                @Override
-                                public void onResponse(Call<Integer> call, Response<Integer> response) {
-                                    if (response.isSuccessful()) {
-                                        int totalPages = response.body().intValue();
-                                        final int[] innerCounter = {totalPages};
-                                        for (int i = 0; i < totalPages; i++) {
-                                            ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getBoxMovesByDatePageble(strUpdateDate, mDBHelper.defs.get_idUser(), mDBHelper.defs.getDeviceId(), i).
-                                                    enqueue(new Callback<List<BoxMoves>>() {
-                                                        @Override
-                                                        public void onResponse
-                                                                (Call<List<BoxMoves>> call, Response<List<BoxMoves>> response) {
-                                                            if (response.isSuccessful() && !response.body().isEmpty()) {
-                                                                mDBHelper.insertBoxMoveInBulk(response.body());
-
-                                                                if (response.body().size() != 0) {
-                                                                    if (mDBHelper.getTableUpdateDate(BoxMoves.TABLE_bm) < mDBHelper.sDateToLong(response.body().get(response.body().size() - 1).get_DT())) {
-                                                                        mDBHelper.setLastUpdate(new lastUpdate(BoxMoves.TABLE_bm,
-                                                                                mDBHelper.sDateToLong(response.body().get(response.body().size() - 1).get_DT()),
-                                                                                getDayTimeLong(new Date()),
-                                                                                true));
-                                                                        Log.d("UpdateActivity", "Записана новая дата в таблицу LastUpdate для BoxMoves: " + response.body().get(response.body().size() - 1).get_DT());
-                                                                    }
-                                                                    Log.d("UpdateActivity", "Ответ сервера на запрос синхронизации BoxMoves: " + response.body().size());
-                                                                }
-                                                                innerCounter[0] = innerCounter[0] - 1;
-                                                                if (innerCounter[0] == 0) {
-                                                                    counter = counter + 20;
-                                                                    publishProgress(7);
-                                                                    Log.d(TAG, "Last page BoxMoves: " + response.body().size());
-                                                                }
-                                                            }
-
-                                                        }
-
-                                                        @Override
-                                                        public void onFailure
-                                                                (Call<List<BoxMoves>> call, Throwable t) {
-                                                            Log.d("UpdateActivity", "Ответ сервера на запрос синхронизации движений коробок: " + t.getMessage());
-                                                            publishProgress(-1);
-                                                        }
-                                                    });
-                                        }
-                                    }
-                                }
-
-                                @Override
-                                public void onFailure(Call<Integer> call, Throwable t) {
-                                    Log.d("1", "getBoxMovesByDatePagebleCount onFailure: " + t.getMessage());
-                                }
-                            });
-
-                            if (!mDBHelper.globalUpdateDate.equals("")) {
-                                strUpdateDate = mDBHelper.globalUpdateDate;
-                            } else {
-                                strUpdateDate = DateTimeUtils.getLongDateTimeString(mDBHelper.getTableUpdateDate("Prods"));
-                            }
-                            ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getPartBoxByDatePagebleCount(strUpdateDate).enqueue(new Callback<Integer>() {
-                                // Получаем количество страниц. В цикле запускаем = количество запросов.
-                                @Override
-                                public void onResponse(Call<Integer> call, Response<Integer> response) {
-                                    if (response.isSuccessful()) {
-
-                                        int totalPages = response.body().intValue();
-                                        final int[] innerCounter = {totalPages};
-                                        for (int i = 0; i < totalPages; i++) {
-                                            ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getPartBoxByDatePageble(strUpdateDate, mDBHelper.defs.get_idUser(), mDBHelper.defs.getDeviceId(), i).
-                                                    enqueue(new Callback<List<Prods>>() {
-                                                        @Override
-                                                        public void onResponse(Call<List<Prods>> call, Response<List<Prods>> response) {
-                                                            if (response.isSuccessful() && !response.body().isEmpty()) {
-                                                                mDBHelper.insertProdInBulk(response.body());
-                                                                if (response.body().size() != 0) {
-                                                                    if (mDBHelper.getTableUpdateDate("Prods") < mDBHelper.sDateToLong(response.body().get(response.body().size() - 1).get_P_date())) {
-                                                                        mDBHelper.setLastUpdate(new lastUpdate(Prods.TABLE_prods,
-                                                                                mDBHelper.sDateToLong(response.body().get(response.body().size() - 1).get_P_date()),
-                                                                                getDayTimeLong(new Date()),
-                                                                                true));
-                                                                        Log.d("UpdateActivity", "Записана новая дата в таблицу LastUpdate для Prods: " + response.body().get(response.body().size() - 1).get_P_date());
-                                                                    }
-                                                                    Log.d("UpdateActivity", "Ответ сервера на запрос синхронизации PartBox: " + response.body().size());
-                                                                }
-                                                                innerCounter[0] = innerCounter[0] - 1;
-                                                                if (innerCounter[0] == 0) {
-                                                                    counter = counter + 40;
-                                                                    publishProgress(8);
-                                                                    Log.d(TAG, "Last page PartBox: " + response.body().size());
-
-                                                                }
-                                                            }
-                                                        }
-
-                                                        @Override
-                                                        public void onFailure(Call<List<Prods>> call, Throwable t) {
-                                                            Log.d("UpdateActivity", "Ответ сервера на запрос синхронизации PartBox: " + t.getMessage());
-                                                            publishProgress(-1);
-                                                        }
-                                                    });
-                                        }
-                                    }
-                                }
-
-                                @Override
-                                public void onFailure(Call<Integer> call, Throwable t) {
-                                    Log.d(TAG, "PartBox onFailure: " + t.getMessage());
-                                }
-                            });
-
-                        } else {
-                            Log.d(TAG, "getOutDocs response is empty.");
-                            publishProgress(5);
-                            publishProgress(6);
-                            publishProgress(7);
-                            publishProgress(8);
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(Call<List<OutDocs>> call, Throwable t) {
-                        Log.d(TAG, "Ответ сервера на запрос новых накладных: " + t.getMessage());
-                        publishProgress(-1);
-                    }
-                });
             } catch (Exception e) {
                 Log.d(TAG, "Error : " + e.getMessage());
                 publishProgress(-1);
@@ -518,7 +312,7 @@ public class UpdateActivity extends AppCompatActivity {
                 case 8:
                     values[0] = values[0] * 5;
                     MessageUtils.showToast(getApplicationContext(), "Синхронизация подошвы завершена.", false);
-                    mDBHelper.globalUpdateDate = "";
+                    globalUpdateDate = "";
                     break;
 
             }
@@ -549,7 +343,7 @@ public class UpdateActivity extends AppCompatActivity {
                     Log.d(TAG, "lastUpdateActivity.onActivityResult -> DateTimePicker returned 0");
                     return;
                 }
-                mDBHelper.globalUpdateDate = DateTimeUtils.getStartOfDayString(longExtra);
+                globalUpdateDate = DateTimeUtils.getStartOfDayString(longExtra);
             }
             if (resultCode == Activity.RESULT_CANCELED) {
                 Log.w(TAG, "lastUpdateActivity.onActivityResult -> RESULT_CANCELED");

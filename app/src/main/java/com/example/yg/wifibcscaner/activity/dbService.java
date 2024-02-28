@@ -14,13 +14,14 @@ import android.widget.TextView;
 import com.example.yg.wifibcscaner.DataBaseHelper;
 import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.activity.lastUpdateActivity;
+import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.service.MessageUtils;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class dbService extends AppCompatActivity {
-    private DataBaseHelper mDBHelper;
+    private DataBaseHelper mDBHelper = AppController.getInstance().getDbHelper();
     ProgressBar pbar;
     Button buttonStart;
     ListView listView;
@@ -69,7 +70,7 @@ public class dbService extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_db_service);
-        mDBHelper = DataBaseHelper.getInstance(this);
+
         buttonStart = (Button) findViewById(R.id.dbServiceBtnStart);
         dbServiceOrders = (TextView) findViewById(R.id.dbServiceOrders);
         dbServiceOutDocs = (TextView) findViewById(R.id.dbServiceOutDocs);

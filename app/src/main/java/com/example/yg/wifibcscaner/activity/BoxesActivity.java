@@ -13,6 +13,7 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
 
+import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.BoxMoves;
 import com.example.yg.wifibcscaner.data.model.Boxes;
 import com.example.yg.wifibcscaner.DataBaseHelper;
@@ -33,7 +34,7 @@ import retrofit2.Response;
 
 public class BoxesActivity extends AppCompatActivity {
     //Переменная для работы с БД
-    private DataBaseHelper mDBHelper;
+    private DataBaseHelper mDBHelper = AppController.getInstance().getDbHelper();
     SimpleAdapter adapter = null;
     ListView listView = null;
     String[] from = {"Ord", "Cust"};
@@ -49,7 +50,6 @@ public class BoxesActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_boxes);
-        mDBHelper = DataBaseHelper.getInstance(this);
 
 
 //Создаем адаптер

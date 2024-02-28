@@ -73,7 +73,7 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
                         Log.d(TAG,"Ответ сервера на запрос синхронизации накладных: " + response.body().size());
                         if(response.isSuccessful()) {
                             for(OutDocs boxes : response.body())
-                                mDBHelper.updateOutDocsetSentToMasterDate(boxes, getApplicationContext());
+                                mDBHelper.updateOutDocsetSentToMasterDate(boxes);
 
                             counter = response.body().size();
                         }else {
