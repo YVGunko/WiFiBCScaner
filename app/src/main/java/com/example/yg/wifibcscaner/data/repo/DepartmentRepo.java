@@ -1,11 +1,14 @@
 package com.example.yg.wifibcscaner.data.repo;
 
+import android.content.ContentValues;
 import android.database.Cursor;
+import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.example.yg.wifibcscaner.controller.AppController;
+import com.example.yg.wifibcscaner.data.model.Deps;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +18,7 @@ import static com.example.yg.wifibcscaner.utils.DateTimeUtils.lDateToString;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.sDateTimeToLong;
 
 public class DepartmentRepo {
-    private static final String TAG = "sProject -> DepartmentRepo";
+    private static final String TAG = "sProject -> DepartmentRepo.";
     private SQLiteDatabase mDataBase = AppController.getInstance().getDbHelper().openDataBase();
 
     public List<String> getAllDepartmentNameByDivisionCodeAndOperationId(String code, int iD) {
@@ -102,6 +105,41 @@ public class DepartmentRepo {
             return result;
         } finally {
             tryCloseCursor(cursor);
+        }
+    }
+    public int getIdByOutDocCode(@NonNull String code){
+        Cursor cursor = null;
+        try {
+            cursor = mDataBase.rawQuery("SELECT Id_d FROM Prods Where idOutDocs=? LIMIT 1", new String [] {code});
+            if (cursor != null && cursor.getCount() != 0) {
+                while (cursor.moveToNext()) {
+                    return cursor.getInt(0);
+                }
+            }
+            return 0;
+        }catch (Exception e) {
+            Log.e(TAG, "getIdByOutDocCode -> ".concat(e.getMessage()));
+            return 0;
+        } finally {
+            tryCloseCursor(cursor);
+        }
+    }
+    public long insertDeps(Deps deps) {
+        try {
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
+            ContentValues values = new ContentValues();
+            values.clear();
+            values.put(Deps.COLUMN_id, deps.get_id());
+            values.put(Deps.COLUMN_Id_deps, deps.get_Id_deps());
+            values.put(Deps.COLUMN_Name_Deps, deps.get_Name_Deps());
+            values.put(Deps.COLUMN_DT, sDateTimeToLong(deps.get_DT()));
+            values.put(Deps.COLUMN_Division_code, deps.getDivision_code());
+            values.put(Deps.COLUMN_Id_o, deps.get_Id_o());
+
+            return mDataBase.insertWithOnConflict(Deps.TABLE, null, values, 5);
+        } catch (SQLException e) {
+            Log.e(TAG, e.getMessage());
+            return 0;
         }
     }
 }

@@ -25,12 +25,12 @@ public class Defs {
     public static final String COLUMN_idOperFirst = "idOperFirst";
     public static final String COLUMN_idOperLast = "idOperLast";
     public static final String COLUMN_Division_code = "division_code";
-    public String descOper = "Производство";
-    public String descDivision = "";
-    public String descDep = "";
-    public String descSotr = "";
-    public String descUser = "";
-    public String descFirstOperForCurrent = "";
+    private String descOper = "Производство";
+    private String descDivision = "";
+    private String descDep = "";
+    private String descSotr = "";
+    private String descUser = "";
+    private String descFirstOperForCurrent = "";
     private String _Host_IP;
     private String _Port;
 
@@ -73,6 +73,10 @@ public class Defs {
         this._Port = _Port;
         this.division_code = Division_code;
         this.DeviceId = DeviceId;
+    }
+
+    public Defs() {
+        super();
     }
 
     public String getDeviceId() {
@@ -156,5 +160,51 @@ public class Defs {
     }
 
     public String getUrl() {return "http://" + this._Host_IP+":"+this._Port;}
+    public String getDescOper() {
+        return descOper;
+    }
 
+    public void setDescOper(String descOper) {
+        this.descOper = descOper;
+    }
+
+    public String getDescDivision() {
+        return descDivision;
+    }
+
+    public void setDescDivision(String descDivision) {
+        this.descDivision = descDivision;
+    }
+
+    public String getDescDep() {
+        return descDep;
+    }
+
+    public void setDescDep(String descDep) {
+        this.descDep = descDep;
+    }
+
+    public String getDescSotr() {
+        return descSotr;
+    }
+
+    public void setDescSotr(String descSotr) {
+        this.descSotr = descSotr;
+    }
+
+    public String getDescUser() {
+        return descUser;
+    }
+
+    public void setDescUser(String descUser) {
+        this.descUser = descUser;
+    }
+
+    public String getDescFirstOperForCurrent() {
+        return descFirstOperForCurrent;
+    }
+
+    public void setDescFirstOperForCurrent(String descFirstOperForCurrent) {
+        this.descFirstOperForCurrent = descFirstOperForCurrent;
+    }
 }

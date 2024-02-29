@@ -33,6 +33,12 @@ import com.example.yg.wifibcscaner.activity.ProdsActivity;
 import com.example.yg.wifibcscaner.activity.SettingsActivity;
 import com.example.yg.wifibcscaner.activity.UpdateActivity;
 import com.example.yg.wifibcscaner.controller.AppController;
+import com.example.yg.wifibcscaner.data.repo.DefsRepo;
+import com.example.yg.wifibcscaner.data.repo.DepartmentRepo;
+import com.example.yg.wifibcscaner.data.repo.DivisionRepo;
+import com.example.yg.wifibcscaner.data.repo.OperRepo;
+import com.example.yg.wifibcscaner.data.repo.SotrRepo;
+import com.example.yg.wifibcscaner.data.repo.UserRepo;
 import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.utils.AppUtils;
 import com.google.zxing.integration.android.IntentIntegrator;
@@ -54,7 +60,14 @@ import static com.example.yg.wifibcscaner.utils.AppUtils.isOutDocOnlyOper;
 
 
 public class MainActivity extends AppCompatActivity implements BarcodeReader.BarcodeListener {
-    private static final String TAG = "MainActivity";
+    private static final String TAG = "sProject -> MainActivity.";
+    private final OperRepo operRepo = new OperRepo();
+    private final DivisionRepo divRepo = new DivisionRepo();
+    private final DepartmentRepo depRepo = new DepartmentRepo();
+    private final SotrRepo sotrRepo = new SotrRepo();
+    private final UserRepo userRepo = new UserRepo();
+    private final DefsRepo defsRepo = new DefsRepo();
+
     private static BarcodeReader barcodeReader;
     private AidcManager manager;
 
@@ -124,15 +137,15 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
         if (!editTextRQ.isEnabled()){ // if enabled we are waiting for quantity to be entered
             String snum = "Накл.№ не выбрана";
             if (mDBHelper.currentOutDoc.get_number() != 0) snum = "Накл.№"+mDBHelper.currentOutDoc.get_number();
-            snum = mDBHelper.defs.descOper+", "+snum;
+            snum = mDBHelper.defs.getDescOper()+", "+snum;
             android.support.v7.app.ActionBar actionBar = getSupportActionBar();
             actionBar.setSubtitle(Html.fromHtml("<font color='#FFBF00'>"+snum+"</font>"));
-            actionBar.setTitle("Подразделение: "+mDBHelper.defs.descDivision);
+            actionBar.setTitle("Подразделение: "+mDBHelper.defs.getDescDivision());
 
             setTextViews();
 
             currentUser  = (TextView) findViewById(R.id.currentUser);
-            currentUser.setText("Пользователь: " +mDBHelper.getUserName(mDBHelper.defs.get_idUser()));
+            currentUser.setText("Пользователь: " +userRepo.getUserName(mDBHelper.defs.get_idUser()));
         }
 
         if (barcodeReader != null) {
@@ -189,10 +202,10 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
 
         String snum = "Накл.???";
         if (mDBHelper.currentOutDoc.get_number() != 0) snum = "Накл.№"+mDBHelper.currentOutDoc.get_number();
-        snum = mDBHelper.defs.descOper+", "+snum;
+        snum = mDBHelper.defs.getDescOper()+", "+snum;
         android.support.v7.app.ActionBar actionBar = getSupportActionBar();
         actionBar.setSubtitle(Html.fromHtml("<font color='#FFBF00'>"+snum+"</font>"));
-        actionBar.setTitle("Подразделение: "+mDBHelper.defs.descDivision);
+        actionBar.setTitle("Подразделение: "+mDBHelper.defs.getDescDivision());
         //====this.setTitle(mDBHelper.defs.descOper+", "+snum);
 
         final     EditText            input = (EditText) findViewById(R.id.barCodeInput);
@@ -256,7 +269,7 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
     }
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-        boolean checkSuper= mDBHelper.checkSuperUser(mDBHelper.defs.get_idUser());
+        boolean checkSuper= userRepo.checkSuperUser(mDBHelper.defs.get_idUser());
         invalidateOptionsMenu();
         menu.findItem(R.id.action_settings).setVisible(checkSuper);
         menu.findItem(R.id.action_orders).setVisible(checkSuper);
@@ -311,7 +324,7 @@ private static String filter (String str){
                             editTextRQ.setText(String.valueOf(fb.QB - fb.RQ));
                             editTextRQ.setEnabled(false);
 
-                            MessageUtils.showToast(this, "Эта коробка уже принята на "+mDBHelper.defs.descOper, false);
+                            MessageUtils.showToast(this, "Эта коробка уже принята на "+mDBHelper.defs.getDescOper(), false);
                         } else {
                             Button bScan = (Button) findViewById(R.id.bScan);
                             bScan.setText("OK!");
@@ -331,7 +344,7 @@ private static String filter (String str){
                             editTextRQ.setEnabled(true);
                             editTextRQ.setSelection(editTextRQ.getText().length());
                         }else{
-                            showLongMessage("Эта коробка не принималась на "+mDBHelper.defs.descFirstOperForCurrent);
+                            showLongMessage("Эта коробка не принималась на "+mDBHelper.defs.getDescFirstOperForCurrent());
                         }
                     }
                 }else {
@@ -355,8 +368,8 @@ private static String filter (String str){
             try {
                 enteredNumber = Integer.valueOf(editTextRQ.getText().toString());
             }catch (NumberFormatException e){
-                Log.e(TAG, mDBHelper.defs.descOper+". Ошибка при получении количества в коробке!", e);
-                MessageUtils.showToast(this,mDBHelper.defs.descOper+". Ошибка! Введите количество верно!", false);
+                Log.e(TAG, mDBHelper.defs.getDescOper().concat(". Ошибка при получении количества в коробке!"), e);
+                MessageUtils.showToast(this,mDBHelper.defs.getDescOper().concat(". Ошибка! Введите количество верно!"), false);
                 return;
             }
         }
@@ -388,19 +401,19 @@ private static String filter (String str){
                 if (mDBHelper.addProds(fb)) {
                     if (newBM)
                         MessageUtils.showToast(AppController.getInstance().getApplicationContext(),
-                                mDBHelper.defs.descOper.concat(". В коробку добавлено ").concat(String.valueOf(enteredNumber)),
+                                mDBHelper.defs.getDescOper().concat(". В коробку добавлено ").concat(String.valueOf(enteredNumber)),
                                 true);
 
                     setTextViews();
                     mDBHelper.lastBoxCheck(fo);
                 } else
                     MessageUtils.showToast(AppController.getInstance().getApplicationContext(),
-                        mDBHelper.defs.descOper+". Повторный прием коробки в смену! Повторный прием возможен в другую смену.",
+                        mDBHelper.defs.getDescOper().concat(". Повторный прием коробки в смену! Повторный прием возможен в другую смену."),
                         true);
             } else {
                 if (!mDBHelper.addBoxes(fo,enteredNumber)) {
                     MessageUtils.showToast(AppController.getInstance().getApplicationContext(),
-                        mDBHelper.defs.descOper+". Ошибка! Коробка не добавлена в БД!",
+                        mDBHelper.defs.getDescOper().concat(". Ошибка! Коробка не добавлена в БД!"),
                         true);
                 } else {
                     setTextViews();
@@ -408,9 +421,9 @@ private static String filter (String str){
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, mDBHelper.defs.descOper+". Ошибка при получении количества в коробке!", e);
+            Log.e(TAG, mDBHelper.defs.getDescOper().concat(". Ошибка при получении количества в коробке!"), e);
             MessageUtils.showToast(AppController.getInstance().getApplicationContext(),
-                    mDBHelper.defs.descOper+". Ошибка! Невозможно получить введенное количество!",
+                    mDBHelper.defs.getDescOper().concat(". Ошибка! Невозможно получить введенное количество!"),
                     true);
         }
     }
@@ -441,7 +454,7 @@ private static String filter (String str){
             mDBHelper.defs.setDeviceId(DeviceId);
         }
 
-        if (mDBHelper.checkIfUserTableEmpty()) {
+        if (userRepo.checkIfUserTableEmpty()) {
             startActivity(new Intent(this,SettingsActivity.class));
             return;
         } else {

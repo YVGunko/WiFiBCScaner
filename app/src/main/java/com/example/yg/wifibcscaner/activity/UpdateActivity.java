@@ -167,7 +167,7 @@ public class UpdateActivity extends AppCompatActivity {
                     public void onResponse(Call<List<user>> call, Response<List<user>> response) {
                         if (response.isSuccessful() && !response.body().isEmpty()) {
                             for (user user : response.body())
-                                mDBHelper.insertUser(user);
+                                userRepo.insertUser(user);
                             if (response.body().size() != 0) {
                                 Log.d(TAG, "Ответ сервера на запрос новых users: " + response.body().size());
                             }
@@ -230,7 +230,7 @@ public class UpdateActivity extends AppCompatActivity {
 
                         if (response.isSuccessful()) {
                             for (Sotr sotr : response.body())
-                                mDBHelper.insertSotr(sotr);
+                                sotrRepo.insertSotr(sotr);
                             if (response.body().size() != 0) {
                                 Log.d(TAG, "Ответ сервера на запрос новых сотрудников: " + response.body().size());
                             }
@@ -252,7 +252,7 @@ public class UpdateActivity extends AppCompatActivity {
                     public void onResponse(Call<List<Deps>> call, Response<List<Deps>> response) {
                         if (response.isSuccessful()) {
                             for (Deps deps : response.body())
-                                mDBHelper.insertDeps(deps);
+                                depRepo.insertDeps(deps);
                             if (response.body().size() != 0)
                                  Log.d(TAG, "Ответ сервера на запрос новых бригад: " + response.body().size());
                         }

@@ -51,6 +51,7 @@ import com.example.yg.wifibcscaner.data.model.Prods;
 import com.example.yg.wifibcscaner.data.model.Sotr;
 import com.example.yg.wifibcscaner.data.dto.OrderOutDocBoxMovePart;
 import com.example.yg.wifibcscaner.data.model.user;
+import com.example.yg.wifibcscaner.data.repo.DefsRepo;
 import com.example.yg.wifibcscaner.data.repo.DepartmentRepo;
 import com.example.yg.wifibcscaner.data.repo.DivisionRepo;
 import com.example.yg.wifibcscaner.data.repo.OperRepo;
@@ -77,6 +78,7 @@ import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDayTimeString;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.sDateToLong;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.sDateTimeToLong;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.lDateToString;
+import static com.example.yg.wifibcscaner.utils.MyStringUtils.getUUID;
 
 public class DataBaseHelper extends SQLiteOpenHelper {
     private static final String TAG = "DataBaseHelper";
@@ -93,9 +95,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     private SQLiteDatabase mDataBase;
     private AtomicInteger mOpenCounter = new AtomicInteger();
 
-
-
-    public Defs defs;
+    public Defs defs ;
     public static OutDocs currentOutDoc;
     private final OperRepo operRepo = new OperRepo();
     private final DivisionRepo divRepo = new DivisionRepo();
@@ -103,6 +103,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     private final OrderRepo orderRepo = new OrderRepo();
     private final SotrRepo sotrRepo = new SotrRepo();
     private final UserRepo userRepo = new UserRepo();
+    private final DefsRepo defsRepo = new DefsRepo();
 
     public class foundbox {
         String barcode; //строка описания
@@ -249,7 +250,9 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             // Opening new database
             mDataBase = DataBaseHelper.getInstance().getWritableDatabase();
 
-            selectDefsTable();
+            if (defsRepo.selectDefsTable().isPresent())
+                defs = defsRepo.selectDefsTable().get();
+
             currentOutDoc = new OutDocs(null, 0, 0,"",null,
                     defs.getDivision_code(), defs.get_idUser(), defs.get_Id_s(), defs.get_Id_d());
 
@@ -260,15 +263,10 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
     public synchronized void closeDataBase() {
         if(mOpenCounter.decrementAndGet() == 0) {
-            Log.d(TAG, "DataBaseHelper openDataBase -> decrementAndGet == 0");
+            Log.d(TAG, "DataBaseHelper closeDataBase -> decrementAndGet == 0");
             // Closing database
             DataBaseHelper.getInstance().close();
         }
-    }
-    public static String getUUID() {
-        // Creating a random UUID (Universally unique identifier).
-        UUID uuid = UUID.randomUUID();
-        return uuid.toString();
     }
 
     public void updateDataBase(boolean mNeedUpdate) throws IOException {
@@ -508,7 +506,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                     " group by d.Name_Deps", null);
             while (cursor.moveToNext()) {
                 HashMap readBox = new HashMap<String, String>();
-                readBox.put("Ord", !AppUtils.isDepAndSotrOper(defs.get_Id_o()) ? defs.descOper : cursor.getString(0));
+                readBox.put("Ord", !AppUtils.isDepAndSotrOper(defs.get_Id_o()) ? defs.getDescOper() : cursor.getString(0));
                 readBox.put("Cust", "Коробок: " + cursor.getString(1) + ". Пар: " + cursor.getString(2));
                 readBoxes.add(readBox);
             }
@@ -521,22 +519,6 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             readBoxes.add(readBox);
         }
         return readBoxes;
-    }
-
-    public boolean updateOutDocsetSentToMasterDate (OutDocs od) {
-        try {
-            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-            ContentValues values = new ContentValues();
-            values.clear();
-            values.put(COLUMN_sentToMasterDate, new Date().getTime());
-            return  (mDataBase.update(OutDocs.TABLE, values,OutDocs.COLUMN_Id +"='"+od.get_id()+"'",null) > 0) ;
-        } catch (SQLiteException e) {
-            Log.e( TAG, "updateOutDocsetSentToMasterDate exception ".concat(e.getMessage()) );
-            MessageUtils.showToast(AppController.getInstance().getContext(),
-                    "Запись даты отправки накладных. Операция не выполнена!",
-                    false);
-            return false;
-        }
     }
 
     public String selectCurrentOutDocDetails (String id){
@@ -567,7 +549,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         Cursor cursor;
         try {
             mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-            if (checkSuperUser(defs.get_idUser())) {
+            if (userRepo.checkSuperUser(defs.get_idUser())) {
                 cursor = mDataBase.rawQuery("SELECT _id, number, comment, strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as DT, Id_o, division_code, idUser, idSotr, idDeps, DT as dtorder " +
                                 " FROM OutDocs where _id<>0 and division_code=? and Id_o=?" +
                                 " AND DT BETWEEN "+dateFrom+
@@ -806,7 +788,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                             } else {
                                 fb.QB = 0;
                             }                          //коробка есть, по базовой операции принято 0. Ошибочная ситуация.
-                            fb.boxdef += defs.descOper + ": " + fb.QB + ". ";
+                            fb.boxdef += defs.getDescOper()+ ": " + fb.QB + ". ";
                         }
                         tryCloseCursor(c);
                         query = "SELECT sum(Prods.RQ_box) as RQ_box FROM Prods, BoxMoves bm " + "" +
@@ -862,64 +844,6 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         }finally {
             mDataBase.close();
             tryCloseCursor(c);
-        }
-    }
-
-    public long insertUser(user user) {
-        try {
-            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-            ContentValues values = new ContentValues();
-            values.clear();
-            values.put(com.example.yg.wifibcscaner.data.model.user.COLUMN_id, user.get_id());
-            values.put(com.example.yg.wifibcscaner.data.model.user.COLUMN_Id_s, user.get_Id_s());
-            values.put(com.example.yg.wifibcscaner.data.model.user.COLUMN_name, user.getName());
-            values.put(com.example.yg.wifibcscaner.data.model.user.COLUMN_pswd, user.getPswd());
-            values.put(com.example.yg.wifibcscaner.data.model.user.COLUMN_DT, sDateTimeToLong(user.get_DT()));
-            values.put(com.example.yg.wifibcscaner.data.model.user.COLUMN_superUser, user.isSuperUser());
-            values.put(com.example.yg.wifibcscaner.data.model.user.COLUMN_EXPIRED, user.isExpired());
-
-            return mDataBase.insertWithOnConflict(com.example.yg.wifibcscaner.data.model.user.TABLE, null, values, 5);
-        } catch (SQLException e) {
-            Log.e(TAG, e.getMessage());
-            return 0;
-        }
-    }
-    public long insertSotr(Sotr sotr) {
-        try {
-            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-            ContentValues values = new ContentValues();
-            values.clear();
-            values.put(Sotr.COLUMN_id, sotr.get_id());
-            values.put(Sotr.COLUMN_Sotr, sotr.get_Sotr());
-            values.put(Sotr.COLUMN_tn_Sotr, sotr.get_tn_Sotr());
-            values.put(Sotr.COLUMN_DT, sDateTimeToLong(sotr.get_DT()));
-            values.put(Sotr.COLUMN_Division_code, sotr.getDivision_code());
-            values.put(Sotr.COLUMN_Id_d, sotr.get_Id_d());
-            values.put(Sotr.COLUMN_Id_o, sotr.get_Id_o());
-            values.put(Sotr.COLUMN_EXPIRED, sotr.isExpired());
-
-            return mDataBase.insertWithOnConflict(Sotr.TABLE, null, values, 5);
-        } catch (SQLException e) {
-            Log.e(TAG, e.getMessage());
-            return 0;
-        }
-    }
-    public long insertDeps(Deps deps) {
-        try {
-            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-            ContentValues values = new ContentValues();
-            values.clear();
-            values.put(Deps.COLUMN_id, deps.get_id());
-            values.put(Deps.COLUMN_Id_deps, deps.get_Id_deps());
-            values.put(Deps.COLUMN_Name_Deps, deps.get_Name_Deps());
-            values.put(Deps.COLUMN_DT, sDateTimeToLong(deps.get_DT()));
-            values.put(Deps.COLUMN_Division_code, deps.getDivision_code());
-            values.put(Deps.COLUMN_Id_o, deps.get_Id_o());
-
-            return mDataBase.insertWithOnConflict(Deps.TABLE, null, values, 5);
-        } catch (SQLException e) {
-            Log.e(TAG, e.getMessage());
-            return 0;
         }
     }
 
@@ -1200,167 +1124,35 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             tryCloseCursor(cursor);
         }
     }
-
-    public List<String> getAllUserName() {
-        ArrayList<String> alUserName = new ArrayList<String>();
+    public String getProdsMinDate(){
         Cursor cursor = null;
         try {
-            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-
-            cursor = mDataBase.rawQuery("SELECT name FROM user WHERE _id<>0 and NOT expired order by name", null);
-            if ((cursor != null) && (cursor.getCount() > 0)) {
-                while (cursor.moveToNext()) {
-                    alUserName.add(cursor.getString(0));
-                }
+            cursor = mDataBase.rawQuery("SELECT min(P_date) FROM Prods", null);
+            if (cursor != null && cursor.moveToFirst()){
+                return lDateToString(cursor.getLong(0));
             }
-            return alUserName;
-        }catch (Exception e) {
-            Log.e(TAG, "getAllUserName -> ".concat(e.getMessage()));
-            return alUserName;
+            return DateTimeUtils.getDayTimeString(new Date());
+        } catch (Exception ex) {
+            Log.e(TAG, ex.getMessage());
+            return DateTimeUtils.getDayTimeString(new Date());
         } finally {
             tryCloseCursor(cursor);
         }
     }
-    public int getUserIdByName(String nm) {
+    public String getTableMinDate(String tableName){
         Cursor cursor = null;
         try {
-            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-            cursor = mDataBase.rawQuery("SELECT _id FROM user Where name='" + nm + "'", null);
-            if (cursor != null && cursor.moveToFirst()) {
-                return cursor.getInt(0);
+            cursor = mDataBase.rawQuery("SELECT min(DT) FROM "+tableName, null);
+            if (cursor != null && cursor.moveToFirst()){
+                return lDateToString(cursor.getLong(0));
             }
-            return 0;
-        }catch (Exception e) {
-            Log.e(TAG, "getUserIdByName -> ".concat(e.getMessage()));
-            return 0;
+            return DateTimeUtils.getDayTimeString(new Date());
+        } catch (Exception ex) {
+            Log.e(TAG, ex.getMessage());
+            return DateTimeUtils.getDayTimeString(new Date());
         } finally {
             tryCloseCursor(cursor);
         }
-    }
-    public Boolean checkUserPswdById(int id, String pswd){
-        Cursor cursor = null;
-        try {
-            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-            cursor = mDataBase.rawQuery("SELECT _id FROM user Where _id=? and pswd=?",
-                    new String [] {String.valueOf(id), String.valueOf(pswd)});
-            if ((cursor != null) && cursor.moveToFirst()) {
-                return cursor.getInt(0) != 0;
-            }
-            return false;
-        }catch (Exception e) {
-            Log.e(TAG, "checkUserPswdById -> ".concat(e.getMessage()));
-            return false;
-        } finally {
-            tryCloseCursor(cursor);
-        }
-    }
-
-    public boolean checkIfUserTableEmpty () {
-        Cursor cursor = null;
-        try {
-            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-            cursor = mDataBase.rawQuery("SELECT count(*) FROM user Where _id<>0",
-                    null);
-            if (cursor != null && cursor.moveToFirst()) {
-                return cursor.getInt(0)==0;
-            }
-            return false;
-        }catch (Exception e) {
-            Log.e(TAG, "checkIfUserTableEmpty -> ".concat(e.getMessage()));
-            return false;
-        } finally {
-            tryCloseCursor(cursor);
-        }
-    }
-
-
-
-    public long updateDefsTable(Defs defs){
-        try {
-            long l;
-            mDataBase = this.getWritableDatabase();
-            ContentValues values = new ContentValues();
-            values.clear();
-            values.put(Defs.COLUMN_Id_d, defs.get_Id_d());
-            values.put(Defs.COLUMN_Id_o, defs.get_Id_o());
-            values.put(Defs.COLUMN_Id_s, defs.get_Id_s());
-            if (defs.get_idUser()!=0) values.put(Defs.COLUMN_idUser, defs.get_idUser());
-            values.put(Defs.COLUMN_Host_IP, defs.get_Host_IP());
-            values.put(Defs.COLUMN_Port, defs.get_Port());
-            values.put(Defs.COLUMN_Division_code, defs.getDivision_code());
-            values.put(Defs.COLUMN_DeviceId, defs.getDeviceId());
-            String strFilter = "_id=1" ;
-            l = mDataBase.update(Defs.table_Defs, values,strFilter, null);
-            mDataBase.close();
-            return l;
-        } catch (SQLException e) {
-            return 0;
-        }
-    }
-    public int selectDefsTable(){
-        try {
-            mDataBase = this.getReadableDatabase();
-            Cursor cursor = mDataBase.rawQuery("SELECT Id_d,Id_o,Id_s,Host_IP,Port,idOperFirst,idOperLast,division_code,idUser,DeviceId  FROM Defs ", null);
-            if ((cursor != null) & (cursor.getCount() != 0)) {
-                cursor.moveToFirst();
-                defs = new Defs(cursor.getInt(0),cursor.getInt(1),cursor.getInt(2),
-                        cursor.getString(3),cursor.getString(4),cursor.getInt(5),
-                        cursor.getInt(6),cursor.getString(7),cursor.getInt(8),cursor.getString(9));
-                defs.descOper = operRepo.getOperNameById(defs.get_Id_o());
-                defs.descDep = depRepo.getDepNameById(defs.get_Id_d());
-                defs.descSotr = sotrRepo.getNameById(defs.get_Id_s());
-                defs.descDivision = divRepo.getDivisionNameByCode(defs.getDivision_code());
-                defs.descUser = getUserName(defs.get_idUser());
-                defs.descFirstOperForCurrent = operRepo.getOperNameById(getFirstOperFor(defs.get_Id_o()));
-            }
-            tryCloseCursor(cursor);
-            mDataBase.close();
-            return 1;
-        } catch (SQLException e) {
-            return 0;
-        }
-    }
-
-    public String getUserName(int code){
-        mDataBase = this.getReadableDatabase();
-        String nm = "";
-        Cursor cursor = mDataBase.rawQuery("SELECT name FROM user Where _id=?", new String [] {String.valueOf(code)});
-        if ((cursor != null) & (cursor.getCount() != 0)) {
-            cursor.moveToFirst();
-            nm = String.format("%s", cursor.getString(0));
-        }
-        tryCloseCursor(cursor);
-        mDataBase.close();
-        return nm;
-    }
-    public int getUserId_s(int _id){
-        mDataBase = this.getReadableDatabase();
-        int nm = 0;
-        Cursor cursor = mDataBase.rawQuery("SELECT Id_s FROM user Where _id=?", new String [] {String.valueOf(_id)});
-        if ((cursor != null) & (cursor.getCount() != 0)) {
-            cursor.moveToFirst();
-            nm = cursor.getInt(0);
-        }
-        tryCloseCursor(cursor);
-        mDataBase.close();
-        return nm;
-    }
-
-
-    public int getId_dByOutdoc(String idOutDocs){
-        int result = 0;
-        mDataBase = this.getReadableDatabase();
-        Cursor cursor = mDataBase.rawQuery("SELECT distinct(Id_d) FROM Prods Where idOutDocs='" + idOutDocs + "'", null);
-        if ((cursor != null) & (cursor.getCount() != 0)) {
-            cursor.moveToFirst();
-            while (!cursor.isAfterLast()) {
-                result = cursor.getInt(0);
-                cursor.moveToNext();
-            }
-        }
-        tryCloseCursor(cursor);
-        mDataBase.close();
-        return result;
     }
     public String getTableRecordsCount(String tableName){
         String count = "0";
@@ -1379,23 +1171,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             return count;
         }
     }
-    public int getId_sByOutDocId(String idOutDocs){
-        int result = 0;
-        if (!mDataBase.isOpen()) {
-            mDataBase = this.getReadableDatabase();
-        }
-        Cursor cursor = mDataBase.rawQuery("SELECT distinct(Id_s) FROM Prods Where idOutDocs='" + idOutDocs + "'", null);
-        if ((cursor != null) & (cursor.getCount() != 0)) {
-            cursor.moveToFirst();
-            while (!cursor.isAfterLast()) {
-                result = cursor.getInt(0);
-                cursor.moveToNext();
-            }
-        }
-        tryCloseCursor(cursor);
-        ////mDataBase.close();
-        return result;
-    }
+
     //Insert in Bulk
 
     public void insertOutDocInBulk(List<OutDocs> list){
@@ -1557,28 +1333,6 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             throw new RuntimeException("To catch into upper level.");
         } finally {
             mDataBase.endTransaction();
-        }
-    }
-
-
-
-    public int getOneSotrIdByDepId(int depId){
-        if (!mDataBase.isOpen()) {
-            mDataBase = this.getReadableDatabase();
-        }
-        Cursor cursor = null;
-        int result = 0;
-        try {
-                cursor = mDataBase.rawQuery("SELECT _id FROM Sotr WHERE Id_d=? LIMIT 1", new String [] {String.valueOf(depId)});
-                if ((cursor != null) & (cursor.getCount() != 0)) {
-                    cursor.moveToFirst();
-                    result = cursor.getInt(0);
-                }
-        } catch (Exception e) {
-            Log.w(TAG, e);
-        } finally {
-            cursor.close();
-            return result;
         }
     }
 

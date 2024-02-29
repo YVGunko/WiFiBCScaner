@@ -12,6 +12,13 @@ import com.example.yg.wifibcscaner.DataBaseHelper;
 import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.Sotr;
+import com.example.yg.wifibcscaner.data.repo.DefsRepo;
+import com.example.yg.wifibcscaner.data.repo.DepartmentRepo;
+import com.example.yg.wifibcscaner.data.repo.DivisionRepo;
+import com.example.yg.wifibcscaner.data.repo.OperRepo;
+import com.example.yg.wifibcscaner.data.repo.OrderRepo;
+import com.example.yg.wifibcscaner.data.repo.SotrRepo;
+import com.example.yg.wifibcscaner.data.repo.UserRepo;
 import com.example.yg.wifibcscaner.service.MessageUtils;
 
 import java.util.List;
@@ -20,8 +27,16 @@ public class LoginActivity extends AppCompatActivity implements
         AdapterView.OnItemSelectedListener {
     private DataBaseHelper mDBHelper = AppController.getInstance().getDbHelper();
     private int idUser;
+    private final OperRepo operRepo = new OperRepo();
+    private final DivisionRepo divRepo = new DivisionRepo();
+    private final DepartmentRepo depRepo = new DepartmentRepo();
+    private final OrderRepo orderRepo = new OrderRepo();
+    private final SotrRepo sotrRepo = new SotrRepo();
+    private final UserRepo userRepo = new UserRepo();
+    private final DefsRepo defsRepo = new DefsRepo();
     Spinner spinnerName;
     EditText ePswd;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -39,7 +54,7 @@ public class LoginActivity extends AppCompatActivity implements
         Spinner sp = (Spinner) parent;
         if(sp.getId() == R.id.spinnerName) {
             if (position >= 0) {
-                idUser = mDBHelper.getUserIdByName(parent.getItemAtPosition(position).toString());
+                idUser = userRepo.getUserIdByName(parent.getItemAtPosition(position).toString());
                 if (idUser == 0) messageUtils.showMessage(getApplicationContext(), "Пользователь не найден! Регистрация невозможна.");
             }
         }}
@@ -52,7 +67,7 @@ public class LoginActivity extends AppCompatActivity implements
         // database handler
 
         // Spinner Drop down elements
-        List<String> labels = mDBHelper.getAllUserName();
+        List<String> labels = userRepo.getAllUserName();
 
         // Creating adapter for spinner
         ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
@@ -66,36 +81,38 @@ public class LoginActivity extends AppCompatActivity implements
         spinnerName.setAdapter(dataAdapter);
     }
     public void ocl_bLogin(View v) {
-        MessageUtils messageUtils = new MessageUtils();
         if((idUser != 0)&(!ePswd.getText().toString().isEmpty())) {
             //check user's pswd checkUserPswdByName()
-            if (mDBHelper.checkUserPswdById(idUser,ePswd.getText().toString())) { //pswd correct
+            if (userRepo.checkUserPswdById(idUser,ePswd.getText().toString())) { //pswd correct
                 if (mDBHelper.defs.get_idUser()!=idUser) { //another user logged
                     mDBHelper.defs.set_idUser(idUser);      //set user as default
+                    mDBHelper.defs.setDescUser(userRepo.getUserName(idUser));
                     mDBHelper.currentOutDoc.set_id("");
                     mDBHelper.currentOutDoc.set_number(0); //clear currentOutdoc
-                    messageUtils.showMessage(getApplicationContext(), "Вы вошли в систему как: "+mDBHelper.getUserName(mDBHelper.defs.get_idUser()));
-                    if (mDBHelper.getUserId_s(idUser)!=0) { //not a superuser
+
+                    MessageUtils.showToast(getApplicationContext(), "Вы вошли в систему как: "+mDBHelper.defs.getDescUser(), false);
+
+                    if (userRepo.getUserSotrById(idUser)!=0) { //not a superuser
                         //select operation, division, department
-                        mDBHelper.defs.set_Id_s(mDBHelper.getUserId_s(idUser)); //employee
-                        Sotr sotr = mDBHelper.getSotrReq(mDBHelper.defs.get_Id_s());
+                        mDBHelper.defs.set_Id_s(userRepo.getUserSotrById(idUser)); //employee
+                        Sotr sotr = sotrRepo.getSotrReq(mDBHelper.defs.get_Id_s());
                         if (sotr.get_Id_o()!=0) mDBHelper.defs.set_Id_o(sotr.get_Id_o()); //oper
                         if (sotr.get_Id_d()!=0) mDBHelper.defs.set_Id_d(sotr.get_Id_d()); //deps
                         if (!sotr.getDivision_code().isEmpty()) mDBHelper.defs.setDivision_code(sotr.getDivision_code()); //oper
                     }
-                    if (mDBHelper.updateDefsTable(mDBHelper.defs) == 0) {
-                        messageUtils.showMessage(getApplicationContext(),"Ошибка при сохранении.");
-                    } else mDBHelper.selectDefsTable();
+                    if (defsRepo.updateDefsTable(mDBHelper.defs) == 0) {
+                        MessageUtils.showToast(getApplicationContext(),"Ошибка при сохранении.", true);
+                    } else defsRepo.selectDefsTable();
                 } else { //same user logged
 
                 }
 
             } else {
-                messageUtils.showMessage(getApplicationContext(), "Пароль не верен! Вход в систему не возможен!");
+                MessageUtils.showToast(getApplicationContext(), "Пароль не верен! Вход в систему не возможен!", true);
             }
         } else {
-            if (idUser == 0) messageUtils.showMessage(getApplicationContext(), "Выберите пользователя!");
-            if (ePswd.getText().toString().isEmpty()) messageUtils.showMessage(getApplicationContext(), "Введите пароль!");
+            if (idUser == 0) MessageUtils.showToast(getApplicationContext(), "Выберите пользователя!", false);
+            if (ePswd.getText().toString().isEmpty()) MessageUtils.showToast(getApplicationContext(), "Введите пароль!", false);
         }
     }
 }

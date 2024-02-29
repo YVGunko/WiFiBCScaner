@@ -20,6 +20,13 @@ import com.example.yg.wifibcscaner.DataBaseHelper;
 import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.data.model.Prods;
 import com.example.yg.wifibcscaner.R;
+import com.example.yg.wifibcscaner.data.repo.DefsRepo;
+import com.example.yg.wifibcscaner.data.repo.DepartmentRepo;
+import com.example.yg.wifibcscaner.data.repo.DivisionRepo;
+import com.example.yg.wifibcscaner.data.repo.OperRepo;
+import com.example.yg.wifibcscaner.data.repo.OutDocRepo;
+import com.example.yg.wifibcscaner.data.repo.SotrRepo;
+import com.example.yg.wifibcscaner.data.repo.UserRepo;
 import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.service.PartBoxRequest;
@@ -35,6 +42,8 @@ import retrofit2.Response;
 public class BoxesActivity extends AppCompatActivity {
     //Переменная для работы с БД
     private DataBaseHelper mDBHelper = AppController.getInstance().getDbHelper();
+    private final OutDocRepo outDocRepo = new OutDocRepo();
+
     SimpleAdapter adapter = null;
     ListView listView = null;
     String[] from = {"Ord", "Cust"};
@@ -129,7 +138,7 @@ public class BoxesActivity extends AppCompatActivity {
                             MessageUtils messageUtils = new MessageUtils();
                             if(response.isSuccessful()) {
                                 for(OutDocs boxes : response.body())
-                                    mDBHelper.updateOutDocsetSentToMasterDate(boxes);
+                                    outDocRepo.updateOutDocsetSentToMasterDate(boxes);
 
                                 if (response.body().size()!=0) {
                                     messageUtils.showMessage(getApplicationContext(), "Ок! Накладные выгружены!");

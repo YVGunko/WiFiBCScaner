@@ -26,6 +26,13 @@ import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.Defs;
 import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.R;
+import com.example.yg.wifibcscaner.data.repo.DefsRepo;
+import com.example.yg.wifibcscaner.data.repo.DepartmentRepo;
+import com.example.yg.wifibcscaner.data.repo.DivisionRepo;
+import com.example.yg.wifibcscaner.data.repo.OperRepo;
+import com.example.yg.wifibcscaner.data.repo.OutDocRepo;
+import com.example.yg.wifibcscaner.data.repo.SotrRepo;
+import com.example.yg.wifibcscaner.data.repo.UserRepo;
 import com.example.yg.wifibcscaner.service.SharedPrefs;
 import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
@@ -40,9 +47,16 @@ import retrofit2.Response;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDayTimeString;
 
 public class OutDocsActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
-    private static final String TAG = "OutDocsActivity";
+    private static final String TAG = "sProject -> OutDocsActivity.";
     //Переменная для работы с БД
-    private DataBaseHelper mDBHelper;
+    private DataBaseHelper mDBHelper = AppController.getInstance().getDbHelper();
+    private final OperRepo operRepo = new OperRepo();
+    private final DivisionRepo divRepo = new DivisionRepo();
+    private final DepartmentRepo depRepo = new DepartmentRepo();
+    private final OutDocRepo outDocRepo = new OutDocRepo();
+    private final UserRepo userRepo = new UserRepo();
+    private final DefsRepo defsRepo = new DefsRepo();
+
     ListView lvData;
     SimpleCursorAdapter scAdapter;
     String strTitle= "Выберите накладную";
@@ -73,7 +87,7 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
                         Log.d(TAG,"Ответ сервера на запрос синхронизации накладных: " + response.body().size());
                         if(response.isSuccessful()) {
                             for(OutDocs boxes : response.body())
-                                mDBHelper.updateOutDocsetSentToMasterDate(boxes);
+                                outDocRepo.updateOutDocsetSentToMasterDate(boxes);
 
                             counter = response.body().size();
                         }else {
@@ -131,19 +145,19 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
             public boolean onLongClick(View view) {
                 AlertDialog.Builder adb = new AlertDialog.Builder(OutDocsActivity.this);
                 adb.setTitle("Создать накладные...");
-                adb.setMessage("Хотите добавить накладные для всех бригад " +mDBHelper.defs.descOper);
+                adb.setMessage("Хотите добавить накладные для всех бригад " +mDBHelper.defs.getDescDep());
                 adb.setNegativeButton("Нет", null);
                 adb.setPositiveButton("Да", new AlertDialog.OnClickListener() {
                     @RequiresApi(api = Build.VERSION_CODES.O)
                     public void onClick(DialogInterface dialog, int which) {
-                        int nextOutDocNumber = mDBHelper.getNextOutDocNumber();
+                        int nextOutDocNumber = outDocRepo.getNextOutDocNumber();
                         if (nextOutDocNumber == 0) {
                             Log.e(TAG, "mDBHelper.getNextOutDocNumber() returned 0");
                             MessageUtils.showToast(getApplicationContext(), "Ошибка нумерации. Накладные не будут созданы!", true);
                             return ;
                         }
 
-                        if (!mDBHelper.createOutDocsForCurrentOper(nextOutDocNumber)) {
+                        if (!outDocRepo.createOutDocsForCurrentOper(nextOutDocNumber)) {
                             Log.e(TAG, "mDBHelper.createOutDocsForCurrentOper(nextOutDocNumber) returned 0");
                             MessageUtils.showToast(getApplicationContext(), "Ошибка при создании документов. Накладные не будут созданы!", true);
                             return ;
@@ -157,7 +171,7 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
         });
 
         Button btnDays = (Button) findViewById(R.id.daysToView);
-        if (!mDBHelper.checkSuperUser(mDBHelper.defs.get_idUser())) {
+        if (!userRepo.checkSuperUser(mDBHelper.defs.get_idUser())) {
             btnDays.findViewById(R.id.daysToView).setVisibility(View.INVISIBLE);
             if (SharedPrefs.getInstance() != null) {
                 SharedPrefs.getInstance().setOutDocsDays(1);
@@ -237,21 +251,20 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
 
                 if ((mDBHelper.defs.get_Id_o()==mDBHelper.defs.get_idOperFirst())&&(mDBHelper.defs.getDivision_code().equals(mDBHelper.puDivision))){
                     //Если прием производства и ПУ - установить бригаду из строки таблицы Prods c выбранной накладной
-                    int iDep = mDBHelper.getId_dByOutdoc(mDBHelper.currentOutDoc.get_id());
+                    int iDep = depRepo.getIdByOutDocCode(mDBHelper.currentOutDoc.get_id());
                     if ((iDep != 0)&&(iDep!=mDBHelper.defs.get_Id_d())){
-                        MessageUtils messageUtils = new MessageUtils();
                         mDBHelper.defs.set_Id_d(iDep);
                         Defs defs = new Defs(iDep, mDBHelper.defs.get_Id_o(), mDBHelper.defs.get_Id_s(),
                                 mDBHelper.defs.get_Host_IP(), mDBHelper.defs.get_Port(),
                                 mDBHelper.defs.getDivision_code(),  mDBHelper.defs.get_idUser(), mDBHelper.defs.getDeviceId());
-                        if (mDBHelper.updateDefsTable(defs) != 0) {
-                            mDBHelper.selectDefsTable();
-                            messageUtils.showMessage(getApplicationContext(),"Сохранено."+mDBHelper.defs.descDep);
+                        if (defsRepo.updateDefsTable(defs) != 0) {
+                            defsRepo.selectDefsTable();
+                            MessageUtils.showToast(getApplicationContext(),"Сохранено."+mDBHelper.defs.getDescDep(), false);
                         } else {
-                            messageUtils.showMessage(getApplicationContext(),"Ошибка при сохранении.");
+                            MessageUtils.showToast(getApplicationContext(),"Ошибка при сохранении.", true);
                         }
                     }
-                    result = selectedTitle +scAdapter.getCursor().getString(1)+" "+mDBHelper.defs.descDep;
+                    result = selectedTitle +scAdapter.getCursor().getString(1)+" "+mDBHelper.defs.getDescDep();
                 }
                 OutDocsActivity.this.setTitle(result);
             }
@@ -269,7 +282,7 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
     // обработка нажатия кнопки
     @RequiresApi(api = Build.VERSION_CODES.O)
     public void onButtonClick(View view) {
-        int docNum = mDBHelper.outDocsAddRec();
+        int docNum = outDocRepo.outDocsAddRec();
         // добавляем запись
         if (docNum!=0) {
             // получаем новый курсор с данными
@@ -336,19 +349,19 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
     private boolean addOutDocForAllDeps (){
         AlertDialog.Builder adb = new AlertDialog.Builder(OutDocsActivity.this);
         adb.setTitle("Создать накладные...");
-        adb.setMessage("Хотите добавить накладные для всех бригад " +mDBHelper.defs.descOper);
+        adb.setMessage("Хотите добавить накладные для всех бригад " +mDBHelper.defs.getDescDep());
         adb.setNegativeButton("Нет", null);
         adb.setPositiveButton("Да", new AlertDialog.OnClickListener() {
             @RequiresApi(api = Build.VERSION_CODES.O)
             public void onClick(DialogInterface dialog, int which) {
-                int nextOutDocNumber = mDBHelper.getNextOutDocNumber();
+                int nextOutDocNumber = outDocRepo.getNextOutDocNumber();
                 if (nextOutDocNumber == 0) {
                     Log.e(TAG, "mDBHelper.getNextOutDocNumber() returned 0");
                     MessageUtils.showToast(getApplicationContext(), "Ошибка нумерации. Накладные не будут созданы!", true);
                     return ;
                 }
 
-                if (!mDBHelper.createOutDocsForCurrentOper(nextOutDocNumber)) {
+                if (!outDocRepo.createOutDocsForCurrentOper(nextOutDocNumber)) {
                     Log.e(TAG, "mDBHelper.createOutDocsForCurrentOper(nextOutDocNumber) returned 0");
                     MessageUtils.showToast(getApplicationContext(), "Ошибка при создании документов. Накладные не будут созданы!", true);
                     return ;
@@ -362,19 +375,19 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
     private boolean addOutDocForAllSotr (){
         AlertDialog.Builder adb = new AlertDialog.Builder(OutDocsActivity.this);
         adb.setTitle("Создать накладные...");
-        adb.setMessage("Хотите добавить накладные для всех сотрудников бригады " +mDBHelper.defs.descDep);
+        adb.setMessage("Хотите добавить накладные для всех сотрудников бригады " +mDBHelper.defs.getDescDep());
         adb.setNegativeButton("Нет", null);
         adb.setPositiveButton("Да", new AlertDialog.OnClickListener() {
             @RequiresApi(api = Build.VERSION_CODES.O)
             public void onClick(DialogInterface dialog, int which) {
-                int nextOutDocNumber = mDBHelper.getNextOutDocNumber();
+                int nextOutDocNumber = outDocRepo.getNextOutDocNumber();
                 if (nextOutDocNumber == 0) {
                     Log.e(TAG, "mDBHelper.getNextOutDocNumber() returned 0");
                     MessageUtils.showToast(getApplicationContext(), "Ошибка нумерации. Накладные не будут созданы!", true);
                     return ;
                 }
 
-                if (!mDBHelper.createOutDocsForCurrentDep(nextOutDocNumber)) {
+                if (!outDocRepo.createOutDocsForCurrentDep(nextOutDocNumber)) {
                     Log.e(TAG, "mDBHelper.createOutDocsForCurrentDep(nextOutDocNumber) returned 0");
                     MessageUtils.showToast(getApplicationContext(), "Ошибка при создании документов. Накладные не будут созданы!", true);
                     return ;

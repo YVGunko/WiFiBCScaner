@@ -30,9 +30,12 @@ import com.example.yg.wifibcscaner.data.model.Deps;
 import com.example.yg.wifibcscaner.data.model.Division;
 import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.R;
+import com.example.yg.wifibcscaner.data.repo.DefsRepo;
 import com.example.yg.wifibcscaner.data.repo.DepartmentRepo;
 import com.example.yg.wifibcscaner.data.repo.DivisionRepo;
 import com.example.yg.wifibcscaner.data.repo.OperRepo;
+import com.example.yg.wifibcscaner.data.repo.SotrRepo;
+import com.example.yg.wifibcscaner.data.repo.UserRepo;
 import com.example.yg.wifibcscaner.service.OrderService;
 import com.example.yg.wifibcscaner.service.SharedPrefs;
 import com.example.yg.wifibcscaner.data.model.Sotr;
@@ -65,6 +68,9 @@ public class SettingsActivity extends AppCompatActivity implements
     private final OperRepo operRepo = new OperRepo();
     private final DivisionRepo divRepo = new DivisionRepo();
     private final DepartmentRepo depRepo = new DepartmentRepo();
+    private final SotrRepo sotrRepo = new SotrRepo();
+    private final UserRepo userRepo = new UserRepo();
+    private final DefsRepo defsRepo = new DefsRepo();
 
     EditText host_v;
     TextView select_label, opers_select_label, labelSotr, labelDivision2;
@@ -115,7 +121,7 @@ public class SettingsActivity extends AppCompatActivity implements
         spinnerSotr.setOnItemSelectedListener(this);
         // Выборка настроек по умолчанию
 
-        mDBHelper.selectDefsTable();
+        defsRepo.selectDefsTable();
         try {
             String url = mDBHelper.defs.getUrl();
             boxesService = ApiUtils.getOrderService(url);
@@ -141,7 +147,7 @@ public class SettingsActivity extends AppCompatActivity implements
         select_label = (TextView) findViewById(R.id.select_label);
         select_label.setText(depRepo.getDepNameById(mDBHelper.defs.get_Id_d()));
         labelSotr = (TextView) findViewById(R.id.labelSotr);
-        labelSotr.setText(mDBHelper.getSotr_Name_by_id(mDBHelper.defs.get_Id_s()));
+        labelSotr.setText(sotrRepo.getNameById(mDBHelper.defs.get_Id_s()));
     }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -369,7 +375,7 @@ matcher.matches();*/
 
         List<String> lables = (AppUtils.isEmpty(division_code) || ido<=0 || idd<=0)
                 ? new ArrayList<>()
-                    : mDBHelper.getAllSotrName(division_code, idd, ido);
+                    : sotrRepo.getAllSotrName(division_code, idd, ido);
 
         ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
                 android.R.layout.simple_spinner_item, lables);
@@ -465,7 +471,7 @@ matcher.matches();*/
             if (position != 0) {
                 String slabel = parent.getItemAtPosition(position).toString();
                 //Выбрать _id Sotr и записать в Defs;
-                ids = mDBHelper.getSotr_id_by_Name(slabel);
+                ids = sotrRepo.getSotr_id_by_Name(slabel);
                 if (ids != 0) {
                     labelSotr = (TextView) findViewById(R.id.labelSotr);
                     labelSotr.setText(slabel);
@@ -479,7 +485,7 @@ matcher.matches();*/
                     try {
                         String slabel = parent.getItemAtPosition(position).toString();
                         //Выбрать _id Sotr и записать в Defs;
-                        ids = mDBHelper.getSotr_id_by_Name(slabel);
+                        ids = sotrRepo.getSotr_id_by_Name(slabel);
                         if (ids != 0) {
                             labelSotr = (TextView) findViewById(R.id.labelSotr);
                             labelSotr.setText(slabel);
@@ -548,12 +554,12 @@ matcher.matches();*/
         String ip = host_v.getText().toString();
 
         Defs defs = new Defs(idd, ido, ids, ip, "4242", division_code, mDBHelper.defs.getDeviceId());
-        if (mDBHelper.updateDefsTable(defs) != 0) {
+        if (defsRepo.updateDefsTable(defs) != 0) {
             MessageUtils.showToast(getApplicationContext(),"Сохранено.", false);
         } else {
             MessageUtils.showToast(getApplicationContext(),"Ошибка при сохранении.", false);
         }
-        mDBHelper.selectDefsTable();
+        defsRepo.selectDefsTable();
     }
 
     private class SyncIncoData extends AsyncTask<String, Integer, String> {
@@ -599,7 +605,7 @@ matcher.matches();*/
                     public void onResponse(Call<List<Deps>> call, Response<List<Deps>> response) {
                         if (response.isSuccessful() && response.body()!=null && !response.body().isEmpty()) {
                             for (Deps deps : response.body())
-                                mDBHelper.insertDeps(deps);
+                                depRepo.insertDeps(deps);
                         }
                         publishProgress(2);
                     }
@@ -615,7 +621,7 @@ matcher.matches();*/
                     public void onResponse(Call<List<Sotr>> call, Response<List<Sotr>> response) {
                         if (response.isSuccessful() && response.body()!=null && !response.body().isEmpty()) {
                             for (Sotr sotr : response.body())
-                                mDBHelper.insertSotr(sotr);
+                                sotrRepo.insertSotr(sotr);
                         }
                         publishProgress(1);
                     }
@@ -632,7 +638,7 @@ matcher.matches();*/
                     public void onResponse(Call<List<user>> call, Response<List<user>> response) {
                         if (response.isSuccessful() && response.body()!=null && !response.body().isEmpty()) {
                             for (user user : response.body())
-                                mDBHelper.insertUser(user);
+                                userRepo.insertUser(user);
                         }
                         publishProgress(5);
                     }

@@ -28,6 +28,7 @@ public class dbService extends AppCompatActivity {
     Button buttonSetDate;
     TextView dbServiceOutDocs, dbServiceOrders, dbServiceBoxes, dbServiceBoxMoves, dbServiceProds;
 
+
     public class tableRecord {
         private String Name ;
         private String Date ;

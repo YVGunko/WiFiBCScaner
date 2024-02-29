@@ -1,15 +1,19 @@
 package com.example.yg.wifibcscaner.data.repo;
 
+import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteStatement;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
 
 import com.example.yg.wifibcscaner.controller.AppController;
+import com.example.yg.wifibcscaner.data.model.Defs;
 import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.data.model.Sotr;
+import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.service.SharedPrefs;
 import com.example.yg.wifibcscaner.utils.DateTimeUtils;
 
@@ -20,19 +24,23 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
+import static com.example.yg.wifibcscaner.DataBaseHelper.COLUMN_sentToMasterDate;
 import static com.example.yg.wifibcscaner.utils.AppUtils.isDepAndSotrOper;
 import static com.example.yg.wifibcscaner.utils.AppUtils.tryCloseCursor;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDateTimeLong;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDayTimeString;
+import static com.example.yg.wifibcscaner.utils.MyStringUtils.getUUID;
 
 public class OutDocRepo {
     private static final String TAG = "sProject -> OutDocRepo";
     private SQLiteDatabase mDataBase = AppController.getInstance().getDbHelper().openDataBase();
+    private Defs defs = AppController.getInstance().getDbHelper().defs;
     private final UserRepo userRepo = new UserRepo();
     private final SotrRepo sotrRepo = new SotrRepo();
     private final OperRepo operRepo = new OperRepo();
     private final DivisionRepo divRepo = new DivisionRepo();
     private final DepartmentRepo depRepo = new DepartmentRepo();
+
     /*
      * OutDoc add, add in bulk, next number
      * */
@@ -90,7 +98,7 @@ public class OutDocRepo {
                         getDayTimeString(new Date().getTime()));
 
                 if (createOutDocsForCurrentOperInBulk(Collections.singletonList(outDoc))) {
-                    currentOutDoc = outDoc;
+                    AppController.getInstance().getDbHelper().currentOutDoc = outDoc;
                 }
             }catch (Exception e) {
                 Log.e(TAG, "outDocsAddRec exception -> ",e);
@@ -120,9 +128,9 @@ public class OutDocRepo {
         List<OutDocs> listOutDocs = new ArrayList<>();
         final String dateToSet = getDayTimeString(new Date());
 
-        for (Sotr sotr : getSotrIdByDep(defs.getDivision_code(), defs.get_Id_o(), defs.get_Id_d())){
+        for (Sotr sotr : sotrRepo.getSotrIdByDivisionCodeAndOperationIdAndDepartmentId(defs.getDivision_code(), defs.get_Id_o(), defs.get_Id_d())){
             if (sotr.get_id() != 0) {
-                listOutDocs.add(prepareOutDoc(nextOutDocNumber, defs.get_Id_d(), defs.descDep, sotr.get_id(), sotr.get_Sotr(), dateToSet));
+                listOutDocs.add(prepareOutDoc(nextOutDocNumber, defs.get_Id_d(), defs.getDescDep(), sotr.get_id(), sotr.get_Sotr(), dateToSet));
                 nextOutDocNumber++;
             }
         }
@@ -130,11 +138,11 @@ public class OutDocRepo {
         return createOutDocsForCurrentOperInBulk(listOutDocs);
     }
     private OutDocs prepareOutDoc (final int outDocNumber, final int depId, final int sotrId, final String dateToSet){
-        String sotrName = (sotrId != 0) ? getSotr_Name_by_id(sotrId) : "";
+        String sotrName = (sotrId != 0) ? sotrRepo.getNameById(sotrId) : "";
         if (StringUtils.isNotEmpty(sotrName)) sotrName = sotrName.substring(0, sotrName.indexOf(" "));
 
         String description = (depId == 0 & sotrId == 0)
-                ? defs.descOper.concat(", ").concat(defs.descUser)
+                ? defs.getDescDep().concat(", ").concat(defs.getDescUser())
                 : (depRepo.getDepNameById(depId).concat(", ").concat(sotrName));
 
         OutDocs outDoc = new OutDocs(getUUID(), defs.get_Id_o(), outDocNumber,
@@ -184,6 +192,20 @@ public class OutDocRepo {
         } finally {
             mDataBase.endTransaction();
             return result;
+        }
+    }
+    public boolean updateOutDocsetSentToMasterDate (OutDocs od) {
+        try {
+            ContentValues values = new ContentValues();
+            values.clear();
+            values.put(COLUMN_sentToMasterDate, new Date().getTime());
+            return  (mDataBase.update(OutDocs.TABLE, values,OutDocs.COLUMN_Id +"='"+od.get_id()+"'",null) > 0) ;
+        } catch (SQLiteException e) {
+            Log.e( TAG, "updateOutDocsetSentToMasterDate exception ".concat(e.getMessage()) );
+            MessageUtils.showToast(AppController.getInstance().getContext(),
+                    "Запись даты отправки накладных. Операция не выполнена!",
+                    false);
+            return false;
         }
     }
 }
