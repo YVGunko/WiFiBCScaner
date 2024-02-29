@@ -15,6 +15,7 @@ import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.Operation;
 
 import static com.example.yg.wifibcscaner.utils.AppUtils.tryCloseCursor;
+import static com.example.yg.wifibcscaner.utils.DateTimeUtils.lDateToString;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.sDateTimeToLong;
 
 public class OperRepo {
@@ -70,7 +71,21 @@ public class OperRepo {
             tryCloseCursor(cursor);
         }
     }
-
+    public String getOperUpdateDate(@NonNull String globalUpdateDate){
+        Cursor cursor = null;
+        try {
+            cursor = mDataBase.rawQuery("SELECT max(DT) FROM Opers", null);
+            if (cursor != null && cursor.moveToFirst()) {
+                return lDateToString(cursor.getLong(0) > sDateTimeToLong(globalUpdateDate) ? cursor.getLong(0) : sDateTimeToLong(globalUpdateDate));
+            }
+            return globalUpdateDate;
+        }catch (Exception e) {
+            Log.e(TAG, "getMaxDepsDate -> ".concat(e.getMessage()));
+            return globalUpdateDate;
+        } finally {
+            tryCloseCursor(cursor);
+        }
+    }
     public long insertOpers(@NonNull Operation oper) {
         try {
             mDataBase = AppController.getInstance().getDbHelper().openDataBase();

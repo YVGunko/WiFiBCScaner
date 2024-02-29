@@ -2,15 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/DataCollection/DataCollection.iml" filepath="$PROJECT_DIR$/DataCollection/DataCollection.iml" group="WiFiBCScaner/DataCollection" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/Desktop-Dev-WiFiBCScaner.iml" filepath="$PROJECT_DIR$/.idea/modules/Desktop-Dev-WiFiBCScaner.iml" group="WiFiBCScaner" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/Dev-WiFiBCScaner.iml" filepath="$PROJECT_DIR$/.idea/modules/Dev-WiFiBCScaner.iml" group="WiFiBCScaner" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/DataCollection/Dev-WiFiBCScaner-DataCollection.iml" filepath="$PROJECT_DIR$/.idea/modules/DataCollection/Dev-WiFiBCScaner-DataCollection.iml" group="WiFiBCScaner/DataCollection" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/Dev-WiFiBCScaner-app.iml" filepath="$PROJECT_DIR$/.idea/modules/app/Dev-WiFiBCScaner-app.iml" group="WiFiBCScaner/app" />
-      <module fileurl="file://$PROJECT_DIR$/WiFiBCScaner.iml" filepath="$PROJECT_DIR$/WiFiBCScaner.iml" group="WiFiBCScaner" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/DataCollection/WiFiBCScaner-DataCollection.iml" filepath="$PROJECT_DIR$/.idea/modules/DataCollection/WiFiBCScaner-DataCollection.iml" group="WiFiBCScaner/DataCollection" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/WiFiBCScaner-app.iml" filepath="$PROJECT_DIR$/.idea/modules/app/WiFiBCScaner-app.iml" group="WiFiBCScaner/app" />
-      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" group="WiFiBCScaner/app" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/Dev.WiFiBCScaner.iml" filepath="$PROJECT_DIR$/.idea/modules/Dev.WiFiBCScaner.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/DataCollection/WiFiBCScaner.DataCollection.iml" filepath="$PROJECT_DIR$/.idea/modules/DataCollection/WiFiBCScaner.DataCollection.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/WiFiBCScaner.app.iml" filepath="$PROJECT_DIR$/.idea/modules/app/WiFiBCScaner.app.iml" />
     </modules>
   </component>
 </project>

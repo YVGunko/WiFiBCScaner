@@ -29,6 +29,9 @@ import com.example.yg.wifibcscaner.data.repo.DepartmentRepo;
 import com.example.yg.wifibcscaner.data.repo.DivisionRepo;
 import com.example.yg.wifibcscaner.data.repo.OperRepo;
 import com.example.yg.wifibcscaner.data.repo.OrderOutDocBoxMovePartRepository;
+import com.example.yg.wifibcscaner.data.repo.OrderRepo;
+import com.example.yg.wifibcscaner.data.repo.SotrRepo;
+import com.example.yg.wifibcscaner.data.repo.UserRepo;
 import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.data.model.user;
@@ -46,6 +49,8 @@ import retrofit2.Response;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import org.apache.commons.lang3.StringUtils;
+
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDayTimeLong;
 
 public class UpdateActivity extends AppCompatActivity {
@@ -54,13 +59,20 @@ public class UpdateActivity extends AppCompatActivity {
     private final OperRepo operRepo = new OperRepo();
     private final DivisionRepo divRepo = new DivisionRepo();
     private final DepartmentRepo depRepo = new DepartmentRepo();
+    private final OrderRepo orderRepo = new OrderRepo();
+    private final SotrRepo sotrRepo = new SotrRepo();
+    private final UserRepo userRepo = new UserRepo();
+
     public String globalUpdateDate = "";
+
+    private static final Long ldtMin = DateTimeUtils.getStartOfDayLong(DateTimeUtils.addDays(new Date(), -DateTimeUtils.numberOfDaysInMonth(new Date())));
+    private static final String dtMin = DateTimeUtils.getStartOfDayString(ldtMin);
 
     ProgressBar pbar;
     Button buttonStart;
     ListView listView;
     Button buttonSetDate;
-    String strUpdateDate = mDBHelper.dtMin;
+
 
     String[] checkNameList = {
             "Сотрудники",
@@ -147,7 +159,9 @@ public class UpdateActivity extends AppCompatActivity {
             counter = 0;
             try {
 
-                ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getUser(mDBHelper.getMaxUserDate()).enqueue(new Callback<List<user>>() {
+                ApiUtils.getOrderService(mDBHelper.defs.getUrl())
+                        .getUser(StringUtils.isNotBlank(globalUpdateDate) ? globalUpdateDate : userRepo.getUserUpdateDate(dtMin))
+                        .enqueue(new Callback<List<user>>() {
                     // TODO Обработать результат. Записать поле sent... если успешно
                     @Override
                     public void onResponse(Call<List<user>> call, Response<List<user>> response) {
@@ -187,7 +201,9 @@ public class UpdateActivity extends AppCompatActivity {
                         Log.d(TAG, "Ответ сервера на запрос новых сотрудников: " + t.getMessage());
                     }
                 });
-                ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getOperation(mDBHelper.getMaxOpersDate()).enqueue(new Callback<List<Operation>>() {
+                ApiUtils.getOrderService(mDBHelper.defs.getUrl())
+                        .getOperation(StringUtils.isNotBlank(globalUpdateDate) ? globalUpdateDate : operRepo.getOperUpdateDate(dtMin))
+                        .enqueue(new Callback<List<Operation>>() {
                     // TODO Обработать результат. Записать поле sent... если успешно
                     @Override
                     public void onResponse(Call<List<Operation>> call, Response<List<Operation>> response) {
@@ -206,8 +222,9 @@ public class UpdateActivity extends AppCompatActivity {
                         Log.d("UpdateActivity", "Ответ сервера на запрос новых операций: " + t.getMessage());
                     }
                 });
-                ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getSotr(mDBHelper.getMaxSotrDate()).enqueue(new Callback<List<Sotr>>() {
-                    // TODO Обработать результат. Записать поле sent... если успешно
+                ApiUtils.getOrderService(mDBHelper.defs.getUrl())
+                        .getSotr(StringUtils.isNotBlank(globalUpdateDate) ? globalUpdateDate : sotrRepo.getSotrUpdateDate(dtMin))
+                        .enqueue(new Callback<List<Sotr>>() {
                     @Override
                     public void onResponse(Call<List<Sotr>> call, Response<List<Sotr>> response) {
 
@@ -228,8 +245,9 @@ public class UpdateActivity extends AppCompatActivity {
                     }
                 });
 
-                ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getDeps(depRepo.getMaxDepsDate(globalUpdateDate)).enqueue(new Callback<List<Deps>>() {
-                    // TODO Обработать результат. Записать поле sent... если успешно
+                ApiUtils.getOrderService(mDBHelper.defs.getUrl())
+                        .getDeps(StringUtils.isNotBlank(globalUpdateDate) ? globalUpdateDate : depRepo.getDepUpdateDate(dtMin))
+                        .enqueue(new Callback<List<Deps>>() {
                     @Override
                     public void onResponse(Call<List<Deps>> call, Response<List<Deps>> response) {
                         if (response.isSuccessful()) {
@@ -248,14 +266,9 @@ public class UpdateActivity extends AppCompatActivity {
                     }
                 });
 
-                if (!mDBHelper.globalUpdateDate.equals("")) {
-                    strUpdateDate = mDBHelper.globalUpdateDate;
-                } else {
-                    strUpdateDate = mDBHelper.getMaxOrderDate();
-                }
                 //выбрать максимальную дату загрузки заказа из MasterData. Запросить все заказы старше этой даты но только за месяц.
                 OrderOutDocBoxMovePartRepository orderOutDocBoxMovePartRepository = new OrderOutDocBoxMovePartRepository();
-                orderOutDocBoxMovePartRepository.downloadData(strUpdateDate);
+                orderOutDocBoxMovePartRepository.downloadData(StringUtils.isNotBlank(globalUpdateDate) ? globalUpdateDate :  orderRepo.getOrderUpdateDate(dtMin));
 
             } catch (Exception e) {
                 Log.d(TAG, "Error : " + e.getMessage());

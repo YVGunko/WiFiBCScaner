@@ -54,6 +54,9 @@ import com.example.yg.wifibcscaner.data.model.user;
 import com.example.yg.wifibcscaner.data.repo.DepartmentRepo;
 import com.example.yg.wifibcscaner.data.repo.DivisionRepo;
 import com.example.yg.wifibcscaner.data.repo.OperRepo;
+import com.example.yg.wifibcscaner.data.repo.OrderRepo;
+import com.example.yg.wifibcscaner.data.repo.SotrRepo;
+import com.example.yg.wifibcscaner.data.repo.UserRepo;
 import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.service.SharedPrefs;
 import com.example.yg.wifibcscaner.service.spBarcode;
@@ -90,14 +93,16 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     private SQLiteDatabase mDataBase;
     private AtomicInteger mOpenCounter = new AtomicInteger();
 
-    public static final Long ldtMin = DateTimeUtils.getStartOfDayLong(DateTimeUtils.addDays(new Date(), -DateTimeUtils.numberOfDaysInMonth(new Date())));
-    public static final String dtMin = DateTimeUtils.getStartOfDayString(ldtMin);
+
 
     public Defs defs;
     public static OutDocs currentOutDoc;
     private final OperRepo operRepo = new OperRepo();
     private final DivisionRepo divRepo = new DivisionRepo();
     private final DepartmentRepo depRepo = new DepartmentRepo();
+    private final OrderRepo orderRepo = new OrderRepo();
+    private final SotrRepo sotrRepo = new SotrRepo();
+    private final UserRepo userRepo = new UserRepo();
 
     public class foundbox {
         String barcode; //строка описания
@@ -1249,23 +1254,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             tryCloseCursor(cursor);
         }
     }
-    public boolean checkSuperUser (int _id) {
-        Cursor cursor = null;
-        try {
-            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-            cursor = mDataBase.rawQuery("SELECT superUser FROM user Where _id=?",
-                    new String [] {String.valueOf(_id)});
-            if (cursor != null && cursor.moveToFirst()) {
-                return cursor.getInt(0) != 0;
-            }
-            return false;
-        }catch (Exception e) {
-            Log.e(TAG, "checkSuperUser -> ".concat(e.getMessage()));
-            return false;
-        } finally {
-            tryCloseCursor(cursor);
-        }
-    }
+
     public boolean checkIfUserTableEmpty () {
         Cursor cursor = null;
         try {
@@ -1319,7 +1308,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                         cursor.getInt(6),cursor.getString(7),cursor.getInt(8),cursor.getString(9));
                 defs.descOper = operRepo.getOperNameById(defs.get_Id_o());
                 defs.descDep = depRepo.getDepNameById(defs.get_Id_d());
-                defs.descSotr = getSotr_Name_by_id(defs.get_Id_s());
+                defs.descSotr = sotrRepo.getNameById(defs.get_Id_s());
                 defs.descDivision = divRepo.getDivisionNameByCode(defs.getDivision_code());
                 defs.descUser = getUserName(defs.get_idUser());
                 defs.descFirstOperForCurrent = operRepo.getOperNameById(getFirstOperFor(defs.get_Id_o()));
@@ -1356,158 +1345,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         mDataBase.close();
         return nm;
     }
-    public List<Sotr> getSotrIdByDep(String division_code, int operation_id, int department_id) {
-        ArrayList<Sotr> sotrArrayList = new ArrayList<Sotr>();
-        mDataBase = this.getReadableDatabase();
-        try ( Cursor cursor = mDataBase.rawQuery("SELECT _id, Sotr FROM Sotr " +
-                        "Where division_code=? and Id_o=? and Id_d=? Order by _id",
-                new String [] {String.valueOf(division_code), String.valueOf(operation_id), String.valueOf(department_id)}) ) {
-            while (cursor.moveToNext()) {
-                sotrArrayList.add(new Sotr(cursor.getInt(0), cursor.getString(1)) );
-            }
-            tryCloseCursor(cursor);
-        }
-        mDataBase.close();
-        return sotrArrayList;
-    }
-    public List<String> getAllSotrName(String code, int department_id, int operation_id) {
-        ArrayList<String> nameDeps = new ArrayList<String>();
-        mDataBase = this.getReadableDatabase();
-        try ( Cursor cursor = mDataBase.rawQuery("SELECT _id,tn_Sotr,Sotr FROM Sotr " +
-                "Where NOT expired and (((division_code=?) and (Id_o=?) and (Id_d=?))) or (_id=0) Order by _id",
-                new String [] {String.valueOf(code), String.valueOf(operation_id), String.valueOf(department_id)}) ) {
-            while (cursor.moveToNext()) {
-                nameDeps.add(String.format("%s, %s", cursor.getString(2), cursor.getString(1)));
-            }
-            tryCloseCursor(cursor);
-        }
-        return nameDeps;
-    }
-    public Sotr getSotrReq(int Id_s){
-        mDataBase = this.getReadableDatabase();
-        Sotr sotr = new Sotr(Id_s, "0",0,0);
-        Cursor cursor = null;
-        try {
-            cursor = mDataBase.rawQuery("SELECT Id_o, Id_d, division_code FROM Sotr Where _id=?", new String [] {String.valueOf(Id_s)});
-            if ((cursor != null) & (cursor.getCount() != 0)) {
-                cursor.moveToFirst();
-                sotr.set_Id_o(cursor.getInt(0));
-                sotr.set_Id_d(cursor.getInt(1));
-                sotr.setDivision_code(cursor.getString(2));
-            }
-            tryCloseCursor(cursor);
-            mDataBase.close();
-        } finally {
-            tryCloseCursor(cursor);
-            mDataBase.close();
-            return sotr;
-        }
-    }
-    public int getSotr_id_by_Name(String nm){
-        mDataBase = this.getReadableDatabase();
-        int num = 0;
-        if( nm.indexOf(", ") > 0) {
-            nm = substring(nm, nm.indexOf("0"), nm.length());
-            Cursor cursor = mDataBase.rawQuery("SELECT _id FROM Sotr Where tn_Sotr='" + nm + "'", null);
-            if ((cursor != null) & (cursor.getCount() != 0)) {
-                cursor.moveToFirst();
-                num = cursor.getInt(0);
-            }
-            tryCloseCursor(cursor);
-            mDataBase.close();
-        }
-        return num;
-    }
-    public String getSotr_Name_by_id(int iD){
-        mDataBase = this.getReadableDatabase();
-        String nm = "";
-        Cursor cursor = mDataBase.rawQuery("SELECT tn_Sotr, Sotr FROM Sotr Where _id="+ iD, null);
-        if ((cursor != null) & (cursor.getCount() != 0)) {
-            cursor.moveToFirst();
-            nm = String.format("%s %s", cursor.getString(1), cursor.getString(0));
-        }
-        tryCloseCursor(cursor);
-        mDataBase.close();
-        return nm;
-    }
 
-    public String getMaxOrderDate(){
-        String nm = dtMin;
-        if (!globalUpdateDate.equals("")) {nm = globalUpdateDate; return nm;}
-
-        Cursor cursor = null;
-        try {
-            mDataBase = this.getReadableDatabase();
-            cursor = mDataBase.rawQuery("SELECT updateStart, updateEnd, updateSuccess FROM lastUpdate WHERE tableName=?", new String [] {Orders.TABLE_orders});
-            if ((cursor != null) & (cursor.getCount() != 0)) {
-                cursor.moveToFirst();
-                //nm = lDateToString(cursor.getLong(0));
-                if(!cursor.isNull(0)) nm = DateTimeUtils.getStartOfDayString(cursor.getLong(0));
-            }
-        } finally {
-            tryCloseCursor(cursor);
-            mDataBase.close();
-            return nm;
-        }
-    }
-
-    public String getMaxUserDate(){
-        String nm = dtMin;
-        if (!globalUpdateDate.equals("")) {nm = globalUpdateDate;
-            return nm;}
-
-        Cursor cursor = null;
-        try {
-            mDataBase = this.getReadableDatabase();
-            cursor = mDataBase.rawQuery("SELECT max(DT) FROM user", null);
-            if ((cursor != null) & (cursor.getCount() != 0)) {
-                cursor.moveToFirst();
-                nm = lDateToString(cursor.getLong(0));
-            }
-        } finally {
-            tryCloseCursor(cursor);
-            mDataBase.close();
-            return nm;
-        }
-    }
-    public String getMaxSotrDate(){
-        String nm = dtMin;
-        if (!globalUpdateDate.equals("")) {nm = globalUpdateDate;
-        return nm;}
-
-        Cursor cursor = null;
-        try {
-            mDataBase = this.getReadableDatabase();
-            cursor = mDataBase.rawQuery("SELECT max(DT) FROM Sotr", null);
-            if ((cursor != null) & (cursor.getCount() != 0)) {
-                cursor.moveToFirst();
-                nm = lDateToString(cursor.getLong(0));
-            }
-        } finally {
-            tryCloseCursor(cursor);
-            mDataBase.close();
-            return nm;
-        }
-    }
-
-    public String getMaxOpersDate(){
-        String nm = dtMin;
-        if (!globalUpdateDate.equals("")) {nm = globalUpdateDate; return nm;}
-
-        Cursor cursor = null;
-        try {
-            mDataBase = this.getReadableDatabase();
-            cursor = mDataBase.rawQuery("SELECT max(DT) FROM Opers", null);
-            if ((cursor != null) & (cursor.getCount() != 0)) {
-                cursor.moveToFirst();
-                nm = lDateToString(cursor.getLong(0));
-            }
-        } finally {
-            tryCloseCursor(cursor);
-            mDataBase.close();
-            return nm;
-        }
-    }
 
     public int getId_dByOutdoc(String idOutDocs){
         int result = 0;
@@ -1523,74 +1361,6 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         tryCloseCursor(cursor);
         mDataBase.close();
         return result;
-    }
-    public String getProdsMinDate(){
-        String nm = dtMin;
-
-        Cursor cursor = null;
-        try {
-            mDataBase = this.getReadableDatabase();
-            cursor = mDataBase.rawQuery("SELECT min(P_date) FROM Prods", null);
-            if ((cursor != null) & (cursor.getCount() != 0)) {
-                cursor.moveToFirst();
-                nm = lDateToString(cursor.getLong(0));
-            }
-        } finally {
-            tryCloseCursor(cursor);
-            mDataBase.close();
-            return nm;
-        }
-    }
-    public Long getProdsMinDateLong(){
-        Long nm = ldtMin;
-
-        Cursor cursor = null;
-        try {
-            mDataBase = this.getReadableDatabase();
-            cursor = mDataBase.rawQuery("SELECT min(P_date) FROM Prods", null);
-            if ((cursor != null) & (cursor.getCount() != 0)) {
-                cursor.moveToFirst();
-                nm = DateTimeUtils.getLongStartOfDayLong(cursor.getLong(0));
-            }
-        } finally {
-            tryCloseCursor(cursor);
-            mDataBase.close();
-            return nm;
-        }
-    }
-    public String getTableMinDate(String tableName){
-        String nm = dtMin;
-
-        Cursor cursor = null;
-        try {
-            mDataBase = this.getReadableDatabase();
-            cursor = mDataBase.rawQuery("SELECT min(DT) FROM "+tableName, null);
-            if ((cursor != null) & (cursor.getCount() != 0)) {
-                cursor.moveToFirst();
-                nm = lDateToString(cursor.getLong(0));
-            }
-        } finally {
-            tryCloseCursor(cursor);
-            mDataBase.close();
-            return nm;
-        }
-    }
-    public Long getTableMinDateLong(String tableName){
-        Long nm = ldtMin;
-
-        Cursor cursor = null;
-        try {
-            mDataBase = this.getReadableDatabase();
-            cursor = mDataBase.rawQuery("SELECT min(DT) FROM "+tableName, null);
-            if ((cursor != null) & (cursor.getCount() != 0)) {
-                cursor.moveToFirst();
-                nm = DateTimeUtils.getLongStartOfDayLong(cursor.getLong(0));
-            }
-        } finally {
-            tryCloseCursor(cursor);
-            mDataBase.close();
-            return nm;
-        }
     }
     public String getTableRecordsCount(String tableName){
         String count = "0";
@@ -1627,51 +1397,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         return result;
     }
     //Insert in Bulk
-    public void insertOrdersInBulk(List<Orders> list){
-        if (!mDataBase.isOpen()) {
-            mDataBase = this.getWritableDatabase();
-        }
-        try {
-            //mDataBase.execSQL("PRAGMA foreign_keys = 0;");
-            mDataBase.beginTransaction();
-            String sql = "INSERT OR REPLACE INTO MasterData (_id, Ord_id, Ord, Cust, Nomen, Attrib," +
-                    " Q_ord, Q_box, N_box, DT, archive, division_code)" +
-                    " VALUES (?,?,?,?,?,?,?,?,?,?,?,?);";
 
-            SQLiteStatement statement = mDataBase.compileStatement(sql);
-
-            for (Orders o : list) {
-                statement.clearBindings();
-                statement.bindLong(1, o.get_id());
-                statement.bindString(2, o.get_Ord_Id());
-                statement.bindString(3, o.get_Ord());
-                statement.bindString(4, o.get_Cust());
-                statement.bindString(5, o.get_Nomen());
-                if (o.get_Attrib() == null)
-                    statement.bindString(6, "");
-                else
-                    statement.bindString(6, (o.get_Attrib()));
-                statement.bindLong(7, o.get_Q_ord());
-                statement.bindLong(8, o.get_Q_box());
-                statement.bindLong(9, o.get_N_box());
-                statement.bindLong(10, getDateTimeLong(o.get_DT()));
-                if (o.getArchive() == null)
-                    statement.bindLong(11, 0);
-                else
-                    statement.bindLong(11, (o.getArchive() ? 1 : 0));
-                statement.bindString(12, o.getDivision_code());
-                statement.executeInsert();
-            }
-
-            mDataBase.setTransactionSuccessful(); // This commits the transaction if there were no exceptions
-            //mDataBase.execSQL("PRAGMA foreign_keys = 1;");
-        } catch (Exception e) {
-            Log.w(TAG, e);
-            throw new RuntimeException("To catch into upper level.");
-        } finally {
-            mDataBase.endTransaction();
-        }
-    }
     public void insertOutDocInBulk(List<OutDocs> list){
         if (!mDataBase.isOpen()) {
             mDataBase = this.getReadableDatabase();
@@ -1855,169 +1581,11 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             return result;
         }
     }
-    /*
-    * OutDoc add, add in bulk, next number
-    * */
-    @RequiresApi(api = Build.VERSION_CODES.O)
-    public int getNextOutDocNumber () {
-        final String queryNextOutDocNumber = "SELECT max(number) FROM OutDocs where division_code=? and Id_o=? AND DT >=? ";
-        final String queryNextOutDocNumberForUser = "SELECT max(number) FROM OutDocs where division_code=? and Id_o=? and idUser=? AND DT >=? ";
 
-        String dateToStartSince = String.valueOf(DateTimeUtils.getFirstDayOfYear());
-        if (SharedPrefs.getInstance() != null) {
-            dateToStartSince = String.valueOf(SharedPrefs.getInstance().getOutdocsNumerationStartDate());
-        }
-
-        if (!mDataBase.isOpen()) {
-            mDataBase = this.getReadableDatabase();
-        }
-        Cursor cursor = null;
-
-        try {
-            if (checkSuperUser(defs.get_idUser())) {
-                cursor = mDataBase.rawQuery(queryNextOutDocNumber,
-                        new String[]{String.valueOf(defs.getDivision_code()), String.valueOf(defs.get_Id_o()),
-                                dateToStartSince});
-            } else {
-                cursor = mDataBase.rawQuery(queryNextOutDocNumberForUser,
-                        new String[]{String.valueOf(defs.getDivision_code()), String.valueOf(defs.get_Id_o()), String.valueOf(defs.get_idUser()),
-                                dateToStartSince});
-            }
-
-            return ( cursor.getInt(0) + 1 );
-
-        } catch (Exception e) {
-            Log.w(TAG, "getNextOutDocNumber -> ".concat(e.getMessage()));
-            return 0;
-        } finally {
-            tryCloseCursor(cursor);
-        }
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.O)
-    public int outDocsAddRec () {
-        if (isDepAndSotrOper(defs.get_Id_o())) {
-            if (defs.get_Id_o() <= 0 || defs.get_Id_d() <= 0 || defs.get_Id_s() <= 0)
-                return 0;
-        } else {
-            if (defs.get_Id_o() <= 0)
-                return 0;
-        }
-
-        final int nextOutDocNumber = getNextOutDocNumber();
-        if (nextOutDocNumber == 0) return 0;
-
-        try {
-            try{
-                OutDocs outDoc = prepareOutDoc(nextOutDocNumber,
-                        isDepAndSotrOper(defs.get_Id_o()) ? defs.get_Id_d() : 0,
-                        isDepAndSotrOper(defs.get_Id_o()) ? defs.get_Id_s() : 0,
-                        getDayTimeString(new Date().getTime()));
-
-                if (createOutDocsForCurrentOperInBulk(Collections.singletonList(outDoc))) {
-                    currentOutDoc = outDoc;
-                }
-            }catch (Exception e) {
-                Log.e(TAG, "outDocsAddRec exception -> ",e);
-            }
-        }  finally {
-            return nextOutDocNumber;
-        }
-    }
-    public boolean createOutDocsForCurrentOper(int nextOutDocNumber) {
-        //for current Div and Oper select all Deps and first Sotr of the Dep.
-        List<OutDocs> listOutDocs = new ArrayList<>();
-        int sotrId;
-        final String dateToSet = getDayTimeString(new Date());
-
-        for (Integer depId : depRepo.getAllDepartmentIdByDivisionCodeAndOperationId(defs.getDivision_code(), defs.get_Id_o())){
-            sotrId = getOneSotrIdByDepId(depId);
-            if (sotrId != 0) {
-                listOutDocs.add(prepareOutDoc(nextOutDocNumber, depId, sotrId, dateToSet));
-                nextOutDocNumber++;
-            }
-        }
-
-        return createOutDocsForCurrentOperInBulk(listOutDocs);
-    }
-    public boolean createOutDocsForCurrentDep(int nextOutDocNumber) {
-        //for current Div and Oper and Dep select all Sotr.
-        List<OutDocs> listOutDocs = new ArrayList<>();
-        final String dateToSet = getDayTimeString(new Date());
-
-        for (Sotr sotr : getSotrIdByDep(defs.getDivision_code(), defs.get_Id_o(), defs.get_Id_d())){
-            if (sotr.get_id() != 0) {
-                listOutDocs.add(prepareOutDoc(nextOutDocNumber, defs.get_Id_d(), defs.descDep, sotr.get_id(), sotr.get_Sotr(), dateToSet));
-                nextOutDocNumber++;
-            }
-        }
-
-        return createOutDocsForCurrentOperInBulk(listOutDocs);
-    }
-    private OutDocs prepareOutDoc (final int outDocNumber, final int depId, final int sotrId, final String dateToSet){
-        String sotrName = (sotrId != 0) ? getSotr_Name_by_id(sotrId) : "";
-        if (StringUtils.isNotEmpty(sotrName)) sotrName = sotrName.substring(0, sotrName.indexOf(" "));
-
-        String description = (depId == 0 & sotrId == 0)
-                ? defs.descOper.concat(", ").concat(defs.descUser)
-                    : (depRepo.getDepNameById(depId).concat(", ").concat(sotrName));
-
-        OutDocs outDoc = new OutDocs(getUUID(), defs.get_Id_o(), outDocNumber,
-                description,
-                dateToSet, defs.getDivision_code(), defs.get_idUser(),
-                sotrId, depId);
-        return outDoc;
-    }
-    private OutDocs prepareOutDoc (final int outDocNumber, final int depId, final String depName, final int sotrId, final String sotrName, final String dateToSet){
-        OutDocs outDoc = new OutDocs(getUUID(), defs.get_Id_o(), outDocNumber,
-                ((StringUtils.isNotEmpty(depName) ? depName : "") + (StringUtils.isNotEmpty(sotrName) ? ", "+sotrName : "")),
-                dateToSet, defs.getDivision_code(), defs.get_idUser(),
-                sotrId, depId);
-        return outDoc;
-    }
-    private boolean createOutDocsForCurrentOperInBulk(List<OutDocs> list){
-        if (!mDataBase.isOpen()) {
-            mDataBase = this.getReadableDatabase();
-        }
-        boolean result = false;
-        try {
-
-            mDataBase.beginTransaction();
-            String sql = "INSERT OR REPLACE INTO OutDocs (_id, Id_o, number, comment, DT, division_code, idUser, idSotr, idDeps) " +
-                    " VALUES (?,?,?,?,?,?,?,?,?);";
-
-            SQLiteStatement statement = mDataBase.compileStatement(sql);
-
-            for (OutDocs o : list) {
-                statement.clearBindings();
-                statement.bindString(1, o.get_id());
-                statement.bindLong(2, o.get_Id_o());
-                statement.bindLong(3, o.get_number());
-                if (o.get_comment() == null)
-                    statement.bindString(4, "");
-                else
-                    statement.bindString(4, o.get_comment());
-                statement.bindLong(5, getDateTimeLong(o.get_DT()));
-                statement.bindString(6, o.getDivision_code());
-                statement.bindLong(7, o.getIdUser());
-                statement.bindLong(8, o.getIdSotr());
-                statement.bindLong(9, o.getIdDeps());
-                statement.executeInsert();
-            }
-
-            mDataBase.setTransactionSuccessful(); // This commits the transaction if there were no exceptions
-            result = true;
-        } catch (Exception e) {
-            Log.e(TAG, "createOutDocsForCurrentOperInBulk exception -> ", e);
-        } finally {
-            mDataBase.endTransaction();
-            return result;
-        }
-    }
     @RequiresApi(api = Build.VERSION_CODES.N)
     public String saveToDB(OrderOutDocBoxMovePart r) {
         try {
-            insertOrdersInBulk(r.orderReqList);
+            orderRepo.insertOrdersInBulk(r.orderReqList);
 
             if (r.outDocReqList != null &&
                     !r.outDocReqList.isEmpty())

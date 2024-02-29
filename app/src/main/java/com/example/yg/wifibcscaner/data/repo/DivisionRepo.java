@@ -20,7 +20,6 @@ public class DivisionRepo {
 
     public List<String> getAllDivisionName() {
         ArrayList<String> list = new ArrayList<String>();
-        mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         Cursor cursor = null;
         try {
             cursor = mDataBase.rawQuery("SELECT name FROM Division", null);
@@ -55,7 +54,6 @@ public class DivisionRepo {
     public String getDivisionsCodeByName(String name){
         Cursor cursor = null;
         try {
-            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             cursor = mDataBase.rawQuery("SELECT code FROM Division Where name=?", new String [] {String.valueOf(name)});
             if (cursor != null && cursor.moveToFirst()) {
                 return cursor.getString(0);

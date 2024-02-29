@@ -10,7 +10,6 @@ import com.example.yg.wifibcscaner.controller.AppController;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.example.yg.wifibcscaner.DataBaseHelper.dtMin;
 import static com.example.yg.wifibcscaner.utils.AppUtils.tryCloseCursor;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.lDateToString;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.sDateTimeToLong;
@@ -69,12 +68,12 @@ public class DepartmentRepo {
             tryCloseCursor(cursor);
         }
     }
-    public String getMaxDepsDate(@NonNull String globalUpdateDate){
+    public String getDepUpdateDate(@NonNull String globalUpdateDate){
         Cursor cursor = null;
         try {
             cursor = mDataBase.rawQuery("SELECT max(DT) FROM Deps", null);
             if (cursor != null && cursor.moveToFirst()) {
-                return lDateToString(cursor.getLong(0) > sDateTimeToLong(globalUpdateDate) ? sDateTimeToLong(globalUpdateDate) : cursor.getLong(0));
+                return lDateToString(cursor.getLong(0) > sDateTimeToLong(globalUpdateDate) ? cursor.getLong(0) : sDateTimeToLong(globalUpdateDate));
             }
             return globalUpdateDate;
         }catch (Exception e) {
