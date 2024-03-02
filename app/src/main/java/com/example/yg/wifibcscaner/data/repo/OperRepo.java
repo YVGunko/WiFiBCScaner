@@ -13,6 +13,7 @@ import java.util.List;
 import com.example.yg.wifibcscaner.DataBaseHelper;
 import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.Operation;
+import com.example.yg.wifibcscaner.data.model.OutDocs;
 
 import static com.example.yg.wifibcscaner.utils.AppUtils.tryCloseCursor;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.lDateToString;

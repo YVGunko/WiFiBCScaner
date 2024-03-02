@@ -20,7 +20,6 @@ public class DefsRepo {
     private final OperRepo operRepo = new OperRepo();
     private final DivisionRepo divRepo = new DivisionRepo();
     private final DepartmentRepo depRepo = new DepartmentRepo();
-    private final OrderRepo orderRepo = new OrderRepo();
     private final SotrRepo sotrRepo = new SotrRepo();
     private final UserRepo userRepo = new UserRepo();
 
@@ -38,7 +37,7 @@ public class DefsRepo {
                 defs.setDescDivision ( divRepo.getDivisionNameByCode(defs.getDivision_code()) );
                 defs.setDescUser ( userRepo.getUserName(defs.get_idUser()) );
                 defs.setDescFirstOperForCurrent ( operRepo.getOperNameById(getFirstOperFor(defs.get_Id_o())) );
-
+                //AppController.getInstance().setDefs(defs);
                 return Optional.ofNullable(defs);
             }
             return Optional.empty();
@@ -51,7 +50,6 @@ public class DefsRepo {
     }
     public int updateDefsTable(Defs defs){
         try {
-            long l;
             ContentValues values = new ContentValues();
             values.clear();
             values.put(Defs.COLUMN_Id_d, defs.get_Id_d());

@@ -3,28 +3,26 @@ package com.example.yg.wifibcscaner.activity;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.AsyncTask;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 
-import com.example.yg.wifibcscaner.controller.AppController;
-import com.example.yg.wifibcscaner.data.model.BoxMoves;
-import com.example.yg.wifibcscaner.data.model.Boxes;
 import com.example.yg.wifibcscaner.DataBaseHelper;
+import com.example.yg.wifibcscaner.R;
+import com.example.yg.wifibcscaner.controller.AppController;
+import com.example.yg.wifibcscaner.data.model.Defs;
 import com.example.yg.wifibcscaner.data.model.Deps;
 import com.example.yg.wifibcscaner.data.model.Division;
-import com.example.yg.wifibcscaner.data.model.Orders;
-import com.example.yg.wifibcscaner.data.model.OutDocs;
-import com.example.yg.wifibcscaner.data.model.Prods;
-import com.example.yg.wifibcscaner.R;
-import com.example.yg.wifibcscaner.data.model.Sotr;
 import com.example.yg.wifibcscaner.data.model.Operation;
-import com.example.yg.wifibcscaner.data.dto.OrderOutDocBoxMovePart;
+import com.example.yg.wifibcscaner.data.model.Sotr;
+import com.example.yg.wifibcscaner.data.model.user;
 import com.example.yg.wifibcscaner.data.repo.DepartmentRepo;
 import com.example.yg.wifibcscaner.data.repo.DivisionRepo;
 import com.example.yg.wifibcscaner.data.repo.OperRepo;
@@ -34,10 +32,9 @@ import com.example.yg.wifibcscaner.data.repo.SotrRepo;
 import com.example.yg.wifibcscaner.data.repo.UserRepo;
 import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
-import com.example.yg.wifibcscaner.data.model.user;
 import com.example.yg.wifibcscaner.utils.DateTimeUtils;
 
-import static com.example.yg.wifibcscaner.utils.DateTimeUtils.sDateToLong;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Date;
 import java.util.List;
@@ -46,16 +43,10 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-import android.view.Menu;
-import android.view.MenuItem;
-
-import org.apache.commons.lang3.StringUtils;
-
-import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDayTimeLong;
-
 public class UpdateActivity extends AppCompatActivity {
     private static final String TAG = "UpdateActivity";
     private DataBaseHelper mDBHelper = AppController.getInstance().getDbHelper();
+    private Defs defs = AppController.getInstance().getDefs();
     private final OperRepo operRepo = new OperRepo();
     private final DivisionRepo divRepo = new DivisionRepo();
     private final DepartmentRepo depRepo = new DepartmentRepo();
@@ -137,7 +128,7 @@ public class UpdateActivity extends AppCompatActivity {
         protected String doInBackground(String... urls) {
             try {
                 //Запросить с сервера время
-                ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getServerUpdateTime().enqueue(new Callback<Long>() {
+                ApiUtils.getOrderService(defs.getUrl()).getServerUpdateTime().enqueue(new Callback<Long>() {
                     // TODO Обработать результат. Записать поле sent... если успешно
                     @Override
                     public void onResponse(Call<Long> call, Response<Long> response) {
@@ -159,7 +150,7 @@ public class UpdateActivity extends AppCompatActivity {
             counter = 0;
             try {
 
-                ApiUtils.getOrderService(mDBHelper.defs.getUrl())
+                ApiUtils.getOrderService(defs.getUrl())
                         .getUser(StringUtils.isNotBlank(globalUpdateDate) ? globalUpdateDate : userRepo.getUserUpdateDate(dtMin))
                         .enqueue(new Callback<List<user>>() {
                     // TODO Обработать результат. Записать поле sent... если успешно
@@ -182,7 +173,7 @@ public class UpdateActivity extends AppCompatActivity {
                     }
                 });
 
-                ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getDivision().enqueue(new Callback<List<Division>>() {
+                ApiUtils.getOrderService(defs.getUrl()).getDivision().enqueue(new Callback<List<Division>>() {
                     @Override
                     public void onResponse(Call<List<Division>> call, Response<List<Division>> response) {
 
@@ -201,7 +192,7 @@ public class UpdateActivity extends AppCompatActivity {
                         Log.d(TAG, "Ответ сервера на запрос новых сотрудников: " + t.getMessage());
                     }
                 });
-                ApiUtils.getOrderService(mDBHelper.defs.getUrl())
+                ApiUtils.getOrderService(defs.getUrl())
                         .getOperation(StringUtils.isNotBlank(globalUpdateDate) ? globalUpdateDate : operRepo.getOperUpdateDate(dtMin))
                         .enqueue(new Callback<List<Operation>>() {
                     // TODO Обработать результат. Записать поле sent... если успешно
@@ -222,7 +213,7 @@ public class UpdateActivity extends AppCompatActivity {
                         Log.d("UpdateActivity", "Ответ сервера на запрос новых операций: " + t.getMessage());
                     }
                 });
-                ApiUtils.getOrderService(mDBHelper.defs.getUrl())
+                ApiUtils.getOrderService(defs.getUrl())
                         .getSotr(StringUtils.isNotBlank(globalUpdateDate) ? globalUpdateDate : sotrRepo.getSotrUpdateDate(dtMin))
                         .enqueue(new Callback<List<Sotr>>() {
                     @Override
@@ -245,7 +236,7 @@ public class UpdateActivity extends AppCompatActivity {
                     }
                 });
 
-                ApiUtils.getOrderService(mDBHelper.defs.getUrl())
+                ApiUtils.getOrderService(defs.getUrl())
                         .getDeps(StringUtils.isNotBlank(globalUpdateDate) ? globalUpdateDate : depRepo.getDepUpdateDate(dtMin))
                         .enqueue(new Callback<List<Deps>>() {
                     @Override

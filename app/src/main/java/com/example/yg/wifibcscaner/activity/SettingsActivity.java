@@ -61,9 +61,8 @@ import static com.example.yg.wifibcscaner.utils.AppUtils.isDepAndSotrOper;
 public class SettingsActivity extends AppCompatActivity implements
         AdapterView.OnItemSelectedListener {
 
-    private static final String TAG = "SettingsActivity";
+    private static final String TAG = "sProject -> SettingsActivity.";
 
-    private DataBaseHelper mDBHelper = AppController.getInstance().getDbHelper();
     private OrderService boxesService;
     private final OperRepo operRepo = new OperRepo();
     private final DivisionRepo divRepo = new DivisionRepo();
@@ -101,7 +100,7 @@ public class SettingsActivity extends AppCompatActivity implements
 
         String devId;
         try {
-            devId = ((mDBHelper.defs.getDeviceId().substring(0,6).length()==6) ? mDBHelper.defs.getDeviceId().substring(0,5) : "Unknown");}
+            devId = ((AppController.getInstance().getDefs().getDeviceId().substring(0,6).length()==6) ? AppController.getInstance().getDefs().getDeviceId().substring(0,5) : "Unknown");}
         catch (Exception e) {
             devId = "unKnown";
         }
@@ -121,11 +120,11 @@ public class SettingsActivity extends AppCompatActivity implements
         spinnerSotr.setOnItemSelectedListener(this);
         // Выборка настроек по умолчанию
 
-        defsRepo.selectDefsTable();
+        defsRepo.selectDefsTable().ifPresent(d -> AppController.getInstance().setDefs(d));
         try {
-            String url = mDBHelper.defs.getUrl();
+            String url = AppController.getInstance().getDefs().getUrl();
             boxesService = ApiUtils.getOrderService(url);
-            host_v.setText(mDBHelper.defs.get_Host_IP());
+            host_v.setText(AppController.getInstance().getDefs().get_Host_IP());
             ocl_check(findViewById(R.id.check));
         }
         catch(Exception e){
@@ -141,13 +140,13 @@ public class SettingsActivity extends AppCompatActivity implements
         loadSpinnerSotrData();
 
         labelDivision2 = (TextView) findViewById(R.id.labelDivision2);
-        labelDivision2.setText(divRepo.getDivisionNameByCode(mDBHelper.defs.getDivision_code()));
+        labelDivision2.setText(divRepo.getDivisionNameByCode(AppController.getInstance().getDefs().getDivision_code()));
         opers_select_label = (TextView) findViewById(R.id.opers_select_label);
-        opers_select_label.setText(operRepo.getOperNameById(mDBHelper.defs.get_Id_o()));
+        opers_select_label.setText(operRepo.getOperNameById(AppController.getInstance().getDefs().get_Id_o()));
         select_label = (TextView) findViewById(R.id.select_label);
-        select_label.setText(depRepo.getDepNameById(mDBHelper.defs.get_Id_d()));
+        select_label.setText(depRepo.getDepNameById(AppController.getInstance().getDefs().get_Id_d()));
         labelSotr = (TextView) findViewById(R.id.labelSotr);
-        labelSotr.setText(sotrRepo.getNameById(mDBHelper.defs.get_Id_s()));
+        labelSotr.setText(sotrRepo.getNameById(AppController.getInstance().getDefs().get_Id_s()));
     }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -287,16 +286,16 @@ Pattern pattern = Pattern.compile(regex);
 Matcher matcher = pattern.matcher(ip);
 matcher.matches();*/
     private String getUrlUserEntered() {
-        if (StringUtils.isNotBlank (StringUtils.trim(host_v.getText().toString())) & StringUtils.isNumeric(mDBHelper.defs.get_Port())) {
-            mDBHelper.defs.set_Host_IP(host_v.getText().toString());
-            return "http://" + host_v.getText().toString() + ":" + mDBHelper.defs.get_Port();
+        if (StringUtils.isNotBlank (StringUtils.trim(host_v.getText().toString())) & StringUtils.isNumeric(AppController.getInstance().getDefs().get_Port())) {
+            AppController.getInstance().getDefs().set_Host_IP(host_v.getText().toString());
+            return "http://" + host_v.getText().toString() + ":" + AppController.getInstance().getDefs().get_Port();
         } else {
             return "";
         }
     }
 
     public void checkConnection() {
-        String url =  (StringUtils.isNotBlank(getUrlUserEntered())) ? getUrlUserEntered() : mDBHelper.defs.getUrl(); //host_v.getText().toString();
+        String url =  (StringUtils.isNotBlank(getUrlUserEntered())) ? getUrlUserEntered() : AppController.getInstance().getDefs().getUrl(); //host_v.getText().toString();
 
         try {
             boxesService = ApiUtils.getOrderService(url);
@@ -306,20 +305,20 @@ matcher.matches();*/
                 @Override
                 public void onResponse(Call<Object> call, Response<Object> response) {
                     if(!response.isSuccessful()) {
-                        MessageUtils.showToast(getApplicationContext(),"Введенный URL недоступен! Введите верный!", false);
+                        MessageUtils.showToast(AppController.getInstance().getContext(),"Введенный URL недоступен! Введите верный!", false);
                         host_v.requestFocus();
                     }else {
-                        MessageUtils.showToast(getApplicationContext(),"Соединение установлено!", false);
+                        MessageUtils.showToast(AppController.getInstance().getContext(),"Соединение установлено!", false);
                     }
                 }
                 @Override
                 public void onFailure(Call<Object> call, Throwable t) {
-                    MessageUtils.showToast(getApplicationContext(),"Введенный URL недоступен! Введите верный!", false);
+                    MessageUtils.showToast(AppController.getInstance().getContext(),"Введенный URL недоступен! Введите верный!", false);
                     host_v.requestFocus();
                 }
             });
         } catch (Exception e) {
-            MessageUtils.showToast(getApplicationContext(),"Введенный URL недоступен! Введите верный!", false);
+            MessageUtils.showToast(AppController.getInstance().getContext(),"Введенный URL недоступен! Введите верный!", false);
         }
     }
 
@@ -334,8 +333,8 @@ matcher.matches();*/
     }
     private void loadOpers_spinnerData() {
         if (AppUtils.isEmpty(division_code)) {
-            if (AppUtils.isNotEmpty(mDBHelper.defs.getDivision_code()))
-                division_code = mDBHelper.defs.getDivision_code();
+            if (AppUtils.isNotEmpty(AppController.getInstance().getDefs().getDivision_code()))
+                division_code = AppController.getInstance().getDefs().getDivision_code();
         }
         List<String> lables = (AppUtils.isEmpty(division_code))
                 ? new ArrayList<>()
@@ -349,10 +348,10 @@ matcher.matches();*/
     }
     private void loadSpinnerData() { //Departments Deps Бригады
         if (AppUtils.isEmpty(division_code)) {
-            if (AppUtils.isNotEmpty(mDBHelper.defs.getDivision_code()))
-                division_code = mDBHelper.defs.getDivision_code();
+            if (AppUtils.isNotEmpty(AppController.getInstance().getDefs().getDivision_code()))
+                division_code = AppController.getInstance().getDefs().getDivision_code();
         }
-        if (ido<=0) ido=mDBHelper.defs.get_Id_o();
+        if (ido<=0) ido=AppController.getInstance().getDefs().get_Id_o();
 
         List<String> lables = (AppUtils.isEmpty(division_code) || ido<=0)
                 ? new ArrayList<>()
@@ -367,11 +366,11 @@ matcher.matches();*/
     }
     private void loadSpinnerSotrData() {
         if (AppUtils.isEmpty(division_code)) {
-            if (AppUtils.isNotEmpty(mDBHelper.defs.getDivision_code()))
-                division_code = mDBHelper.defs.getDivision_code();
+            if (AppUtils.isNotEmpty(AppController.getInstance().getDefs().getDivision_code()))
+                division_code = AppController.getInstance().getDefs().getDivision_code();
         }
-        if (ido<=0) ido=mDBHelper.defs.get_Id_o();
-        if (idd<=0) idd=mDBHelper.defs.get_Id_d();
+        if (ido<=0) ido=AppController.getInstance().getDefs().get_Id_o();
+        if (idd<=0) idd=AppController.getInstance().getDefs().get_Id_d();
 
         List<String> lables = (AppUtils.isEmpty(division_code) || ido<=0 || idd<=0)
                 ? new ArrayList<>()
@@ -515,51 +514,34 @@ matcher.matches();*/
             MessageUtils.showToast(getApplicationContext(),"Выберите операцию. Настройки не будут сохранены!", true);
             return;
         }
-        if (ido != mDBHelper.defs.get_Id_o()) {
-            mDBHelper.defs.set_Id_o(ido);
-
-            if (mDBHelper.currentOutDoc == null) {
-                mDBHelper.currentOutDoc = new OutDocs("", 0,0, "", "01.01.2018 00:00:00",
-                        mDBHelper.defs.getDivision_code(), mDBHelper.defs.get_idUser(),
-                        isDepAndSotrOper(mDBHelper.defs.get_Id_o()) ? mDBHelper.defs.get_Id_s() : 0,
-                        isDepAndSotrOper(mDBHelper.defs.get_Id_o()) ? mDBHelper.defs.get_Id_d() : 0);
-            } else {
-                mDBHelper.currentOutDoc.set_id("");
-                mDBHelper.currentOutDoc.set_number(0);
-                mDBHelper.currentOutDoc.set_comment("");
-                mDBHelper.currentOutDoc.set_DT("01.01.2018 00:00:00");
-                mDBHelper.currentOutDoc.set_Id_o(0);
-                mDBHelper.currentOutDoc.set_sentToMasterDate(null);
-                mDBHelper.currentOutDoc.setDivision_code("0");
-                mDBHelper.currentOutDoc.setIdUser(0);
-                mDBHelper.currentOutDoc.setIdSotr(0);
-                mDBHelper.currentOutDoc.setIdDeps(0);
-            }
+        if (ido != AppController.getInstance().getDefs().get_Id_o()) {
+            AppController.getInstance().getDefs().set_Id_o(ido);
+            AppController.getInstance().setCurrentOutDoc( new OutDocs() );
         }
 
-        if (isDepAndSotrOper(mDBHelper.defs.get_Id_o()) & idd<=0) {
+        if (isDepAndSotrOper(AppController.getInstance().getDefs().get_Id_o()) & idd<=0) {
             MessageUtils.showToast(getApplicationContext(),"Выберите бригаду. Настройки не будут сохранены!", true);
             return;
         } else {
-            mDBHelper.defs.set_Id_d(idd);
+            AppController.getInstance().getDefs().set_Id_d(idd);
         }
 
-        if (isDepAndSotrOper(mDBHelper.defs.get_Id_o()) & ids<=0) {
+        if (isDepAndSotrOper(AppController.getInstance().getDefs().get_Id_o()) & ids<=0) {
             MessageUtils.showToast(getApplicationContext(),"Выберите сотрудника. Настройки не будут сохранены!", true);
             return;
         } else {
-            mDBHelper.defs.set_Id_s(ids);
+            AppController.getInstance().getDefs().set_Id_s(ids);
         }
 
         String ip = host_v.getText().toString();
 
-        Defs defs = new Defs(idd, ido, ids, ip, "4242", division_code, mDBHelper.defs.getDeviceId());
-        if (defsRepo.updateDefsTable(defs) != 0) {
+        if (defsRepo.updateDefsTable(new Defs(idd, ido, ids, ip, "4242", division_code,
+                StringUtils.isNotBlank(AppController.getInstance().getDefs().getDeviceId()) ? AppController.getInstance().getDefs().getDeviceId() : "")) != 0) {
+            defsRepo.selectDefsTable().ifPresent(d -> AppController.getInstance().setDefs(d));
             MessageUtils.showToast(getApplicationContext(),"Сохранено.", false);
         } else {
             MessageUtils.showToast(getApplicationContext(),"Ошибка при сохранении.", false);
         }
-        defsRepo.selectDefsTable();
     }
 
     private class SyncIncoData extends AsyncTask<String, Integer, String> {
@@ -569,7 +551,7 @@ matcher.matches();*/
         @Override
         protected String doInBackground(String... urls) {
             try {
-                ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getDivision().enqueue(new Callback<List<Division>>() {
+                ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).getDivision().enqueue(new Callback<List<Division>>() {
                     @Override
                     public void onResponse(Call<List<Division>> call, Response<List<Division>> response) {
                         if (response.isSuccessful() && response.body()!=null && !response.body().isEmpty()) {
@@ -583,7 +565,7 @@ matcher.matches();*/
                         Log.e(TAG, "Ответ сервера на запрос новых сотрудников: " + t.getMessage());
                     }
                 });
-                ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getOperation("01.01.2018 00:00:00").enqueue(new Callback<List<Operation>>() {
+                ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).getOperation("01.01.2018 00:00:00").enqueue(new Callback<List<Operation>>() {
                     @Override
                     public void onResponse(Call<List<Operation>> call, Response<List<Operation>> response) {
 
@@ -600,7 +582,7 @@ matcher.matches();*/
                     }
                 });
 
-                ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getDeps("01.01.2018 00:00:00").enqueue(new Callback<List<Deps>>() {
+                ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).getDeps("01.01.2018 00:00:00").enqueue(new Callback<List<Deps>>() {
                     @Override
                     public void onResponse(Call<List<Deps>> call, Response<List<Deps>> response) {
                         if (response.isSuccessful() && response.body()!=null && !response.body().isEmpty()) {
@@ -616,7 +598,7 @@ matcher.matches();*/
                     }
                 });
 
-                ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getSotr("01.01.2018 00:00:00").enqueue(new Callback<List<Sotr>>() {
+                ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).getSotr("01.01.2018 00:00:00").enqueue(new Callback<List<Sotr>>() {
                     @Override
                     public void onResponse(Call<List<Sotr>> call, Response<List<Sotr>> response) {
                         if (response.isSuccessful() && response.body()!=null && !response.body().isEmpty()) {
@@ -632,7 +614,7 @@ matcher.matches();*/
                     }
                 });
 
-                ApiUtils.getOrderService(mDBHelper.defs.getUrl()).getUser("01.01.2018 00:00:00").enqueue(new Callback<List<user>>() {
+                ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).getUser("01.01.2018 00:00:00").enqueue(new Callback<List<user>>() {
                     // TODO Обработать результат. Записать поле sent... если успешно
                     @Override
                     public void onResponse(Call<List<user>> call, Response<List<user>> response) {

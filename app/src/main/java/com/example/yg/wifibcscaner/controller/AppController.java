@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import com.example.yg.wifibcscaner.DataBaseHelper;
+import com.example.yg.wifibcscaner.data.model.Defs;
+import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.service.SharedPrefs;
 
 public class AppController extends Application {
@@ -14,7 +16,8 @@ public class AppController extends Application {
     private DataBaseHelper mDBHelper;
     private SharedPreferences mSharedPreferences;
     private Context mContext;
-
+    private OutDocs currentOutDoc;
+    private Defs defs;
     /**
      * init all required objects in onCreate
      */
@@ -26,6 +29,8 @@ public class AppController extends Application {
         mResources = getResources();
         mSharedPreferences = getSharedPreferences(SharedPrefs.getPrefsName(), Context.MODE_PRIVATE);
         mDBHelper = DataBaseHelper.getInstance();
+        currentOutDoc = new OutDocs();
+        defs = new Defs();
     }
 
     /**
@@ -51,5 +56,18 @@ public class AppController extends Application {
 
     public Context getContext() {
         return mContext;
+    }
+
+    public OutDocs getCurrentOutDoc() {
+        return currentOutDoc;
+    }
+    public void setCurrentOutDoc(OutDocs outDoc) {
+        this.currentOutDoc = outDoc;
+    }
+    public Defs getDefs() {
+        return this.defs;
+    }
+    public void setDefs(Defs defs) {
+        this.defs = defs;
     }
 }

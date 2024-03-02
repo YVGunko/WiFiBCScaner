@@ -9,11 +9,14 @@ import com.example.yg.wifibcscaner.DataBaseHelper;
 import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.dto.OrderOutDocBoxMovePart;
+import com.example.yg.wifibcscaner.data.model.Orders;
 import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.service.SharedPrefs;
 import com.example.yg.wifibcscaner.utils.executors.DefaultExecutorSupplier;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
 
@@ -22,9 +25,13 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class OrderOutDocBoxMovePartRepository {
-    private AtomicInteger nextPage;
+    private AtomicInteger nextPage = new AtomicInteger(0);
     private static int pageSize = 200;
     private static final String TAG = "orderAndStuffRepo";
+
+    private final OrderRepo orderRepo = new OrderRepo();
+    private final OutDocRepo outDocRepo = new OutDocRepo();
+    private final BoxRepo boxRepo = new BoxRepo();
 
     private void showToast (String message, boolean duration) {
         DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
@@ -39,10 +46,10 @@ public class OrderOutDocBoxMovePartRepository {
                 Log.d(TAG, "downloadData -> update date: " + updateDate);
                 Log.d(TAG, "downloadData -> current page to load: " + nextPage);
 
-                ApiUtils.getOrderService(AppController.getInstance().getDbHelper().defs.getUrl()).getDataPageableV1(
+                ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).getDataPageableV1(
                         updateDate,
-                        AppController.getInstance().getDbHelper().defs.getDivision_code(),
-                        AppController.getInstance().getDbHelper().defs.get_Id_o(),
+                        AppController.getInstance().getDefs().getDivision_code(),
+                        AppController.getInstance().getDefs().get_Id_o(),
                         nextPage.getAndIncrement(),
                         pageSize)
                         .enqueue(downloadDataCallback(updateDate));
@@ -75,16 +82,16 @@ public class OrderOutDocBoxMovePartRepository {
                             !response.body().orderReqList.isEmpty())
                         try {
                             Log.d(TAG, "saveToDB here.");
-                            String dt = AppController.getInstance().getDbHelper().saveToDB(response.body());
+                            String dt = saveToDB(response.body());
                             if (dt == null) return;
 
                             Log.d(TAG, "downloadDataCallback -> pageNumber: " + nextPage.get());
 
                             if (nextPage.get() != 0) {
-                                ApiUtils.getOrderService(AppController.getInstance().getDbHelper().defs.getUrl()).getDataPageableV1(
+                                ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).getDataPageableV1(
                                         updateDate,
-                                        AppController.getInstance().getDbHelper().defs.getDivision_code(),
-                                        AppController.getInstance().getDbHelper().defs.get_Id_o(),
+                                        AppController.getInstance().getDefs().getDivision_code(),
+                                        AppController.getInstance().getDefs().get_Id_o(),
                                         nextPage.getAndIncrement(),
                                         pageSize)
                                         .enqueue(downloadDataCallback(updateDate));
@@ -104,5 +111,33 @@ public class OrderOutDocBoxMovePartRepository {
             }
 
         };
+    }
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    public String saveToDB(OrderOutDocBoxMovePart r) {
+        try {
+            orderRepo.insertOrdersInBulk(r.orderReqList);
+
+            if (r.outDocReqList != null &&
+                    !r.outDocReqList.isEmpty())
+                outDocRepo.insertOutDocInBulk(r.outDocReqList);
+
+            if (r.boxReqList != null &&
+                    !r.boxReqList.isEmpty())
+                boxRepo.insertBoxInBulk(r.boxReqList);
+/*
+            if (r.movesReqList != null &&
+                    !r.movesReqList.isEmpty())
+                insertBoxMoveInBulk(r.movesReqList);
+
+            if (r.partBoxReqList != null &&
+                    !r.partBoxReqList.isEmpty())
+                insertProdInBulk(r.partBoxReqList);*/
+
+            Log.d(TAG, "saveToDB reached its return point.");
+            return Collections.max(r.orderReqList, Comparator.comparing(Orders::get_DT)).get_DT();
+        } catch (RuntimeException re) {
+            Log.w(TAG, re);
+            throw new RuntimeException("To catch onto method level.");
+        }
     }
 }

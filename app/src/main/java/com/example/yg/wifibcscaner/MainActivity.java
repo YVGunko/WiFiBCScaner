@@ -33,6 +33,8 @@ import com.example.yg.wifibcscaner.activity.ProdsActivity;
 import com.example.yg.wifibcscaner.activity.SettingsActivity;
 import com.example.yg.wifibcscaner.activity.UpdateActivity;
 import com.example.yg.wifibcscaner.controller.AppController;
+import com.example.yg.wifibcscaner.data.model.Defs;
+import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.data.repo.DefsRepo;
 import com.example.yg.wifibcscaner.data.repo.DepartmentRepo;
 import com.example.yg.wifibcscaner.data.repo.DivisionRepo;
@@ -61,10 +63,8 @@ import static com.example.yg.wifibcscaner.utils.AppUtils.isOutDocOnlyOper;
 
 public class MainActivity extends AppCompatActivity implements BarcodeReader.BarcodeListener {
     private static final String TAG = "sProject -> MainActivity.";
-    private final OperRepo operRepo = new OperRepo();
-    private final DivisionRepo divRepo = new DivisionRepo();
-    private final DepartmentRepo depRepo = new DepartmentRepo();
-    private final SotrRepo sotrRepo = new SotrRepo();
+    //private Defs defs = AppController.getInstance().getDefs();
+    private OutDocs currentOutDoc = AppController.getInstance().getCurrentOutDoc();
     private final UserRepo userRepo = new UserRepo();
     private final DefsRepo defsRepo = new DefsRepo();
 
@@ -92,6 +92,7 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
 
         AppController.getInstance().getDbHelper().openDataBase();
         mDBHelper = AppController.getInstance().getDbHelper();
+        defsRepo.selectDefsTable().ifPresent(d -> AppController.getInstance().setDefs(d));
 
         setContentView(R.layout.activity_main);
         setRequestedOrientation (ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
@@ -136,16 +137,18 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
 
         if (!editTextRQ.isEnabled()){ // if enabled we are waiting for quantity to be entered
             String snum = "Накл.№ не выбрана";
-            if (mDBHelper.currentOutDoc.get_number() != 0) snum = "Накл.№"+mDBHelper.currentOutDoc.get_number();
-            snum = mDBHelper.defs.getDescOper()+", "+snum;
+            if (AppController.getInstance().getCurrentOutDoc().get_number() != 0) {
+                snum = "Накл.№" + AppController.getInstance().getCurrentOutDoc().get_number();
+            }
+            snum = AppController.getInstance().getDefs().getDescOper()+", "+snum;
             android.support.v7.app.ActionBar actionBar = getSupportActionBar();
             actionBar.setSubtitle(Html.fromHtml("<font color='#FFBF00'>"+snum+"</font>"));
-            actionBar.setTitle("Подразделение: "+mDBHelper.defs.getDescDivision());
+            actionBar.setTitle("Подразделение: "+AppController.getInstance().getDefs().getDescDivision());
 
             setTextViews();
 
             currentUser  = (TextView) findViewById(R.id.currentUser);
-            currentUser.setText("Пользователь: " +userRepo.getUserName(mDBHelper.defs.get_idUser()));
+            currentUser.setText("Пользователь: " +userRepo.getUserName(AppController.getInstance().getDefs().get_idUser()));
         }
 
         if (barcodeReader != null) {
@@ -162,33 +165,33 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
 
     @RequiresApi(api = Build.VERSION_CODES.N)
     public void ocl_scan(View v) { //Вызов активности Сканирования
-        if (mDBHelper.defs.get_idUser()==0){
+        if (AppController.getInstance().getDefs().get_idUser()==0){
             showLongMessage("Нужно войти в систему...");
             startActivity(new Intent(this, LoginActivity.class));
             //if not a superuser check for current user today's outdoc and add new one if not exist.
             return;
         }
-        if ((mDBHelper.defs.get_Id_o()<=0) || AppUtils.isEmpty(mDBHelper.defs.getDivision_code()))
+        if ((AppController.getInstance().getDefs().get_Id_o()<=0) || AppUtils.isEmpty(AppController.getInstance().getDefs().getDivision_code()))
         {   //Операция не выбрана
             showLongMessage("Нужно зайти в настройки и выбрать подразделение и операцию");
             startActivity(new Intent(this, SettingsActivity.class));  //Вызов активности Коробки
             return;
         }
-        if (isOutDocOnlyOper(mDBHelper.defs.get_Id_o())&(
-                (mDBHelper.currentOutDoc.get_id()==null)||
-                        (mDBHelper.currentOutDoc.get_number()==0)))
+        if (isOutDocOnlyOper(AppController.getInstance().getDefs().get_Id_o())&(
+                (currentOutDoc.get_id()==null)||
+                        (currentOutDoc.get_number()==0)))
         {
             //Отгрузка, накладная не выбрана
             startActivity(new Intent(this, OutDocsActivity.class));
             return;
         }
-        if (isDepAndSotrOper(mDBHelper.defs.get_Id_o())&(
-                (mDBHelper.defs.get_Id_d()<=0)||
-                (mDBHelper.defs.get_Id_s()<=0)||
-                (mDBHelper.currentOutDoc.get_id()==null)||
-                (mDBHelper.currentOutDoc.get_number()==0)))
+        if (isDepAndSotrOper(AppController.getInstance().getDefs().get_Id_o())&(
+                (AppController.getInstance().getDefs().get_Id_d()<=0)||
+                (AppController.getInstance().getDefs().get_Id_s()<=0)||
+                (currentOutDoc.get_id()==null)||
+                (currentOutDoc.get_number()==0)))
         {
-            if ((mDBHelper.currentOutDoc.get_id()==null)||(mDBHelper.currentOutDoc.get_number()==0))
+            if ((currentOutDoc.get_id()==null)||(currentOutDoc.get_number()==0))
             {
                 //showLongMessage("Нужно выбрать или создать накладную...");
                 startActivity(new Intent(this,OutDocsActivity.class));
@@ -201,12 +204,12 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
         }
 
         String snum = "Накл.???";
-        if (mDBHelper.currentOutDoc.get_number() != 0) snum = "Накл.№"+mDBHelper.currentOutDoc.get_number();
-        snum = mDBHelper.defs.getDescOper()+", "+snum;
+        if (currentOutDoc.get_number() != 0) snum = "Накл.№"+currentOutDoc.get_number();
+        snum = AppController.getInstance().getDefs().getDescOper()+", "+snum;
         android.support.v7.app.ActionBar actionBar = getSupportActionBar();
         actionBar.setSubtitle(Html.fromHtml("<font color='#FFBF00'>"+snum+"</font>"));
-        actionBar.setTitle("Подразделение: "+mDBHelper.defs.getDescDivision());
-        //====this.setTitle(mDBHelper.defs.descOper+", "+snum);
+        actionBar.setTitle("Подразделение: "+AppController.getInstance().getDefs().getDescDivision());
+        //====this.setTitle(AppController.getInstance().getDefs().descOper+", "+snum);
 
         final     EditText            input = (EditText) findViewById(R.id.barCodeInput);
         if (editTextRQ.isEnabled()){
@@ -269,7 +272,7 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
     }
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-        boolean checkSuper= userRepo.checkSuperUser(mDBHelper.defs.get_idUser());
+        boolean checkSuper= userRepo.checkSuperUser(AppController.getInstance().getDefs().get_idUser());
         invalidateOptionsMenu();
         menu.findItem(R.id.action_settings).setVisible(checkSuper);
         menu.findItem(R.id.action_orders).setVisible(checkSuper);
@@ -297,7 +300,7 @@ private static String filter (String str){
             return;
         }
         fo = mDBHelper.searchOrder(currentbarcode);
-        if (fo.division_code != null && !fo.division_code.equals(mDBHelper.defs.getDivision_code())) {
+        if (fo.division_code != null && !fo.division_code.equals(AppController.getInstance().getDefs().getDivision_code())) {
             Log.d(TAG, "scanResultHandler -> division mismatch -> return");
             MessageUtils.showToast(MainActivity.this, getString(R.string.wrong_division_order),true);
             return;
@@ -317,26 +320,26 @@ private static String filter (String str){
                 if (!fb._archive){
                     if (StringUtils.isNotEmpty(fb._id)) {                                  //Коробка есть
                         //if it isOneScanOnlyOper and there is another outDoc record, set Quantity equal, bcs it can be only one shot
-                        if (isOneScanOnlyOper(mDBHelper.defs.get_Id_o()) & StringUtils.isNotEmpty(fb.outDocs)) fb.QB = fb.RQ;
+                        if (isOneScanOnlyOper(AppController.getInstance().getDefs().get_Id_o()) & StringUtils.isNotEmpty(fb.outDocs)) fb.QB = fb.RQ;
                         if (fb.QB == fb.RQ) {//Коробка заполнена
 
                             editTextRQ = (EditText) findViewById(R.id.editTextRQ);
                             editTextRQ.setText(String.valueOf(fb.QB - fb.RQ));
                             editTextRQ.setEnabled(false);
 
-                            MessageUtils.showToast(this, "Эта коробка уже принята на "+mDBHelper.defs.getDescOper(), false);
+                            MessageUtils.showToast(this, "Эта коробка уже принята на "+AppController.getInstance().getDefs().getDescOper(), false);
                         } else {
                             Button bScan = (Button) findViewById(R.id.bScan);
                             bScan.setText("OK!");
                             editTextRQ = (EditText) findViewById(R.id.editTextRQ);
                             editTextRQ.setText(String.valueOf(fb.QB - fb.RQ));
-                            final boolean isSetEnabled = true; //!AppUtils.isOutComeOper(mDBHelper.defs.get_Id_o());
+                            final boolean isSetEnabled = true; //!AppUtils.isOutComeOper(AppController.getInstance().getDefs().get_Id_o());
                             editTextRQ.setEnabled(isSetEnabled);
                             editTextRQ.setSelection(editTextRQ.getText().length());
                             if (fb.RQ != 0) {showMessage("Эта коробка ранее принималась неполной!");}
                         }
                     } else {                                                //Коробки нет , подставить колво в поле редактирования колва и дожаться ОК.
-                        if (isOneOfFirstOper(mDBHelper.defs.get_Id_o())){ //Добавить коробку если это операция приемки baseOper = 1
+                        if (isOneOfFirstOper(AppController.getInstance().getDefs().get_Id_o())){ //Добавить коробку если это операция приемки baseOper = 1
                             Button bScan = (Button) findViewById(R.id.bScan);
                             bScan.setText("OK!");
                             editTextRQ = (EditText) findViewById(R.id.editTextRQ);
@@ -344,7 +347,7 @@ private static String filter (String str){
                             editTextRQ.setEnabled(true);
                             editTextRQ.setSelection(editTextRQ.getText().length());
                         }else{
-                            showLongMessage("Эта коробка не принималась на "+mDBHelper.defs.getDescFirstOperForCurrent());
+                            showLongMessage("Эта коробка не принималась на "+AppController.getInstance().getDefs().getDescFirstOperForCurrent());
                         }
                     }
                 }else {
@@ -368,14 +371,14 @@ private static String filter (String str){
             try {
                 enteredNumber = Integer.valueOf(editTextRQ.getText().toString());
             }catch (NumberFormatException e){
-                Log.e(TAG, mDBHelper.defs.getDescOper().concat(". Ошибка при получении количества в коробке!"), e);
-                MessageUtils.showToast(this,mDBHelper.defs.getDescOper().concat(". Ошибка! Введите количество верно!"), false);
+                Log.e(TAG, AppController.getInstance().getDefs().getDescOper().concat(". Ошибка при получении количества в коробке!"), e);
+                MessageUtils.showToast(this,AppController.getInstance().getDefs().getDescOper().concat(". Ошибка! Введите количество верно!"), false);
                 return;
             }
         }
 
-        if (!AppUtils.isIncomeOper(mDBHelper.defs.get_Id_o())) { //entered number should be checked
-            if (AppUtils.isOutComeOper(mDBHelper.defs.get_Id_o())) {//entered number should be equal
+        if (!AppUtils.isIncomeOper(AppController.getInstance().getDefs().get_Id_o())) { //entered number should be checked
+            if (AppUtils.isOutComeOper(AppController.getInstance().getDefs().get_Id_o())) {//entered number should be equal
                 if (enteredNumber != fb.QB) {
                     MessageUtils.showToast(this,"Ошибка! Количество должно быть равно оприходованному!", false);
                     return;
@@ -401,19 +404,19 @@ private static String filter (String str){
                 if (mDBHelper.addProds(fb)) {
                     if (newBM)
                         MessageUtils.showToast(AppController.getInstance().getApplicationContext(),
-                                mDBHelper.defs.getDescOper().concat(". В коробку добавлено ").concat(String.valueOf(enteredNumber)),
+                                AppController.getInstance().getDefs().getDescOper().concat(". В коробку добавлено ").concat(String.valueOf(enteredNumber)),
                                 true);
 
                     setTextViews();
                     mDBHelper.lastBoxCheck(fo);
                 } else
                     MessageUtils.showToast(AppController.getInstance().getApplicationContext(),
-                        mDBHelper.defs.getDescOper().concat(". Повторный прием коробки в смену! Повторный прием возможен в другую смену."),
+                        AppController.getInstance().getDefs().getDescOper().concat(". Повторный прием коробки в смену! Повторный прием возможен в другую смену."),
                         true);
             } else {
                 if (!mDBHelper.addBoxes(fo,enteredNumber)) {
                     MessageUtils.showToast(AppController.getInstance().getApplicationContext(),
-                        mDBHelper.defs.getDescOper().concat(". Ошибка! Коробка не добавлена в БД!"),
+                        AppController.getInstance().getDefs().getDescOper().concat(". Ошибка! Коробка не добавлена в БД!"),
                         true);
                 } else {
                     setTextViews();
@@ -421,9 +424,9 @@ private static String filter (String str){
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, mDBHelper.defs.getDescOper().concat(". Ошибка при получении количества в коробке!"), e);
+            Log.e(TAG, AppController.getInstance().getDefs().getDescOper().concat(". Ошибка при получении количества в коробке!"), e);
             MessageUtils.showToast(AppController.getInstance().getApplicationContext(),
-                    mDBHelper.defs.getDescOper().concat(". Ошибка! Невозможно получить введенное количество!"),
+                    AppController.getInstance().getDefs().getDescOper().concat(". Ошибка! Невозможно получить введенное количество!"),
                     true);
         }
     }
@@ -432,7 +435,7 @@ private static String filter (String str){
         tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
         tVDBInfo.setText(mDBHelper.lastBox());
         currentDocDetails  = (TextView) findViewById(R.id.currentDocDetails);
-        currentDocDetails.setText("Накл.№" +mDBHelper.currentOutDoc.getNumberString() + mDBHelper.selectCurrentOutDocDetails(mDBHelper.currentOutDoc.get_id()));
+        currentDocDetails.setText("Накл.№" +currentOutDoc.getNumberString() + mDBHelper.selectCurrentOutDocDetails(currentOutDoc.get_id()));
     }
     public void ocl_boxes(View v) {
         startActivity(new Intent(this,BoxesActivity.class)); //Вызов активности Коробки
@@ -449,16 +452,16 @@ private static String filter (String str){
         // TODO Auto-generated method stub
         super.onStart();
 
-        if (mDBHelper.defs.getDeviceId().isEmpty() || mDBHelper.defs.getDeviceId() == null || mDBHelper.defs.getDeviceId().contentEquals("0")) {
+        if (AppController.getInstance().getDefs().getDeviceId().isEmpty() || AppController.getInstance().getDefs().getDeviceId() == null || AppController.getInstance().getDefs().getDeviceId().contentEquals("0")) {
             String DeviceId = getDeviceUniqueID(this);
-            mDBHelper.defs.setDeviceId(DeviceId);
+            AppController.getInstance().getDefs().setDeviceId(DeviceId);
         }
 
         if (userRepo.checkIfUserTableEmpty()) {
             startActivity(new Intent(this,SettingsActivity.class));
             return;
         } else {
-            if (mDBHelper.defs.get_idUser()==0) {
+            if (AppController.getInstance().getDefs().get_idUser()==0) {
                 startActivity(new Intent(this, LoginActivity.class));
             }
         }

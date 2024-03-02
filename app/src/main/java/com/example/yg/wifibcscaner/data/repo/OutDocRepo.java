@@ -29,12 +29,13 @@ import static com.example.yg.wifibcscaner.utils.AppUtils.isDepAndSotrOper;
 import static com.example.yg.wifibcscaner.utils.AppUtils.tryCloseCursor;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDateTimeLong;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDayTimeString;
+import static com.example.yg.wifibcscaner.utils.DateTimeUtils.lDateToString;
 import static com.example.yg.wifibcscaner.utils.MyStringUtils.getUUID;
 
 public class OutDocRepo {
     private static final String TAG = "sProject -> OutDocRepo";
     private SQLiteDatabase mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-    private Defs defs = AppController.getInstance().getDbHelper().defs;
+    private Defs defs = AppController.getInstance().getDefs();
     private final UserRepo userRepo = new UserRepo();
     private final SotrRepo sotrRepo = new SotrRepo();
     private final OperRepo operRepo = new OperRepo();
@@ -98,7 +99,7 @@ public class OutDocRepo {
                         getDayTimeString(new Date().getTime()));
 
                 if (createOutDocsForCurrentOperInBulk(Collections.singletonList(outDoc))) {
-                    AppController.getInstance().getDbHelper().currentOutDoc = outDoc;
+                    AppController.getInstance().setCurrentOutDoc( outDoc );
                 }
             }catch (Exception e) {
                 Log.e(TAG, "outDocsAddRec exception -> ",e);
@@ -206,6 +207,73 @@ public class OutDocRepo {
                     "Запись даты отправки накладных. Операция не выполнена!",
                     false);
             return false;
+        }
+    }
+    public void insertOutDocInBulk(List<OutDocs> list){
+        try {
+            mDataBase.beginTransaction();
+            String sql = "INSERT OR REPLACE INTO OutDocs (_id, Id_o, number, comment, DT, sentToMasterDate, division_code, idUser) " +
+                    " VALUES (?,?,?,?,?,?,?,?);";
+
+            SQLiteStatement statement = mDataBase.compileStatement(sql);
+
+            for (OutDocs o : list) {
+                statement.clearBindings();
+                statement.bindString(1, o.get_id());
+                statement.bindLong(2, o.get_Id_o());
+                statement.bindLong(3, o.get_number());
+                if (o.get_comment() == null)
+                    statement.bindString(4, "");
+                else
+                    statement.bindString(4, o.get_comment());
+
+                statement.bindLong(5, getDateTimeLong(o.get_DT()));
+
+                if (o.get_sentToMasterDate() == null)
+                    statement.bindLong(6, new Date().getTime());
+                else
+                    statement.bindLong(6, getDateTimeLong(o.get_sentToMasterDate()));
+
+                statement.bindString(7, o.getDivision_code());
+                statement.bindLong(8, o.getIdUser());
+                statement.executeInsert();
+            }
+
+            mDataBase.setTransactionSuccessful(); // This commits the transaction if there were no exceptions
+            //mDataBase.execSQL("PRAGMA foreign_keys = 1;");
+        } catch (Exception e) {
+            Log.w(TAG, e);
+            throw new RuntimeException("To catch into upper level.");
+        } finally {
+            mDataBase.endTransaction();
+        }
+    }
+    public ArrayList<OutDocs> getOutDocNotSent(){
+        Cursor cursor = null;
+        ArrayList<OutDocs> readBoxMoves = new ArrayList<OutDocs>();
+        mDataBase = AppController.getInstance().getDbHelper().openDataBase();
+        try {
+            cursor = mDataBase.rawQuery("SELECT _id, Id_o, number, comment, DT, division_code, idUser, idSotr, idDeps" +
+                    " FROM OutDocs where ((" + COLUMN_sentToMasterDate + " IS NULL) OR (" + COLUMN_sentToMasterDate + " = ''))", null);
+            while (cursor.moveToNext()) {
+                OutDocs readBoxMove = new OutDocs(cursor.getString(0),
+                        cursor.getInt(1),
+                        cursor.getInt(2),
+                        cursor.getString(3),
+                        lDateToString(cursor.getLong(4)),
+                        cursor.getString(5),
+                        cursor.getInt(6),
+                        cursor.getInt(7),
+                        cursor.getInt(8));
+                //Закидываем в список
+                readBoxMoves.add(readBoxMove);
+            }
+            return readBoxMoves;
+        }catch (Exception e) {
+            Log.e(TAG, "getOutDocNotSent -> ".concat(e.getMessage()) );
+            return readBoxMoves;
+        } finally {
+            tryCloseCursor(cursor);
         }
     }
 }

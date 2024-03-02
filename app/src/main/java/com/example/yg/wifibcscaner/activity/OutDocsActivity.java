@@ -80,8 +80,8 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
         protected Integer doInBackground(String... urls) {
             counter = 0;
             try {
-                ApiUtils.getOrderService(mDBHelper.defs.getUrl()).
-                        addOutDoc(mDBHelper.getOutDocNotSent(),mDBHelper.defs.getDeviceId()).enqueue(new Callback<List<OutDocs>>() {
+                ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).
+                        addOutDoc(outDocRepo.getOutDocNotSent(),AppController.getInstance().getDefs().getDeviceId()).enqueue(new Callback<List<OutDocs>>() {
                     @Override
                     public void onResponse(Call<List<OutDocs>> call, Response<List<OutDocs>> response) {
                         Log.d(TAG,"Ответ сервера на запрос синхронизации накладных: " + response.body().size());
@@ -145,7 +145,7 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
             public boolean onLongClick(View view) {
                 AlertDialog.Builder adb = new AlertDialog.Builder(OutDocsActivity.this);
                 adb.setTitle("Создать накладные...");
-                adb.setMessage("Хотите добавить накладные для всех бригад " +mDBHelper.defs.getDescDep());
+                adb.setMessage("Хотите добавить накладные для всех бригад " +AppController.getInstance().getDefs().getDescDep());
                 adb.setNegativeButton("Нет", null);
                 adb.setPositiveButton("Да", new AlertDialog.OnClickListener() {
                     @RequiresApi(api = Build.VERSION_CODES.O)
@@ -171,7 +171,7 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
         });
 
         Button btnDays = (Button) findViewById(R.id.daysToView);
-        if (!userRepo.checkSuperUser(mDBHelper.defs.get_idUser())) {
+        if (!userRepo.checkSuperUser(AppController.getInstance().getDefs().get_idUser())) {
             btnDays.findViewById(R.id.daysToView).setVisibility(View.INVISIBLE);
             if (SharedPrefs.getInstance() != null) {
                 SharedPrefs.getInstance().setOutDocsDays(1);
@@ -228,43 +228,37 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
 
                 String result = "";
 
-                if (mDBHelper.currentOutDoc == null) {
-                    mDBHelper.currentOutDoc = new OutDocs(scAdapter.getCursor().getString(0), scAdapter.getCursor().getInt(4),
-                            scAdapter.getCursor().getInt(1), scAdapter.getCursor().getString(2), scAdapter.getCursor().getString(3),
-                            scAdapter.getCursor().getString(5),scAdapter.getCursor().getInt(6),
-                            scAdapter.getCursor().getInt(7), scAdapter.getCursor().getInt(8));
-
-                } else {
-                    mDBHelper.currentOutDoc.set_id(scAdapter.getCursor().getString(0));
-                    mDBHelper.currentOutDoc.set_number(scAdapter.getCursor().getInt(1));
-                    mDBHelper.currentOutDoc.set_comment(scAdapter.getCursor().getString(2));
-                    mDBHelper.currentOutDoc.set_DT(scAdapter.getCursor().getString(3));
-                    mDBHelper.currentOutDoc.set_Id_o(scAdapter.getCursor().getInt(4));
-                    mDBHelper.currentOutDoc.set_sentToMasterDate(null);
-                    mDBHelper.currentOutDoc.setDivision_code(scAdapter.getCursor().getString(5));
-                    mDBHelper.currentOutDoc.setIdUser(scAdapter.getCursor().getInt(6));
-                    mDBHelper.currentOutDoc.setIdSotr(scAdapter.getCursor().getInt(7));
-                    mDBHelper.currentOutDoc.setIdDeps(scAdapter.getCursor().getInt(8));
-                }
+                AppController.getInstance().setCurrentOutDoc( new OutDocs(scAdapter.getCursor().getString(0),
+                            scAdapter.getCursor().getInt(4),
+                            scAdapter.getCursor().getInt(1),
+                            scAdapter.getCursor().getString(2),
+                            scAdapter.getCursor().getString(3),
+                            scAdapter.getCursor().getString(5),
+                            scAdapter.getCursor().getInt(6),
+                            scAdapter.getCursor().getInt(7),
+                            scAdapter.getCursor().getInt(8)));
 
                 result = selectedTitle +scAdapter.getCursor().getString(1);
 
-                if ((mDBHelper.defs.get_Id_o()==mDBHelper.defs.get_idOperFirst())&&(mDBHelper.defs.getDivision_code().equals(mDBHelper.puDivision))){
+                if (AppController.getInstance().getDefs().get_Id_o()==AppController.getInstance().getDefs().get_idOperFirst()
+                        && AppController.getInstance().getDefs().getDivision_code().equals(mDBHelper.puDivision)){
                     //Если прием производства и ПУ - установить бригаду из строки таблицы Prods c выбранной накладной
-                    int iDep = depRepo.getIdByOutDocCode(mDBHelper.currentOutDoc.get_id());
-                    if ((iDep != 0)&&(iDep!=mDBHelper.defs.get_Id_d())){
-                        mDBHelper.defs.set_Id_d(iDep);
-                        Defs defs = new Defs(iDep, mDBHelper.defs.get_Id_o(), mDBHelper.defs.get_Id_s(),
-                                mDBHelper.defs.get_Host_IP(), mDBHelper.defs.get_Port(),
-                                mDBHelper.defs.getDivision_code(),  mDBHelper.defs.get_idUser(), mDBHelper.defs.getDeviceId());
+                    int iDep = depRepo.getIdByOutDocCode(AppController.getInstance().getCurrentOutDoc().get_id());
+                    if ( iDep != 0 && iDep!=AppController.getInstance().getDefs().get_Id_d() ){
+                        AppController.getInstance().getDefs().set_Id_d(iDep);
+                        Defs defs = new Defs(iDep, AppController.getInstance().getDefs().get_Id_o(), AppController.getInstance().getDefs().get_Id_s(),
+                                AppController.getInstance().getDefs().get_Host_IP(), AppController.getInstance().getDefs().get_Port(),
+                                AppController.getInstance().getDefs().getDivision_code(),
+                                AppController.getInstance().getDefs().get_idUser(),
+                                AppController.getInstance().getDefs().getDeviceId());
                         if (defsRepo.updateDefsTable(defs) != 0) {
-                            defsRepo.selectDefsTable();
-                            MessageUtils.showToast(getApplicationContext(),"Сохранено."+mDBHelper.defs.getDescDep(), false);
+                            AppController.getInstance().setDefs(defs);
+                            MessageUtils.showToast(getApplicationContext(),"Сохранено."+AppController.getInstance().getDefs().getDescDep(), false);
                         } else {
                             MessageUtils.showToast(getApplicationContext(),"Ошибка при сохранении.", true);
                         }
                     }
-                    result = selectedTitle +scAdapter.getCursor().getString(1)+" "+mDBHelper.defs.getDescDep();
+                    result = selectedTitle +scAdapter.getCursor().getString(1)+" "+AppController.getInstance().getDefs().getDescDep();
                 }
                 OutDocsActivity.this.setTitle(result);
             }
@@ -349,7 +343,7 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
     private boolean addOutDocForAllDeps (){
         AlertDialog.Builder adb = new AlertDialog.Builder(OutDocsActivity.this);
         adb.setTitle("Создать накладные...");
-        adb.setMessage("Хотите добавить накладные для всех бригад " +mDBHelper.defs.getDescDep());
+        adb.setMessage("Хотите добавить накладные для всех бригад " +AppController.getInstance().getDefs().getDescDep());
         adb.setNegativeButton("Нет", null);
         adb.setPositiveButton("Да", new AlertDialog.OnClickListener() {
             @RequiresApi(api = Build.VERSION_CODES.O)
@@ -375,7 +369,7 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
     private boolean addOutDocForAllSotr (){
         AlertDialog.Builder adb = new AlertDialog.Builder(OutDocsActivity.this);
         adb.setTitle("Создать накладные...");
-        adb.setMessage("Хотите добавить накладные для всех сотрудников бригады " +mDBHelper.defs.getDescDep());
+        adb.setMessage("Хотите добавить накладные для всех сотрудников бригады " +AppController.getInstance().getDefs().getDescDep());
         adb.setNegativeButton("Нет", null);
         adb.setPositiveButton("Да", new AlertDialog.OnClickListener() {
             @RequiresApi(api = Build.VERSION_CODES.O)

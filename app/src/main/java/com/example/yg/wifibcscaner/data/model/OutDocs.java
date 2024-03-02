@@ -47,9 +47,17 @@ public class OutDocs {
         this.idUser = idUser;
     }
 
-
+    public OutDocs () {
+        super();
+        this._id = "";
+        this._comment = "";
+        this._DT = "";
+        this.division_code = "";
+        this._sentToMasterDate = null;
+    }
 
     public OutDocs(String _id, int _Id_o, int _number, String _comment, String _DT, String division_code, int idUser, int idSotr, int idDeps) {
+        super();
         this._id = _id;
         this._number = _number;
         this._comment = _comment;

@@ -17,6 +17,7 @@ import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.BoxMoves;
 import com.example.yg.wifibcscaner.data.model.Boxes;
 import com.example.yg.wifibcscaner.DataBaseHelper;
+import com.example.yg.wifibcscaner.data.model.Defs;
 import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.data.model.Prods;
 import com.example.yg.wifibcscaner.R;
@@ -42,6 +43,7 @@ import retrofit2.Response;
 public class BoxesActivity extends AppCompatActivity {
     //Переменная для работы с БД
     private DataBaseHelper mDBHelper = AppController.getInstance().getDbHelper();
+    private Defs defs = AppController.getInstance().getDefs();
     private final OutDocRepo outDocRepo = new OutDocRepo();
 
     SimpleAdapter adapter = null;
@@ -129,8 +131,8 @@ public class BoxesActivity extends AppCompatActivity {
             case R.id.action_sendboxes:
 //ТУт отправляем коробки на сервер
                 try {
-                    ApiUtils.getOrderService(mDBHelper.defs.getUrl()).
-                            addOutDoc(mDBHelper.getOutDocNotSent(),mDBHelper.defs.getDeviceId()).enqueue(new Callback<List<OutDocs>>() {
+                    ApiUtils.getOrderService(defs.getUrl()).
+                            addOutDoc(outDocRepo.getOutDocNotSent(),defs.getDeviceId()).enqueue(new Callback<List<OutDocs>>() {
 
                         // TODO Обработать результат. Записать поле sent... если успешно
                         @Override
@@ -147,8 +149,8 @@ public class BoxesActivity extends AppCompatActivity {
                                     ArrayList<Boxes> boxesList = mDBHelper.getBoxes();
                                     ArrayList<BoxMoves> boxMovesList = mDBHelper.getBoxMoves();
                                     ArrayList<Prods> prodsList = mDBHelper.getProds();
-                                    ApiUtils.getOrderService(mDBHelper.defs.getUrl()).addBoxes(new PartBoxRequest(boxesList, boxMovesList, prodsList),
-                                            mDBHelper.defs.get_idUser(),mDBHelper.defs.getDeviceId()).enqueue(new Callback<PartBoxRequest>() {
+                                    ApiUtils.getOrderService(defs.getUrl()).addBoxes(new PartBoxRequest(boxesList, boxMovesList, prodsList),
+                                            defs.get_idUser(),defs.getDeviceId()).enqueue(new Callback<PartBoxRequest>() {
                                         // TODO Обработать результат. Записать поле sent... если успешно
                                         @Override
                                         public void onResponse(Call<PartBoxRequest> call, Response<PartBoxRequest> response) {
@@ -161,7 +163,7 @@ public class BoxesActivity extends AppCompatActivity {
                                                 for (BoxMoves pmReq : response.body().movesReqList) {
                                                     if (!mDBHelper.updateBoxMovesSentDate(pmReq))
                                                         Log.d("getBoxesService", "Ошибка при записи даты в BoxMoves.");
-                                                    if (pmReq.get_Id_o() == mDBHelper.defs.get_idOperLast())
+                                                    if (pmReq.get_Id_o() == defs.get_idOperLast())
                                                         if (!mDBHelper.updateBoxesSetArchiveTrue(pmReq.get_Id_b()))
                                                             Log.d("getBoxesService", "Ошибка при установке признака архива Box.");
                                                 }

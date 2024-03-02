@@ -11,6 +11,7 @@ import android.widget.Spinner;
 import com.example.yg.wifibcscaner.DataBaseHelper;
 import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.controller.AppController;
+import com.example.yg.wifibcscaner.data.model.Defs;
 import com.example.yg.wifibcscaner.data.model.Sotr;
 import com.example.yg.wifibcscaner.data.repo.DefsRepo;
 import com.example.yg.wifibcscaner.data.repo.DepartmentRepo;
@@ -26,6 +27,7 @@ import java.util.List;
 public class LoginActivity extends AppCompatActivity implements
         AdapterView.OnItemSelectedListener {
     private DataBaseHelper mDBHelper = AppController.getInstance().getDbHelper();
+    private Defs defs = AppController.getInstance().getDefs();
     private int idUser;
     private final OperRepo operRepo = new OperRepo();
     private final DivisionRepo divRepo = new DivisionRepo();
@@ -84,25 +86,25 @@ public class LoginActivity extends AppCompatActivity implements
         if((idUser != 0)&(!ePswd.getText().toString().isEmpty())) {
             //check user's pswd checkUserPswdByName()
             if (userRepo.checkUserPswdById(idUser,ePswd.getText().toString())) { //pswd correct
-                if (mDBHelper.defs.get_idUser()!=idUser) { //another user logged
-                    mDBHelper.defs.set_idUser(idUser);      //set user as default
-                    mDBHelper.defs.setDescUser(userRepo.getUserName(idUser));
-                    mDBHelper.currentOutDoc.set_id("");
-                    mDBHelper.currentOutDoc.set_number(0); //clear currentOutdoc
+                if (defs.get_idUser()!=idUser) { //another user logged
+                    defs.set_idUser(idUser);      //set user as default
+                    defs.setDescUser(userRepo.getUserName(idUser));
+                    AppController.getInstance().getCurrentOutDoc().set_id("");
+                    AppController.getInstance().getCurrentOutDoc().set_number(0); //clear currentOutdoc
 
-                    MessageUtils.showToast(getApplicationContext(), "Вы вошли в систему как: "+mDBHelper.defs.getDescUser(), false);
+                    MessageUtils.showToast(getApplicationContext(), "Вы вошли в систему как: "+defs.getDescUser(), false);
 
                     if (userRepo.getUserSotrById(idUser)!=0) { //not a superuser
                         //select operation, division, department
-                        mDBHelper.defs.set_Id_s(userRepo.getUserSotrById(idUser)); //employee
-                        Sotr sotr = sotrRepo.getSotrReq(mDBHelper.defs.get_Id_s());
-                        if (sotr.get_Id_o()!=0) mDBHelper.defs.set_Id_o(sotr.get_Id_o()); //oper
-                        if (sotr.get_Id_d()!=0) mDBHelper.defs.set_Id_d(sotr.get_Id_d()); //deps
-                        if (!sotr.getDivision_code().isEmpty()) mDBHelper.defs.setDivision_code(sotr.getDivision_code()); //oper
+                        defs.set_Id_s(userRepo.getUserSotrById(idUser)); //employee
+                        Sotr sotr = sotrRepo.getSotrReq(defs.get_Id_s());
+                        if (sotr.get_Id_o()!=0) defs.set_Id_o(sotr.get_Id_o()); //oper
+                        if (sotr.get_Id_d()!=0) defs.set_Id_d(sotr.get_Id_d()); //deps
+                        if (!sotr.getDivision_code().isEmpty()) defs.setDivision_code(sotr.getDivision_code()); //oper
                     }
-                    if (defsRepo.updateDefsTable(mDBHelper.defs) == 0) {
+                    if (defsRepo.updateDefsTable(defs) == 0) {
                         MessageUtils.showToast(getApplicationContext(),"Ошибка при сохранении.", true);
-                    } else defsRepo.selectDefsTable();
+                    } else AppController.getInstance().setDefs(defs);
                 } else { //same user logged
 
                 }
