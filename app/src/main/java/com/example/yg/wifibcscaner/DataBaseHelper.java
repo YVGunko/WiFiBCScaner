@@ -12,15 +12,13 @@ import android.database.sqlite.SQLiteConstraintException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.database.sqlite.SQLiteStatement;
 import android.util.Log;
 
-import com.example.yg.wifibcscaner.activity.lastUpdate;
+import com.example.yg.wifibcscaner.data.model.lastUpdate;
 import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.BoxMoves;
 import com.example.yg.wifibcscaner.data.model.Boxes;
 import com.example.yg.wifibcscaner.data.model.Orders;
-import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.data.model.Prods;
 import com.example.yg.wifibcscaner.data.repo.DefsRepo;
 import com.example.yg.wifibcscaner.data.repo.UserRepo;
@@ -40,15 +38,12 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.example.yg.wifibcscaner.utils.AppUtils.getFirstOperFor;
 import static com.example.yg.wifibcscaner.utils.AppUtils.isNotEmpty;
 import static com.example.yg.wifibcscaner.utils.AppUtils.isOneOfFirstOper;
 import static com.example.yg.wifibcscaner.utils.AppUtils.tryCloseCursor;
-import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDateLong;
-import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDateTimeLong;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.lDateToString;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.sDateTimeToLong;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.sDateToLong;
@@ -63,14 +58,9 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
     public static final String COLUMN_sentToMasterDate = "sentToMasterDate";
     public long serverUpdateTime;
-    public static final String puDivision = "00-000002";
-    public static final String tepDivision = "00-000025";
 
     private SQLiteDatabase mDataBase;
     private AtomicInteger mOpenCounter = new AtomicInteger(0);
-
-    private UserRepo userRepo ;
-    private DefsRepo defsRepo ;
 
     public class foundbox {
         String barcode; //строка описания
@@ -218,10 +208,12 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             mDataBase = DataBaseHelper.getInstance().getWritableDatabase();
             return mDataBase;
         }
+        Log.i(TAG, "DataBaseHelper mOpenCounter = ".concat(mOpenCounter.toString()));
         return mDataBase;
     }
 
     public synchronized void closeDataBase() {
+        Log.i(TAG, "DataBaseHelper mOpenCounter = ".concat(mOpenCounter.toString()));
         if(mOpenCounter.decrementAndGet() == 0) {
             Log.d(TAG, "DataBaseHelper closeDataBase -> decrementAndGet == 0");
             // Closing database
@@ -481,65 +473,6 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         return readBoxes;
     }
 
-    public String selectCurrentOutDocDetails (String id){
-        mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-        Cursor cursor = null;
-        try {
-            cursor = mDataBase.rawQuery("select p.idOutDocs, count(bm.Id_b) as boxNumber, sum(p.RQ_box) as RQ_box" +
-                            " FROM Prods p, BoxMoves bm" +
-                            " where p.idOutDocs='"+id+"' and bm._id=p.Id_bm"+
-                            " group by p.idOutDocs", null);
-            cursor.moveToNext();
-            String result = ", Кор: "+cursor.getString(1)+", Под.: "+cursor.getString(2);
-
-            return result;
-        } catch (Exception e){
-            return "Ошибка!";
-        } finally {
-            tryCloseCursor(cursor);
-        }
-    }
-    public Cursor listOutDocs() {
-        Date curDate = new Date();
-        long dateFrom = DateTimeUtils.getStartOfDayLong(DateTimeUtils.addDays(curDate, 1));
-        long dateTill = DateTimeUtils.getStartOfDayLong(DateTimeUtils.addDays(curDate, 1));
-        if (SharedPrefs.getInstance() != null) {
-            dateFrom = DateTimeUtils.getStartOfDayLong(DateTimeUtils.addDays(curDate, -SharedPrefs.getInstance().getOutDocsDays()+1));
-        }
-        Cursor cursor;
-        try {
-            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-            if (userRepo.checkSuperUser(AppController.getInstance().getDefs().get_idUser())) {
-                cursor = mDataBase.rawQuery("SELECT _id, number, comment, strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as DT, Id_o, division_code, idUser, idSotr, idDeps, DT as dtorder " +
-                                " FROM OutDocs where _id<>0 and division_code=? and Id_o=?" +
-                                " AND DT BETWEEN "+dateFrom+
-                                " AND "+dateTill+
-                                " ORDER BY dtorder desc, number desc",
-                        new String[]{String.valueOf(AppController.getInstance().getDefs().getDivision_code()), String.valueOf(AppController.getInstance().getDefs().get_Id_o())});
-            }
-            else {
-                // for what in the world I put date(DT / 1000,'unixepoch') here ???
-                /*                                    " AND date(DT / 1000,'unixepoch') BETWEEN date("+dateFrom+
-                                " / 1000,'unixepoch') AND  date("+dateTill+" / 1000,'unixepoch')"+
-                * */
-                cursor = mDataBase.rawQuery("SELECT _id, number, comment, strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as DT, Id_o, division_code, idUser, idSotr, idDeps, DT as dtorder " +
-                                " FROM OutDocs where _id<>0 and division_code=? and Id_o=? and idUser=?" +
-                                " AND DT BETWEEN "+dateFrom+
-                                " AND "+dateTill+
-                                " ORDER BY dtorder desc, number desc",
-                        new String[]{String.valueOf(AppController.getInstance().getDefs().getDivision_code()), String.valueOf(AppController.getInstance().getDefs().get_Id_o()), String.valueOf(AppController.getInstance().getDefs().get_idUser())});
-            }
-            cursor.moveToFirst();
-            return cursor;
-        } catch (Exception e) {
-            // TODO fill cursor manually
-            Log.e(TAG, "listOutDocs cursor is NULL! ".concat(e.getMessage()) );
-            cursor = mDataBase.rawQuery("SELECT _id, number, comment, strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as DT, Id_o, division_code, idUser, idSotr, idDeps, DT as dtorder " +
-                            " FROM OutDocs where _id=0",
-                    null);
-            return cursor;
-        }
-    }
 
     //list all boxes
     public ArrayList<HashMap<String, Integer>> listboxes() {
@@ -1069,22 +1002,9 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             tryCloseCursor(cursor);
         }
     }
-    public String getProdsMinDate(){
-        Cursor cursor = null;
-        try {
-            cursor = mDataBase.rawQuery("SELECT min(P_date), max (P_date) FROM Prods", null);
-            if (cursor != null && cursor.moveToFirst()){
-                return lDateToString(cursor.getLong(0)).concat(" - ").concat(lDateToString(cursor.getLong(1)));
-            }
-            return DateTimeUtils.getDayTimeString(new Date());
-        } catch (Exception ex) {
-            Log.e(TAG, ex.getMessage());
-            return DateTimeUtils.getDayTimeString(new Date());
-        } finally {
-            tryCloseCursor(cursor);
-        }
-    }
+
     public String getTableMinDate(String tableName){
+        mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         Cursor cursor = null;
         try {
             cursor = mDataBase.rawQuery("SELECT min(DT), max(DT) FROM "+tableName, null);
@@ -1100,105 +1020,28 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         }
     }
     public String getTableRecordsCount(String tableName){
-        String count = "0";
-
+        mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         Cursor cursor = null;
         try {
-            mDataBase = this.getReadableDatabase();
             cursor = mDataBase.rawQuery("SELECT COUNT(*) FROM "+tableName, null);
-            if ((cursor != null) & (cursor.getCount() != 0)) {
-                cursor.moveToFirst();
-                count = String.valueOf(cursor.getInt(0));
+            if (cursor != null && cursor.moveToFirst()){
+                return String.valueOf(cursor.getInt(0));
             }
+            return "Ошибка!";
+        } catch (Exception ex) {
+            Log.e(TAG, ex.getMessage());
+            return "Ошибка!";
         } finally {
             tryCloseCursor(cursor);
-            mDataBase.close();
-            return count;
         }
     }
 
-    //Insert in Bulk
 
 
 
 
-    public void insertBoxMoveInBulk(List<BoxMoves> list) {
-        if (!mDataBase.isOpen()) {
-            mDataBase = this.getReadableDatabase();
-        }
-        try {
 
-            //mDataBase.execSQL("PRAGMA foreign_keys = 0;");
-            mDataBase.beginTransaction();
-            String sql = "INSERT OR REPLACE INTO BoxMoves (_id, Id_b, Id_o, DT, sentToMasterDate) " +
-                    " VALUES (?,?,?,?,?);";
 
-            SQLiteStatement statement = mDataBase.compileStatement(sql);
-
-            for (BoxMoves o : list) {
-                statement.clearBindings();
-                statement.bindString(1, o.get_id());
-                statement.bindString(2, o.get_Id_b());
-                statement.bindLong(3, o.get_Id_o());
-                statement.bindLong(5, getDateTimeLong(o.get_DT()));
-
-                if (o.get_sentToMasterDate() == null)
-                    statement.bindLong(4, new Date().getTime());
-                else
-                    statement.bindLong(4, getDateTimeLong(o.get_sentToMasterDate()));
-
-                statement.executeInsert();
-            }
-
-            mDataBase.setTransactionSuccessful(); // This commits the transaction if there were no exceptions
-            //mDataBase.execSQL("PRAGMA foreign_keys = 1;");
-        } catch (Exception e) {
-            Log.w(TAG, e);
-            throw new RuntimeException("To catch into upper level.");
-        } finally {
-            mDataBase.endTransaction();
-        }
-    }
-
-    public void insertProdInBulk(List<Prods> list) {
-        if (!mDataBase.isOpen()) {
-            mDataBase = this.getReadableDatabase();
-        }
-        try {
-
-            //mDataBase.execSQL("PRAGMA foreign_keys = 0;");
-            mDataBase.beginTransaction();
-            String sql = "INSERT OR REPLACE INTO Prods (_id, Id_bm, Id_d, Id_s, RQ_box, P_date, sentToMasterDate, idOutDocs) " +
-                    " VALUES (?,?,?,?,?,?,?,?);";
-
-            SQLiteStatement statement = mDataBase.compileStatement(sql);
-
-            for (Prods o : list) {
-                statement.clearBindings();
-                statement.bindString(1, o.get_id());
-                statement.bindString(2, o.get_Id_bm());
-                statement.bindLong(3, o.get_Id_d());
-                statement.bindLong(4, o.get_Id_s());
-                statement.bindLong(5, o.get_RQ_box());
-                statement.bindLong(6, getDateLong(o.get_P_date()));
-
-                if (o.get_sentToMasterDate() == null)
-                    statement.bindLong(7, new Date().getTime());
-                else
-                    statement.bindLong(7, getDateTimeLong(o.get_sentToMasterDate()));
-                statement.bindString(8, o.get_idOutDocs());
-                statement.executeInsert();
-            }
-
-            mDataBase.setTransactionSuccessful(); // This commits the transaction if there were no exceptions
-            //mDataBase.execSQL("PRAGMA foreign_keys = 1;");
-        } catch (Exception e) {
-            Log.w(TAG, e);
-            throw new RuntimeException("To catch into upper level.");
-        } finally {
-            mDataBase.endTransaction();
-        }
-    }
 
 
 }

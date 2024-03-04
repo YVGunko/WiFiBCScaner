@@ -22,6 +22,9 @@ public class DefsRepo {
     private final DepartmentRepo depRepo = new DepartmentRepo();
     private final SotrRepo sotrRepo = new SotrRepo();
     private final UserRepo userRepo = new UserRepo();
+    public static final String puDivision = "00-000002";
+    public static final String tepDivision = "00-000025";
+    public static final String evaDivision = "00-000047";
 
     public Optional<Defs> selectDefsTable(){
         Cursor cursor = null;
@@ -65,5 +68,8 @@ public class DefsRepo {
         } catch (SQLException e) {
             return 0;
         }
+    }
+    public static String getPuDivisionCode(){
+        return puDivision;
     }
 }

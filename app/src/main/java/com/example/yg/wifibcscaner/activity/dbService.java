@@ -15,6 +15,7 @@ import com.example.yg.wifibcscaner.DataBaseHelper;
 import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.activity.lastUpdateActivity;
 import com.example.yg.wifibcscaner.controller.AppController;
+import com.example.yg.wifibcscaner.data.repo.ProdRepo;
 import com.example.yg.wifibcscaner.service.MessageUtils;
 
 import java.util.ArrayList;
@@ -22,9 +23,10 @@ import java.util.List;
 
 public class dbService extends AppCompatActivity {
     private DataBaseHelper mDBHelper = AppController.getInstance().getDbHelper();
-    ProgressBar pbar;
+    private final ProdRepo pbRepo = new ProdRepo();
+
+
     Button buttonStart;
-    ListView listView;
     Button buttonSetDate;
     TextView dbServiceOutDocs, dbServiceOrders, dbServiceBoxes, dbServiceBoxMoves, dbServiceProds;
 
@@ -118,7 +120,7 @@ public class dbService extends AppCompatActivity {
                 checkNameList.set(3, new tableRecord("BoxMoves",
                         mDBHelper.getTableMinDate("BoxMoves"), mDBHelper.getTableRecordsCount("BoxMoves")));
                 checkNameList.set(4, new tableRecord("Prods",
-                        mDBHelper.getProdsMinDate(), mDBHelper.getTableRecordsCount("Prods")));
+                        pbRepo.getProdsMinAndMaxDate(), mDBHelper.getTableRecordsCount("Prods")));
 
                 publishProgress();
 

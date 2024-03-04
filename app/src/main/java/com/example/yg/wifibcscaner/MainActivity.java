@@ -39,6 +39,7 @@ import com.example.yg.wifibcscaner.data.repo.DefsRepo;
 import com.example.yg.wifibcscaner.data.repo.DepartmentRepo;
 import com.example.yg.wifibcscaner.data.repo.DivisionRepo;
 import com.example.yg.wifibcscaner.data.repo.OperRepo;
+import com.example.yg.wifibcscaner.data.repo.OutDocRepo;
 import com.example.yg.wifibcscaner.data.repo.SotrRepo;
 import com.example.yg.wifibcscaner.data.repo.UserRepo;
 import com.example.yg.wifibcscaner.service.MessageUtils;
@@ -63,21 +64,19 @@ import static com.example.yg.wifibcscaner.utils.AppUtils.isOutDocOnlyOper;
 
 public class MainActivity extends AppCompatActivity implements BarcodeReader.BarcodeListener {
     private static final String TAG = "sProject -> MainActivity.";
-    //private Defs defs = AppController.getInstance().getDefs();
-    private OutDocs currentOutDoc = AppController.getInstance().getCurrentOutDoc();
+
     private final UserRepo userRepo = new UserRepo();
     private final DefsRepo defsRepo = new DefsRepo();
+    private final OutDocRepo outDocRepo = new OutDocRepo();
 
     private static BarcodeReader barcodeReader;
     private AidcManager manager;
 
-    private int sId_o = 1;
-    private int sId_d = 1;
     private DataBaseHelper mDBHelper;
 
     TextView tVDBInfo, currentDocDetails, currentUser;
-    EditText editTextRQ, barCodeInput;
-    Button bScan;
+    EditText editTextRQ;
+
     DataBaseHelper.foundbox fb;
     DataBaseHelper.foundorder fo;
 
@@ -178,8 +177,8 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
             return;
         }
         if (isOutDocOnlyOper(AppController.getInstance().getDefs().get_Id_o())&(
-                (currentOutDoc.get_id()==null)||
-                        (currentOutDoc.get_number()==0)))
+                (AppController.getInstance().getCurrentOutDoc().get_id()==null)||
+                        (AppController.getInstance().getCurrentOutDoc().get_number()==0)))
         {
             //Отгрузка, накладная не выбрана
             startActivity(new Intent(this, OutDocsActivity.class));
@@ -188,10 +187,10 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
         if (isDepAndSotrOper(AppController.getInstance().getDefs().get_Id_o())&(
                 (AppController.getInstance().getDefs().get_Id_d()<=0)||
                 (AppController.getInstance().getDefs().get_Id_s()<=0)||
-                (currentOutDoc.get_id()==null)||
-                (currentOutDoc.get_number()==0)))
+                (AppController.getInstance().getCurrentOutDoc().get_id()==null)||
+                (AppController.getInstance().getCurrentOutDoc().get_number()==0)))
         {
-            if ((currentOutDoc.get_id()==null)||(currentOutDoc.get_number()==0))
+            if ((AppController.getInstance().getCurrentOutDoc().get_id()==null)||(AppController.getInstance().getCurrentOutDoc().get_number()==0))
             {
                 //showLongMessage("Нужно выбрать или создать накладную...");
                 startActivity(new Intent(this,OutDocsActivity.class));
@@ -204,7 +203,7 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
         }
 
         String snum = "Накл.???";
-        if (currentOutDoc.get_number() != 0) snum = "Накл.№"+currentOutDoc.get_number();
+        if (AppController.getInstance().getCurrentOutDoc().get_number() != 0) snum = "Накл.№"+AppController.getInstance().getCurrentOutDoc().get_number();
         snum = AppController.getInstance().getDefs().getDescOper()+", "+snum;
         android.support.v7.app.ActionBar actionBar = getSupportActionBar();
         actionBar.setSubtitle(Html.fromHtml("<font color='#FFBF00'>"+snum+"</font>"));
@@ -435,7 +434,7 @@ private static String filter (String str){
         tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
         tVDBInfo.setText(mDBHelper.lastBox());
         currentDocDetails  = (TextView) findViewById(R.id.currentDocDetails);
-        currentDocDetails.setText("Накл.№" +currentOutDoc.getNumberString() + mDBHelper.selectCurrentOutDocDetails(currentOutDoc.get_id()));
+        currentDocDetails.setText("Накл.№" +AppController.getInstance().getCurrentOutDoc().getNumberString() + outDocRepo.selectCurrentOutDocDetails(AppController.getInstance().getCurrentOutDoc().get_id()));
     }
     public void ocl_boxes(View v) {
         startActivity(new Intent(this,BoxesActivity.class)); //Вызов активности Коробки

@@ -33,9 +33,9 @@ import static com.example.yg.wifibcscaner.utils.DateTimeUtils.lDateToString;
 import static com.example.yg.wifibcscaner.utils.MyStringUtils.getUUID;
 
 public class OutDocRepo {
-    private static final String TAG = "sProject -> OutDocRepo";
+    private static final String TAG = "sProject -> OutDocRepo.";
     private SQLiteDatabase mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-    private Defs defs = AppController.getInstance().getDefs();
+
     private final UserRepo userRepo = new UserRepo();
     private final SotrRepo sotrRepo = new SotrRepo();
     private final OperRepo operRepo = new OperRepo();
@@ -58,18 +58,23 @@ public class OutDocRepo {
         Cursor cursor = null;
 
         try {
-            if (userRepo.checkSuperUser(defs.get_idUser())) {
+            if (userRepo.checkSuperUser(AppController.getInstance().getDefs().get_idUser())) {
                 cursor = mDataBase.rawQuery(queryNextOutDocNumber,
-                        new String[]{String.valueOf(defs.getDivision_code()), String.valueOf(defs.get_Id_o()),
+                        new String[]{String.valueOf(AppController.getInstance().getDefs().getDivision_code()),
+                                String.valueOf(AppController.getInstance().getDefs().get_Id_o()),
                                 dateToStartSince});
             } else {
                 cursor = mDataBase.rawQuery(queryNextOutDocNumberForUser,
-                        new String[]{String.valueOf(defs.getDivision_code()), String.valueOf(defs.get_Id_o()), String.valueOf(defs.get_idUser()),
+                        new String[]{String.valueOf(AppController.getInstance().getDefs().getDivision_code()),
+                                String.valueOf(AppController.getInstance().getDefs().get_Id_o()),
+                                String.valueOf(AppController.getInstance().getDefs().get_idUser()),
                                 dateToStartSince});
             }
-
-            return ( cursor.getInt(0) + 1 );
-
+            if (cursor != null && cursor.moveToFirst()) {
+                return (cursor.getInt(0) + 1);
+            }
+            Log.i(TAG, "getNextOutDocNumber -> cursor is empty, gonna return 1");
+            return 1;
         } catch (Exception e) {
             Log.w(TAG, "getNextOutDocNumber -> ".concat(e.getMessage()));
             return 0;
@@ -80,11 +85,11 @@ public class OutDocRepo {
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     public int outDocsAddRec () {
-        if (isDepAndSotrOper(defs.get_Id_o())) {
-            if (defs.get_Id_o() <= 0 || defs.get_Id_d() <= 0 || defs.get_Id_s() <= 0)
+        if (isDepAndSotrOper(AppController.getInstance().getDefs().get_Id_o())) {
+            if (AppController.getInstance().getDefs().get_Id_o() <= 0 || AppController.getInstance().getDefs().get_Id_d() <= 0 || AppController.getInstance().getDefs().get_Id_s() <= 0)
                 return 0;
         } else {
-            if (defs.get_Id_o() <= 0)
+            if (AppController.getInstance().getDefs().get_Id_o() <= 0)
                 return 0;
         }
 
@@ -94,8 +99,8 @@ public class OutDocRepo {
         try {
             try{
                 OutDocs outDoc = prepareOutDoc(nextOutDocNumber,
-                        isDepAndSotrOper(defs.get_Id_o()) ? defs.get_Id_d() : 0,
-                        isDepAndSotrOper(defs.get_Id_o()) ? defs.get_Id_s() : 0,
+                        isDepAndSotrOper(AppController.getInstance().getDefs().get_Id_o()) ? AppController.getInstance().getDefs().get_Id_d() : 0,
+                        isDepAndSotrOper(AppController.getInstance().getDefs().get_Id_o()) ? AppController.getInstance().getDefs().get_Id_s() : 0,
                         getDayTimeString(new Date().getTime()));
 
                 if (createOutDocsForCurrentOperInBulk(Collections.singletonList(outDoc))) {
@@ -114,7 +119,7 @@ public class OutDocRepo {
         int sotrId;
         final String dateToSet = getDayTimeString(new Date());
 
-        for (Integer depId : depRepo.getAllDepartmentIdByDivisionCodeAndOperationId(defs.getDivision_code(), defs.get_Id_o())){
+        for (Integer depId : depRepo.getAllDepartmentIdByDivisionCodeAndOperationId(AppController.getInstance().getDefs().getDivision_code(), AppController.getInstance().getDefs().get_Id_o())){
             sotrId = sotrRepo.getOneSotrIdByDepId(depId);
             if (sotrId != 0) {
                 listOutDocs.add(prepareOutDoc(nextOutDocNumber, depId, sotrId, dateToSet));
@@ -129,9 +134,9 @@ public class OutDocRepo {
         List<OutDocs> listOutDocs = new ArrayList<>();
         final String dateToSet = getDayTimeString(new Date());
 
-        for (Sotr sotr : sotrRepo.getSotrIdByDivisionCodeAndOperationIdAndDepartmentId(defs.getDivision_code(), defs.get_Id_o(), defs.get_Id_d())){
+        for (Sotr sotr : sotrRepo.getSotrIdByDivisionCodeAndOperationIdAndDepartmentId(AppController.getInstance().getDefs().getDivision_code(), AppController.getInstance().getDefs().get_Id_o(), AppController.getInstance().getDefs().get_Id_d())){
             if (sotr.get_id() != 0) {
-                listOutDocs.add(prepareOutDoc(nextOutDocNumber, defs.get_Id_d(), defs.getDescDep(), sotr.get_id(), sotr.get_Sotr(), dateToSet));
+                listOutDocs.add(prepareOutDoc(nextOutDocNumber, AppController.getInstance().getDefs().get_Id_d(), AppController.getInstance().getDefs().getDescDep(), sotr.get_id(), sotr.get_Sotr(), dateToSet));
                 nextOutDocNumber++;
             }
         }
@@ -143,19 +148,19 @@ public class OutDocRepo {
         if (StringUtils.isNotEmpty(sotrName)) sotrName = sotrName.substring(0, sotrName.indexOf(" "));
 
         String description = (depId == 0 & sotrId == 0)
-                ? defs.getDescDep().concat(", ").concat(defs.getDescUser())
+                ? AppController.getInstance().getDefs().getDescDep().concat(", ").concat(AppController.getInstance().getDefs().getDescUser())
                 : (depRepo.getDepNameById(depId).concat(", ").concat(sotrName));
 
-        OutDocs outDoc = new OutDocs(getUUID(), defs.get_Id_o(), outDocNumber,
+        OutDocs outDoc = new OutDocs(getUUID(), AppController.getInstance().getDefs().get_Id_o(), outDocNumber,
                 description,
-                dateToSet, defs.getDivision_code(), defs.get_idUser(),
+                dateToSet, AppController.getInstance().getDefs().getDivision_code(), AppController.getInstance().getDefs().get_idUser(),
                 sotrId, depId);
         return outDoc;
     }
     private OutDocs prepareOutDoc (final int outDocNumber, final int depId, final String depName, final int sotrId, final String sotrName, final String dateToSet){
-        OutDocs outDoc = new OutDocs(getUUID(), defs.get_Id_o(), outDocNumber,
+        OutDocs outDoc = new OutDocs(getUUID(), AppController.getInstance().getDefs().get_Id_o(), outDocNumber,
                 ((StringUtils.isNotEmpty(depName) ? depName : "") + (StringUtils.isNotEmpty(sotrName) ? ", "+sotrName : "")),
-                dateToSet, defs.getDivision_code(), defs.get_idUser(),
+                dateToSet, AppController.getInstance().getDefs().getDivision_code(), AppController.getInstance().getDefs().get_idUser(),
                 sotrId, depId);
         return outDoc;
     }
@@ -276,4 +281,68 @@ public class OutDocRepo {
             tryCloseCursor(cursor);
         }
     }
+    public String selectCurrentOutDocDetails (String id){
+        if (StringUtils.isEmpty(id)) return "";
+        mDataBase = AppController.getInstance().getDbHelper().openDataBase();
+        Cursor cursor = null;
+        try {
+            cursor = mDataBase.rawQuery("select p.idOutDocs, count(bm.Id_b) as boxNumber, sum(p.RQ_box) as RQ_box" +
+                    " FROM Prods p, BoxMoves bm" +
+                    " where p.idOutDocs='"+id+"' and bm._id=p.Id_bm"+
+                    " group by p.idOutDocs", null);
+            cursor.moveToNext();
+            String result = ", Кор: "+cursor.getString(1)+", Под.: "+cursor.getString(2);
+
+            return result;
+        } catch (Exception e){
+            return "Не найдена";
+        } finally {
+            tryCloseCursor(cursor);
+            AppController.getInstance().getDbHelper().closeDataBase();
+        }
+    }
+    public Cursor listOutDocs() {
+        Date curDate = new Date();
+        long dateFrom = DateTimeUtils.getStartOfDayLong(DateTimeUtils.addDays(curDate, 1));
+        long dateTill = DateTimeUtils.getStartOfDayLong(DateTimeUtils.addDays(curDate, 1));
+        if (SharedPrefs.getInstance() != null) {
+            dateFrom = DateTimeUtils.getStartOfDayLong(DateTimeUtils.addDays(curDate, -SharedPrefs.getInstance().getOutDocsDays()+1));
+        }
+        Cursor cursor;
+        try {
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
+            if (userRepo.checkSuperUser(AppController.getInstance().getDefs().get_idUser())) {
+                cursor = mDataBase.rawQuery("SELECT _id, number, comment, strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as DT, Id_o, division_code, idUser, idSotr, idDeps, DT as dtorder " +
+                                " FROM OutDocs where _id<>0 and division_code=? and Id_o=?" +
+                                " AND DT BETWEEN "+dateFrom+
+                                " AND "+dateTill+
+                                " ORDER BY dtorder desc, number desc",
+                        new String[]{String.valueOf(AppController.getInstance().getDefs().getDivision_code()),
+                                String.valueOf(AppController.getInstance().getDefs().get_Id_o())});
+            }
+            else {
+                // for what in the world I put date(DT / 1000,'unixepoch') here ???
+                /*                                    " AND date(DT / 1000,'unixepoch') BETWEEN date("+dateFrom+
+                                " / 1000,'unixepoch') AND  date("+dateTill+" / 1000,'unixepoch')"+
+                * */
+                cursor = mDataBase.rawQuery("SELECT _id, number, comment, strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as DT, Id_o, division_code, idUser, idSotr, idDeps, DT as dtorder " +
+                                " FROM OutDocs where _id<>0 and division_code=? and Id_o=? and idUser=?" +
+                                " AND DT BETWEEN "+dateFrom+
+                                " AND "+dateTill+
+                                " ORDER BY dtorder desc, number desc",
+                        new String[]{String.valueOf(AppController.getInstance().getDefs().getDivision_code()),
+                                String.valueOf(AppController.getInstance().getDefs().get_Id_o()), String.valueOf(AppController.getInstance().getDefs().get_idUser())});
+            }
+            cursor.moveToFirst();
+            return cursor;
+        } catch (Exception e) {
+            // TODO fill cursor manually
+            Log.e(TAG, "listOutDocs cursor is NULL! ".concat(e.getMessage()) );
+            cursor = mDataBase.rawQuery("SELECT _id, number, comment, strftime('%d-%m-%Y %H:%M:%S', DT/1000, 'unixepoch', 'localtime') as DT, Id_o, division_code, idUser, idSotr, idDeps, DT as dtorder " +
+                            " FROM OutDocs where _id=0",
+                    null);
+            return cursor;
+        }
+    }
+
 }

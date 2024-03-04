@@ -44,7 +44,6 @@ public class SotrRepo {
     }
     public List<String> getAllSotrName(String code, int department_id, int operation_id) {
         ArrayList<String> nameDeps = new ArrayList<String>();
-
         try ( Cursor cursor = mDataBase.rawQuery("SELECT _id,tn_Sotr,Sotr FROM Sotr " +
                         "Where NOT expired and (((division_code=?) and (Id_o=?) and (Id_d=?))) or (_id=0) Order by _id",
                 new String [] {String.valueOf(code), String.valueOf(operation_id), String.valueOf(department_id)}) ) {
@@ -52,27 +51,29 @@ public class SotrRepo {
                 nameDeps.add(String.format("%s, %s", cursor.getString(2), cursor.getString(1)));
             }
             tryCloseCursor(cursor);
+            return nameDeps;
+        }catch (Exception e) {
+            Log.e(TAG, "getAllSotrName -> ".concat(e.getMessage()));
+            return nameDeps;
         }
-        return nameDeps;
     }
-    public Sotr getSotrReq(int Id_s){
+    public Sotr getSotrReq(@NonNull int Id_s){
 
         Sotr sotr = new Sotr(Id_s, "0",0,0);
         Cursor cursor = null;
         try {
             cursor = mDataBase.rawQuery("SELECT Id_o, Id_d, division_code FROM Sotr Where _id=?", new String [] {String.valueOf(Id_s)});
-            if ((cursor != null) & (cursor.getCount() != 0)) {
-                cursor.moveToFirst();
+            if (cursor != null && cursor.moveToFirst()){
                 sotr.set_Id_o(cursor.getInt(0));
                 sotr.set_Id_d(cursor.getInt(1));
                 sotr.setDivision_code(cursor.getString(2));
             }
-            tryCloseCursor(cursor);
-            mDataBase.close();
+            return sotr;
+        }catch (Exception e) {
+            Log.e(TAG, "getSotrReq -> ".concat(e.getMessage()));
+            return sotr;
         } finally {
             tryCloseCursor(cursor);
-            mDataBase.close();
-            return sotr;
         }
     }
     public int getOneSotrIdByDepId(int depId){

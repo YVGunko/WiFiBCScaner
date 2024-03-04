@@ -64,6 +64,7 @@ public class AppController extends Application {
     public void setCurrentOutDoc(OutDocs outDoc) {
         this.currentOutDoc = outDoc;
     }
+
     public Defs getDefs() {
         return this.defs;
     }

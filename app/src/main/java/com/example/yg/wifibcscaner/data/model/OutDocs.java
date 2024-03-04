@@ -90,7 +90,7 @@ public class OutDocs {
         return _number ;
     }
     public String getNumberString() {
-        return AppUtils.isNotEmpty(String.valueOf(_number)) ? String.valueOf(_number) : " не выбрана." ;
+        return AppUtils.isNotEmpty(String.valueOf(this._number)) ? String.valueOf(this._number) : " не выбрана." ;
     }
     public void set_number(int _number) {
         this._number = _number;
