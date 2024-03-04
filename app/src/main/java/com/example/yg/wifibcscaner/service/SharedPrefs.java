@@ -17,6 +17,7 @@ public class SharedPrefs {
     final static String PREF_DB_NEED_REPLACE = "db_need_replace";
     final static String OUTDOCS_DAYS = "outDocsDays";
     final static String OUTDOCS_NUMERATION_START_DATE = "outDocsNumStartDate";
+    final static String NEXT_UPDATE_DATE = "nextUpdateDate";
     final static int DOESNT_EXIST = -1;
 
     private static SharedPrefs sharedPref;
@@ -68,5 +69,14 @@ public class SharedPrefs {
     public long getOutdocsNumerationStartDate() {
         long result = AppController.getInstance().getSharedPreferences().getLong(OUTDOCS_NUMERATION_START_DATE, DateTimeUtils.getFirstDayOfYear());
         return ( result > DateTimeUtils.getFirstDayOfYear() & result <= new Date().getTime() ) ? result : DateTimeUtils.getFirstDayOfYear();
+    }
+    public void setNextUpdateDate(long value) {
+        editor = AppController.getInstance().getSharedPreferences().edit();
+        editor.putLong(NEXT_UPDATE_DATE, value);
+        editor.apply();
+    }
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    public long getNextUpdateDate() {
+        return AppController.getInstance().getSharedPreferences().getLong(NEXT_UPDATE_DATE, DateTimeUtils.getFirstDayOfMonth());
     }
 }

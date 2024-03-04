@@ -14,10 +14,6 @@ import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.Defs;
 import com.example.yg.wifibcscaner.data.model.Sotr;
 import com.example.yg.wifibcscaner.data.repo.DefsRepo;
-import com.example.yg.wifibcscaner.data.repo.DepartmentRepo;
-import com.example.yg.wifibcscaner.data.repo.DivisionRepo;
-import com.example.yg.wifibcscaner.data.repo.OperRepo;
-import com.example.yg.wifibcscaner.data.repo.OrderRepo;
 import com.example.yg.wifibcscaner.data.repo.SotrRepo;
 import com.example.yg.wifibcscaner.data.repo.UserRepo;
 import com.example.yg.wifibcscaner.service.MessageUtils;
@@ -26,13 +22,9 @@ import java.util.List;
 
 public class LoginActivity extends AppCompatActivity implements
         AdapterView.OnItemSelectedListener {
-    private DataBaseHelper mDBHelper = AppController.getInstance().getDbHelper();
-    private Defs defs = AppController.getInstance().getDefs();
+
     private int idUser;
-    private final OperRepo operRepo = new OperRepo();
-    private final DivisionRepo divRepo = new DivisionRepo();
-    private final DepartmentRepo depRepo = new DepartmentRepo();
-    private final OrderRepo orderRepo = new OrderRepo();
+
     private final SotrRepo sotrRepo = new SotrRepo();
     private final UserRepo userRepo = new UserRepo();
     private final DefsRepo defsRepo = new DefsRepo();
@@ -86,25 +78,25 @@ public class LoginActivity extends AppCompatActivity implements
         if((idUser != 0)&(!ePswd.getText().toString().isEmpty())) {
             //check user's pswd checkUserPswdByName()
             if (userRepo.checkUserPswdById(idUser,ePswd.getText().toString())) { //pswd correct
-                if (defs.get_idUser()!=idUser) { //another user logged
-                    defs.set_idUser(idUser);      //set user as default
-                    defs.setDescUser(userRepo.getUserName(idUser));
+                if (AppController.getInstance().getDefs().get_idUser()!=idUser) { //another user logged
+                    AppController.getInstance().getDefs().set_idUser(idUser);      //set user as default
+                    AppController.getInstance().getDefs().setDescUser(userRepo.getUserName(idUser));
                     AppController.getInstance().getCurrentOutDoc().set_id("");
                     AppController.getInstance().getCurrentOutDoc().set_number(0); //clear currentOutdoc
 
-                    MessageUtils.showToast(getApplicationContext(), "Вы вошли в систему как: "+defs.getDescUser(), false);
+                    MessageUtils.showToast(getApplicationContext(), "Вы вошли в систему как: "+AppController.getInstance().getDefs().getDescUser(), false);
 
                     if (userRepo.getUserSotrById(idUser)!=0) { //not a superuser
                         //select operation, division, department
-                        defs.set_Id_s(userRepo.getUserSotrById(idUser)); //employee
-                        Sotr sotr = sotrRepo.getSotrReq(defs.get_Id_s());
-                        if (sotr.get_Id_o()!=0) defs.set_Id_o(sotr.get_Id_o()); //oper
-                        if (sotr.get_Id_d()!=0) defs.set_Id_d(sotr.get_Id_d()); //deps
-                        if (!sotr.getDivision_code().isEmpty()) defs.setDivision_code(sotr.getDivision_code()); //oper
+                        AppController.getInstance().getDefs().set_Id_s(userRepo.getUserSotrById(idUser)); //employee
+                        Sotr sotr = sotrRepo.getSotrReq(AppController.getInstance().getDefs().get_Id_s());
+                        if (sotr.get_Id_o()!=0) AppController.getInstance().getDefs().set_Id_o(sotr.get_Id_o()); //oper
+                        if (sotr.get_Id_d()!=0) AppController.getInstance().getDefs().set_Id_d(sotr.get_Id_d()); //deps
+                        if (!sotr.getDivision_code().isEmpty()) AppController.getInstance().getDefs().setDivision_code(sotr.getDivision_code()); //oper
                     }
-                    if (defsRepo.updateDefsTable(defs) == 0) {
+                    if (defsRepo.updateDefsTable(AppController.getInstance().getDefs()) == 0) {
                         MessageUtils.showToast(getApplicationContext(),"Ошибка при сохранении.", true);
-                    } else AppController.getInstance().setDefs(defs);
+                    } else AppController.getInstance().setDefs(AppController.getInstance().getDefs());
                 } else { //same user logged
 
                 }

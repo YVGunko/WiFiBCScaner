@@ -290,12 +290,12 @@ public class OutDocRepo {
                     " FROM Prods p, BoxMoves bm" +
                     " where p.idOutDocs='"+id+"' and bm._id=p.Id_bm"+
                     " group by p.idOutDocs", null);
-            cursor.moveToNext();
-            String result = ", Кор: "+cursor.getString(1)+", Под.: "+cursor.getString(2);
-
-            return result;
+            if (cursor != null && cursor.moveToFirst()) {
+                return ", Кор: "+cursor.getString(1)+", Под.: "+cursor.getString(2);
+            }
+            return ", Кор: 0";
         } catch (Exception e){
-            return "Не найдена";
+            return ". Нет данных.";
         } finally {
             tryCloseCursor(cursor);
             AppController.getInstance().getDbHelper().closeDataBase();

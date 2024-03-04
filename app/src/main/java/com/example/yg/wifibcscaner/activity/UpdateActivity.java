@@ -3,7 +3,9 @@ package com.example.yg.wifibcscaner.activity;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -124,6 +126,7 @@ public class UpdateActivity extends AppCompatActivity {
     private class SyncIncoData extends AsyncTask<String, Integer, String> {
         Integer counter;
 
+        @RequiresApi(api = Build.VERSION_CODES.O)
         @Override
         protected String doInBackground(String... urls) {
             try {

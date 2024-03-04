@@ -1,26 +1,26 @@
 package com.example.yg.wifibcscaner.data.repo;
 
-import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
+import android.os.Build;
 import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
 import android.util.Log;
 
 import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.Orders;
-import com.example.yg.wifibcscaner.utils.DateTimeUtils;
+import com.example.yg.wifibcscaner.service.SharedPrefs;
 
 import java.util.List;
 
-import static com.example.yg.wifibcscaner.utils.AppUtils.tryCloseCursor;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDateTimeLong;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.lDateToString;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.sDateTimeToLong;
 
 public class OrderRepo {
-    private static final String TAG = "sProject -> OrderRepo";
+    private static final String TAG = "sProject -> OrderRepo.";
     private SQLiteDatabase mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-
+/*
     public String getOrderUpdateDate(@NonNull String globalUpdateDate){
         Cursor cursor = null;
         try {
@@ -34,6 +34,20 @@ public class OrderRepo {
             return globalUpdateDate;
         } finally {
             tryCloseCursor(cursor);
+        }
+    }*/
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    public String getOrderUpdateDate(@NonNull String globalUpdateDate){
+        try {
+            if (SharedPrefs.getInstance() != null) {
+                long saved = SharedPrefs.getInstance().getNextUpdateDate();
+                return lDateToString(saved > sDateTimeToLong(globalUpdateDate) ? saved : sDateTimeToLong(globalUpdateDate));
+            }
+
+            return globalUpdateDate;
+        }catch (Exception e) {
+            Log.e(TAG, "getMaxDepsDate -> ".concat(e.getMessage()));
+            return globalUpdateDate;
         }
     }
     public void insertOrdersInBulk(List<Orders> list){

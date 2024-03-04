@@ -15,7 +15,7 @@ import java.util.Date;
 import java.util.Locale;
 
 import static java.time.temporal.TemporalAdjusters.firstDayOfYear;
-import static java.time.temporal.TemporalAdjusters.lastDayOfYear;
+import static java.time.temporal.TemporalAdjusters.firstDayOfMonth;
 
 /**
  * Created by YG on 2020-03-21.
@@ -128,6 +128,12 @@ public class DateTimeUtils {
     public static Long getFirstDayOfYear() {
         LocalDate now = LocalDate.now(); // 2015-11-23
         LocalDate firstDay = now.with(firstDayOfYear()); // 2015-01-01
+        return toMillis(firstDay);
+    }
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    public static Long getFirstDayOfMonth() {
+        LocalDate now = LocalDate.now(); // 2015-11-23
+        LocalDate firstDay = now.with(java.time.temporal.TemporalAdjusters.firstDayOfMonth()); // 2015-01-01
         return toMillis(firstDay);
     }
 

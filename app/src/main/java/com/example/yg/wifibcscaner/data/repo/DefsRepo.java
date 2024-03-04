@@ -16,7 +16,7 @@ import static com.example.yg.wifibcscaner.utils.AppUtils.tryCloseCursor;
 
 public class DefsRepo {
     private static final String TAG = "sProject -> DefsRepo.";
-    private SQLiteDatabase mDataBase = AppController.getInstance().getDbHelper().openDataBase();
+
     private final OperRepo operRepo = new OperRepo();
     private final DivisionRepo divRepo = new DivisionRepo();
     private final DepartmentRepo depRepo = new DepartmentRepo();
@@ -27,6 +27,7 @@ public class DefsRepo {
     public static final String evaDivision = "00-000047";
 
     public Optional<Defs> selectDefsTable(){
+        SQLiteDatabase mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         Cursor cursor = null;
         try {
             cursor = mDataBase.rawQuery("SELECT Id_d,Id_o,Id_s,Host_IP,Port,idOperFirst,idOperLast,division_code,idUser,DeviceId  FROM Defs ", null);
@@ -48,10 +49,12 @@ public class DefsRepo {
             Log.e(TAG, "selectDefsTable -> ".concat(e.getMessage()));
             return Optional.empty();
         } finally {
+            AppController.getInstance().getDbHelper().closeDataBase();
             tryCloseCursor(cursor);
         }
     }
     public int updateDefsTable(Defs defs){
+        SQLiteDatabase mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         try {
             ContentValues values = new ContentValues();
             values.clear();
@@ -67,6 +70,8 @@ public class DefsRepo {
             return mDataBase.update(Defs.table_Defs, values,strFilter, null);
         } catch (SQLException e) {
             return 0;
+        } finally {
+            AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
     public static String getPuDivisionCode(){

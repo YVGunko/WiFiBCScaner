@@ -3,6 +3,10 @@ package com.example.yg.wifibcscaner.data.repo;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.controller.AppController;
@@ -10,15 +14,14 @@ import com.example.yg.wifibcscaner.data.dto.OrderOutDocBoxMovePart;
 import com.example.yg.wifibcscaner.data.model.Orders;
 import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
+import com.example.yg.wifibcscaner.service.SharedPrefs;
 import com.example.yg.wifibcscaner.utils.executors.DefaultExecutorSupplier;
-
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+
+import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDayTimeLong;
 
 public class OrderOutDocBoxMovePartRepository {
     private AtomicInteger nextPage = new AtomicInteger(0);
@@ -70,6 +73,9 @@ public class OrderOutDocBoxMovePartRepository {
                     if (response.code() == 204) {
                         //no content, so prepare environment to stop current request and prepare for next one
                         nextPage.set(0);
+                        if (SharedPrefs.getInstance() != null) {
+                            SharedPrefs.getInstance().setNextUpdateDate(getDayTimeLong(new Date()));
+                        }
                         showToast("Синхронизация завершена успешно. 204.", true);
                         return;
                     }
@@ -93,6 +99,7 @@ public class OrderOutDocBoxMovePartRepository {
                                         nextPage.getAndIncrement(),
                                         pageSize)
                                         .enqueue(downloadDataCallback(updateDate));
+                                showToast("Синхронизация еще продолжается... ".concat(nextPage.toString()), false);
                             }
                         } catch (RuntimeException re) {
                             Log.w(TAG, re);
