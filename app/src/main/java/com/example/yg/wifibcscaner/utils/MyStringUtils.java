@@ -143,5 +143,17 @@ public class MyStringUtils {
         }
         return sb.toString ();
     }
-
+/* order definition
+* */
+    public static String makeOrderdef(Cursor cursor) {
+        String def = "№ " + cursor.getString(2);
+        def += " / " + cursor.getString(3) + "\n";
+        def += "Подошва: " + cursor.getString(4) ;
+        if (AppUtils.isNotEmpty(cursor.getString(5)))
+            def += ", " + cursor.getString(5);
+        def += "\nЗаказ: " + cursor.getString(6) +
+                ". Регл: " + cursor.getString(7) +
+                ". Всего кор: " + cursor.getString(8) + "\n";
+        return def;
+    }
 }

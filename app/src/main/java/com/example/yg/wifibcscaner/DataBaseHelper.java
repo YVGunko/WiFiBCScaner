@@ -48,6 +48,7 @@ import static com.example.yg.wifibcscaner.utils.DateTimeUtils.lDateToString;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.sDateTimeToLong;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.sDateToLong;
 import static com.example.yg.wifibcscaner.utils.MyStringUtils.getUUID;
+import static com.example.yg.wifibcscaner.utils.MyStringUtils.makeOrderdef;
 
 public class DataBaseHelper extends SQLiteOpenHelper {
     private static final String TAG = "DataBaseHelper";
@@ -121,17 +122,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         }
         return so;
     }
-    private String makeOrderdef(Cursor cursor) {
-        String def = "№ " + cursor.getString(2);
-        def += " / " + cursor.getString(3) + "\n";
-        def += "Подошва: " + cursor.getString(4) ;
-        if (AppUtils.isNotEmpty(cursor.getString(5)))
-            def += ", " + cursor.getString(5);
-        def += "\nЗаказ: " + cursor.getString(6) +
-                ". Регл: " + cursor.getString(7) +
-                ". Всего кор: " + cursor.getString(8) + "\n";
-        return def;
-    }
+
     private String retStringFollowingCRIfNotNull (String s){
         String retString = "";
         try {

@@ -1,5 +1,6 @@
 package com.example.yg.wifibcscaner.data.repo;
 
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
 import android.os.Build;
@@ -13,6 +14,7 @@ import com.example.yg.wifibcscaner.service.SharedPrefs;
 
 import java.util.List;
 
+import static com.example.yg.wifibcscaner.utils.AppUtils.tryCloseCursor;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDateTimeLong;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.lDateToString;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.sDateTimeToLong;
@@ -20,11 +22,11 @@ import static com.example.yg.wifibcscaner.utils.DateTimeUtils.sDateTimeToLong;
 public class OrderRepo {
     private static final String TAG = "sProject -> OrderRepo.";
     private SQLiteDatabase mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-/*
+
     public String getOrderUpdateDate(@NonNull String globalUpdateDate){
         Cursor cursor = null;
         try {
-            cursor = mDataBase.rawQuery("SELECT updateStart, updateEnd, updateSuccess FROM lastUpdate WHERE tableName=?", new String [] {Orders.TABLE_orders});
+            cursor = mDataBase.rawQuery("SELECT max(DT) FROM Orders ", null);
             if (cursor != null && cursor.moveToFirst()) {
                 return lDateToString(cursor.getLong(0) > sDateTimeToLong(globalUpdateDate) ? cursor.getLong(0) : sDateTimeToLong(globalUpdateDate));
             }
@@ -35,8 +37,8 @@ public class OrderRepo {
         } finally {
             tryCloseCursor(cursor);
         }
-    }*/
-    @RequiresApi(api = Build.VERSION_CODES.O)
+    }
+    /*@RequiresApi(api = Build.VERSION_CODES.O)
     public String getOrderUpdateDate(@NonNull String globalUpdateDate){
         try {
             if (SharedPrefs.getInstance() != null) {
@@ -49,7 +51,7 @@ public class OrderRepo {
             Log.e(TAG, "getMaxDepsDate -> ".concat(e.getMessage()));
             return globalUpdateDate;
         }
-    }
+    }*/
     public void insertOrdersInBulk(List<Orders> list){
         try {
             //mDataBase.execSQL("PRAGMA foreign_keys = 0;");
