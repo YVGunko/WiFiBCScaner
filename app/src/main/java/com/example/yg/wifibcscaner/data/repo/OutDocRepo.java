@@ -9,13 +9,16 @@ import android.os.Build;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
 
+import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.Defs;
 import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.data.model.Sotr;
+import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.service.SharedPrefs;
 import com.example.yg.wifibcscaner.utils.DateTimeUtils;
+import com.example.yg.wifibcscaner.utils.executors.DefaultExecutorSupplier;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -23,6 +26,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 import static com.example.yg.wifibcscaner.DataBaseHelper.COLUMN_sentToMasterDate;
 import static com.example.yg.wifibcscaner.utils.AppUtils.isDepAndSotrOper;
@@ -205,13 +212,15 @@ public class OutDocRepo {
             ContentValues values = new ContentValues();
             values.clear();
             values.put(COLUMN_sentToMasterDate, new Date().getTime());
-            return  (mDataBase.update(OutDocs.TABLE, values,OutDocs.COLUMN_Id +"='"+od.get_id()+"'",null) > 0) ;
+            mDataBase.beginTransaction();
+            int n = mDataBase.update(OutDocs.TABLE, values,OutDocs.COLUMN_Id +"='"+od.get_id()+"'",null) ;
+            mDataBase.setTransactionSuccessful();
+            return n > 0 ;
         } catch (SQLiteException e) {
             Log.e( TAG, "updateOutDocsetSentToMasterDate exception ".concat(e.getMessage()) );
-            MessageUtils.showToast(AppController.getInstance().getContext(),
-                    "Запись даты отправки накладных. Операция не выполнена!",
-                    false);
             return false;
+        } finally {
+            mDataBase.endTransaction();
         }
     }
     public void insertOutDocInBulk(List<OutDocs> list){
@@ -344,5 +353,33 @@ public class OutDocRepo {
             return cursor;
         }
     }
+    /* send outDocs in background
+        * */
+    public void sendData(String updateDate) {
+        DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
+            try {
+                Log.d(TAG, "sendData -> update date: " + updateDate);
 
+                ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).
+                        addOutDoc(getOutDocNotSent(),AppController.getInstance().getDefs().getDeviceId()).enqueue(new Callback<List<OutDocs>>() {
+                    @Override
+                    public void onResponse(Call<List<OutDocs>> call, Response<List<OutDocs>> response) {
+                        Log.d(TAG,"Ответ сервера на запрос синхронизации накладных: " + response.body().size());
+                        if(response.isSuccessful()) {
+                            for (OutDocs boxes : response.body())
+                                updateOutDocsetSentToMasterDate(boxes);
+                        }
+                    }
+                    @Override
+                    public void onFailure(Call<List<OutDocs>> call, Throwable t) {
+                        Log.e(TAG, "OutDocs Error: " + t.getMessage());
+                    }
+                });
+
+            } catch (Exception e) {
+                Log.e(TAG, "sendData -> " + e.getMessage());
+            }
+        });
+        return;
+    }
 }
