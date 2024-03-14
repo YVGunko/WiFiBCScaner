@@ -21,6 +21,7 @@ import com.example.yg.wifibcscaner.data.model.Defs;
 import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.data.model.Prods;
 import com.example.yg.wifibcscaner.R;
+import com.example.yg.wifibcscaner.data.repo.BoxRepo;
 import com.example.yg.wifibcscaner.data.repo.DefsRepo;
 import com.example.yg.wifibcscaner.data.repo.DepartmentRepo;
 import com.example.yg.wifibcscaner.data.repo.DivisionRepo;
@@ -41,10 +42,10 @@ import retrofit2.Response;
 
 
 public class BoxesActivity extends AppCompatActivity {
-    //Переменная для работы с БД
-    private DataBaseHelper mDBHelper = AppController.getInstance().getDbHelper();
-    private Defs defs = AppController.getInstance().getDefs();
+    private static final String TAG = "sProject -> BoxesActivity.";
+
     private final OutDocRepo outDocRepo = new OutDocRepo();
+    private final BoxRepo boxRepo = new BoxRepo();
 
     SimpleAdapter adapter = null;
     ListView listView = null;
@@ -64,7 +65,7 @@ public class BoxesActivity extends AppCompatActivity {
 
 
 //Создаем адаптер
-        adapter = new SimpleAdapter(this, mDBHelper.listboxes(), R.layout.adapter_item, from, to);
+        adapter = new SimpleAdapter(this, AppController.getInstance().getDbHelper().listboxes(), R.layout.adapter_item, from, to);
         listView = (ListView) findViewById(R.id.listView);
         listView.setAdapter(adapter);
 
@@ -91,11 +92,11 @@ public class BoxesActivity extends AppCompatActivity {
                         String sPdId = sTmp.substring(sTmp.indexOf("pdId=")+5,sTmp.indexOf("/pdId"));
                         //Проверить нет ли других операций по этой коробке. Если это расходная операция -
                         //приходная есть по умолчанию. Если это приходная операция - проверить наличие других.
-                        if (mDBHelper.deleteFromTable(Prods.TABLE_prods,Prods.COLUMN_ID,sPdId)){
+                        if (AppController.getInstance().getDbHelper().deleteFromTable(Prods.TABLE_prods,Prods.COLUMN_ID,sPdId)){
                         //удалили подошву. проверить есть ли еще подошва по этому движению.
                         //если нет удалить движение
-                            if (mDBHelper.deleteFromTable(BoxMoves.TABLE_bm,BoxMoves.COLUMN_ID,sBmId)){
-                                if (!mDBHelper.deleteFromTable(Boxes.TABLE_boxes,Boxes.COLUMN_ID,sBId)){
+                            if (AppController.getInstance().getDbHelper().deleteFromTable(BoxMoves.TABLE_bm,BoxMoves.COLUMN_ID,sBmId)){
+                                if (!AppController.getInstance().getDbHelper().deleteFromTable(Boxes.TABLE_boxes,Boxes.COLUMN_ID,sBId)){
                                     Log.d("1","Коробка не может быть удалена из-за ссылок других операций! Id= "+sBId );
                                 }
                                 messageUtils.showMessage(getApplicationContext(), "Ок! Успешно!");
@@ -131,64 +132,42 @@ public class BoxesActivity extends AppCompatActivity {
             case R.id.action_sendboxes:
 //ТУт отправляем коробки на сервер
                 try {
-                    ApiUtils.getOrderService(defs.getUrl()).
-                            addOutDoc(outDocRepo.getOutDocNotSent(),defs.getDeviceId()).enqueue(new Callback<List<OutDocs>>() {
-
-                        // TODO Обработать результат. Записать поле sent... если успешно
+                    ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).
+                            addOutDoc(outDocRepo.getOutDocNotSent(),AppController.getInstance().getDefs().getDeviceId()).enqueue(new Callback<List<OutDocs>>() {
                         @Override
                         public void onResponse(Call<List<OutDocs>> call, Response<List<OutDocs>> response) {
-                            MessageUtils messageUtils = new MessageUtils();
                             if(response.isSuccessful()) {
-                                for(OutDocs boxes : response.body())
-                                    outDocRepo.updateOutDocsetSentToMasterDate(boxes);
+                                outDocRepo.updateOutDocsetSentToMasterDate(response.body());
 
                                 if (response.body().size()!=0) {
-                                    messageUtils.showMessage(getApplicationContext(), "Ок! Накладные выгружены!");
+                                    MessageUtils.showToast(getApplicationContext(), "Ок! Накладные выгружены!", false);
                                 }
                                 try {
-                                    ArrayList<Boxes> boxesList = mDBHelper.getBoxes();
-                                    ArrayList<BoxMoves> boxMovesList = mDBHelper.getBoxMoves();
-                                    ArrayList<Prods> prodsList = mDBHelper.getProds();
-                                    ApiUtils.getOrderService(defs.getUrl()).addBoxes(new PartBoxRequest(boxesList, boxMovesList, prodsList),
-                                            defs.get_idUser(),defs.getDeviceId()).enqueue(new Callback<PartBoxRequest>() {
-                                        // TODO Обработать результат. Записать поле sent... если успешно
+                                    ArrayList<Boxes> boxesList = AppController.getInstance().getDbHelper().getBoxes();
+                                    ArrayList<BoxMoves> boxMovesList = AppController.getInstance().getDbHelper().getBoxMoves();
+                                    ArrayList<Prods> prodsList = AppController.getInstance().getDbHelper().getProds();
+                                    ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).addBoxes(new PartBoxRequest(boxesList, boxMovesList, prodsList),
+                                            AppController.getInstance().getDefs().get_idUser(),AppController.getInstance().getDefs().getDeviceId()).enqueue(new Callback<PartBoxRequest>() {
                                         @Override
                                         public void onResponse(Call<PartBoxRequest> call, Response<PartBoxRequest> response) {
-                                            MessageUtils messageUtils = new MessageUtils();
-                                            //Log.d("getBoxesService", "PartBoxRequest : " + response.body());
                                             if (response.isSuccessful()) {
-                                                for (Boxes boxReq : response.body().boxReqList)
-                                                    if (!mDBHelper.updateBoxesSentDate(boxReq))
-                                                        Log.d("getBoxesService", "Ошибка при записи даты в Box.");
-                                                for (BoxMoves pmReq : response.body().movesReqList) {
-                                                    if (!mDBHelper.updateBoxMovesSentDate(pmReq))
-                                                        Log.d("getBoxesService", "Ошибка при записи даты в BoxMoves.");
-                                                    if (pmReq.get_Id_o() == defs.get_idOperLast())
-                                                        if (!mDBHelper.updateBoxesSetArchiveTrue(pmReq.get_Id_b()))
-                                                            Log.d("getBoxesService", "Ошибка при установке признака архива Box.");
-                                                }
-                                                for (Prods pReq : response.body().partBoxReqList)
-                                                    if (!mDBHelper.updateProdsSentDate(pReq))
-                                                        Log.d("getBoxesService", "Ошибка при записи даты в Prods.");
-
-                                                messageUtils.showMessage(getApplicationContext(), "Ок! Данные успешно выгружены на сервер!");
+                                                boxRepo.updateWithResponse(response.body());
                                             } else {
-                                                messageUtils.showLongMessage(getApplicationContext(), "Ошибка при выгрузке данных на сервер!!");
+                                                MessageUtils.showToast(getApplicationContext(), "Ошибка при выгрузке данных на сервер!", true);
                                             }
                                         }
 
                                         @Override
                                         public void onFailure(Call<PartBoxRequest> call, Throwable t) {
-                                            Log.d("getBoxesService error :", t.getMessage());
-                                            MessageUtils messageUtils = new MessageUtils();
-                                            messageUtils.showMessage(getApplicationContext(),  "Ошибка. ТаймАут.");
+                                            Log.d(TAG, t.getMessage());
+                                            MessageUtils.showToast(getApplicationContext(),  "Ошибка. ТаймАут.", true);
                                         }
                                     });
                                 }catch (Exception e) {
-                                    messageUtils.showMessage(getApplicationContext(), "Ошибка при выгрузке коробок.");
+                                   MessageUtils.showToast(getApplicationContext(),"Ошибка при выгрузке коробок.", true);
                                 }
                             }else {
-                                messageUtils.showLongMessage(getApplicationContext(), "Ошибка при выгрузке накладных!");
+                                MessageUtils.showToast(getApplicationContext(), "Ошибка при выгрузке накладных!", true);
                             }
                         }
                         @Override

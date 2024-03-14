@@ -11,6 +11,7 @@ import android.util.Log;
 
 import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.controller.AppController;
+import com.example.yg.wifibcscaner.data.model.Boxes;
 import com.example.yg.wifibcscaner.data.model.Defs;
 import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.data.model.Sotr;
@@ -45,8 +46,6 @@ public class OutDocRepo {
 
     private final UserRepo userRepo = new UserRepo();
     private final SotrRepo sotrRepo = new SotrRepo();
-    private final OperRepo operRepo = new OperRepo();
-    private final DivisionRepo divRepo = new DivisionRepo();
     private final DepartmentRepo depRepo = new DepartmentRepo();
 
     /*
@@ -207,20 +206,27 @@ public class OutDocRepo {
             return result;
         }
     }
-    public boolean updateOutDocsetSentToMasterDate (OutDocs od) {
+    public void updateOutDocsetSentToMasterDate (List<OutDocs> outDocs) {
+        SQLiteDatabase mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         try {
-            ContentValues values = new ContentValues();
-            values.clear();
-            values.put(COLUMN_sentToMasterDate, new Date().getTime());
             mDataBase.beginTransaction();
-            int n = mDataBase.update(OutDocs.TABLE, values,OutDocs.COLUMN_Id +"='"+od.get_id()+"'",null) ;
+            ContentValues values = new ContentValues();
+            try {
+                for (OutDocs od : outDocs) {
+                    values.put(COLUMN_sentToMasterDate, new Date().getTime());
+                    mDataBase.update(OutDocs.TABLE, values, OutDocs.COLUMN_Id + "='" + od.get_id() + "'", null);
+                }
+            }catch (SQLiteException e) {
+                Log.e(TAG, "updateWithResponse -> Boxes sentToMasterDate update exception -> ".concat(e.getMessage()));
+                throw new RuntimeException("To catch into upper level.");
+            }
             mDataBase.setTransactionSuccessful();
-            return n > 0 ;
-        } catch (SQLiteException e) {
+            MessageUtils.showToast("updateOutDocsetSentToMasterDate", true);
+        } catch (Exception e) {
             Log.e( TAG, "updateOutDocsetSentToMasterDate exception ".concat(e.getMessage()) );
-            return false;
         } finally {
             mDataBase.endTransaction();
+            AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
     public void insertOutDocInBulk(List<OutDocs> list){
@@ -366,8 +372,7 @@ public class OutDocRepo {
                     public void onResponse(Call<List<OutDocs>> call, Response<List<OutDocs>> response) {
                         Log.d(TAG,"Ответ сервера на запрос синхронизации накладных: " + response.body().size());
                         if(response.isSuccessful()) {
-                            for (OutDocs boxes : response.body())
-                                updateOutDocsetSentToMasterDate(boxes);
+                            updateOutDocsetSentToMasterDate(response.body());
                         }
                     }
                     @Override

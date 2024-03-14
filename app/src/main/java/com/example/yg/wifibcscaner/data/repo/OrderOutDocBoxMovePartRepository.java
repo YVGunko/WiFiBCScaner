@@ -31,12 +31,6 @@ public class OrderOutDocBoxMovePartRepository {
     private final BoxMoveRepo bmRepo = new BoxMoveRepo();
     private final ProdRepo pbRepo = new ProdRepo();
 
-    private void showToast (String message, boolean duration) {
-        DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
-            MessageUtils.showToast(AppController.getInstance().getApplicationContext(), message, duration);
-        });
-    }
-
     public void downloadData(String updateDate) {
         DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
             try {
@@ -54,7 +48,7 @@ public class OrderOutDocBoxMovePartRepository {
 
             } catch (Exception e) {
                 Log.e(TAG, "downloadData -> " + R.string.error_something_went_wrong, e);
-                showToast("Ошибка. downloadData. "+R.string.error_something_went_wrong, true);
+                MessageUtils.showToast("Ошибка. downloadData. "+R.string.error_something_went_wrong, true);
             }
         });
         return;
@@ -70,7 +64,7 @@ public class OrderOutDocBoxMovePartRepository {
                     if (response.code() == 204) {
                         //no content, so prepare environment to stop current request and prepare for next one
                         nextPage.set(0);
-                        showToast("Синхронизация завершена успешно. 204.", true);
+                        MessageUtils.showToast("Синхронизация завершена успешно. 204.", true);
                         return;
                     }
                     if (response.code() != 200) return;
@@ -93,7 +87,7 @@ public class OrderOutDocBoxMovePartRepository {
                                         nextPage.getAndIncrement(),
                                         pageSize)
                                         .enqueue(downloadDataCallback(updateDate));
-                                showToast("Синхронизация еще продолжается... ".concat(nextPage.toString()), false);
+                                MessageUtils.showToast("Синхронизация еще продолжается... ".concat(nextPage.toString()), false);
                             }
                         } catch (RuntimeException re) {
                             Log.w(TAG, re);
@@ -106,7 +100,7 @@ public class OrderOutDocBoxMovePartRepository {
             public void onFailure(Call<OrderOutDocBoxMovePart> call, Throwable t) {
                 Log.w(TAG, "downloadDataCallback -> API Request failed: " + t.getMessage());
                 nextPage.set(0);
-                showToast("Ошибка. downloadDataCallback. onFailure", true);
+                MessageUtils.showToast("Ошибка. downloadDataCallback. onFailure", true);
             }
 
         };

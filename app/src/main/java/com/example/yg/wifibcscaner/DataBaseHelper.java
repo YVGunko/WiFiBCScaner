@@ -816,19 +816,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             return false;
         }
     }
-    public boolean updateBoxMovesSentDate(BoxMoves bm) {
-        try {
-            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-            ContentValues values = new ContentValues();
-            values.clear();
 
-            values.put(BoxMoves.COLUMN_sentToMasterDate, sDateTimeToLong(bm.get_sentToMasterDate()));
-            return (mDataBase.update(BoxMoves.TABLE_bm, values,BoxMoves.COLUMN_ID +"='"+bm.get_id()+"'",null) > 0) ;
-        } catch (SQLiteException e) {
-            Log.e(TAG, "updateBoxMovesSentDate exception -> ".concat(e.getMessage()));
-            return false;
-        }
-    }
     public boolean deleteFromTable(final String TABLE, final String COLUMN, String Value){
         try {
             mDataBase = AppController.getInstance().getDbHelper().openDataBase();
@@ -838,33 +826,8 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             return false;
         }
     }
-    public boolean updateBoxesSetArchiveTrue(String bId) {
-        try {
-            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-            ContentValues values = new ContentValues();
-            values.clear();
 
-            values.put(Boxes.COLUMN_archive, true);
-            return (mDataBase.update(Boxes.TABLE_boxes, values,Boxes.COLUMN_ID +"='"+bId+"'",null) > 0) ;
-        } catch (SQLiteException e) {
-            Log.e(TAG, e.getMessage());
-            return false;
-        }
-    }
-    public boolean updateBoxesSentDate(Boxes boxes) {
-        try {
-            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-            ContentValues values = new ContentValues();
-            values.clear();
 
-            values.put(Boxes.COLUMN_sentToMasterDate, sDateTimeToLong(boxes.get_sentToMasterDate()));
-            values.put(Boxes.COLUMN_archive, boxes.isArchive());
-            return (mDataBase.update(Boxes.TABLE_boxes, values,Boxes.COLUMN_ID +"='"+boxes.get_id()+"'",null) > 0) ;
-        } catch (SQLiteException e) {
-            Log.e(TAG, e.getMessage());
-            return false;
-        }
-    }
 
     public boolean insertBoxes(Boxes boxes) {
         Cursor cursor = null;

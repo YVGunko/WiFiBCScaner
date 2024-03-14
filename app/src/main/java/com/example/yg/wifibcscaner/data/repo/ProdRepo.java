@@ -51,6 +51,7 @@ public class ProdRepo {
             throw new RuntimeException("To catch into upper level.");
         } finally {
             mDataBase.endTransaction();
+            AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
     public String getProdsMinAndMaxDate(){

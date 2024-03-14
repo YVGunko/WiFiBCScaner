@@ -83,18 +83,17 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
                     public void onResponse(Call<List<OutDocs>> call, Response<List<OutDocs>> response) {
                         Log.d(TAG,"Ответ сервера на запрос синхронизации накладных: " + response.body().size());
                         if(response.isSuccessful()) {
-                            for(OutDocs boxes : response.body())
-                                outDocRepo.updateOutDocsetSentToMasterDate(boxes);
+                            outDocRepo.updateOutDocsetSentToMasterDate(response.body());
 
                             counter = response.body().size();
                         }else {
-                            showToast("Ошибка при выгрузке накладных!", true);
+                            MessageUtils.showToast("Ошибка при выгрузке накладных!", true);
                         }
                     }
                     @Override
                     public void onFailure(Call<List<OutDocs>> call, Throwable t) {
                         Log.d(TAG, "OutDocs Error: " + t.getMessage());
-                        showToast("Ошибка при выгрузке накладных!", true);
+                        MessageUtils.showToast("Ошибка при выгрузке накладных!", true);
                     }
                 });
             } catch (Exception e) {

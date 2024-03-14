@@ -8,6 +8,9 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.example.yg.wifibcscaner.controller.AppController;
+import com.example.yg.wifibcscaner.utils.executors.DefaultExecutorSupplier;
+
 import me.drakeet.support.toast.ToastCompat;
 
 /**
@@ -37,6 +40,11 @@ public class MessageUtils {
         } else {
             Toast.makeText(context, s, duration).show();
         }
+    }
+    public static void showToast (String message, boolean duration) {
+        DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
+            showToast(AppController.getInstance().getApplicationContext(), message, duration);
+        });
     }
     public static void showToast(final Context context, final String message, final boolean longDuration) {
         try {
