@@ -35,14 +35,18 @@ import com.example.yg.wifibcscaner.activity.UpdateActivity;
 import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.Defs;
 import com.example.yg.wifibcscaner.data.model.OutDocs;
+import com.example.yg.wifibcscaner.data.repo.BoxRepo;
 import com.example.yg.wifibcscaner.data.repo.DefsRepo;
 import com.example.yg.wifibcscaner.data.repo.DepartmentRepo;
 import com.example.yg.wifibcscaner.data.repo.DivisionRepo;
 import com.example.yg.wifibcscaner.data.repo.OperRepo;
+import com.example.yg.wifibcscaner.data.repo.OrderRepo;
 import com.example.yg.wifibcscaner.data.repo.OutDocRepo;
 import com.example.yg.wifibcscaner.data.repo.SotrRepo;
 import com.example.yg.wifibcscaner.data.repo.UserRepo;
 import com.example.yg.wifibcscaner.service.MessageUtils;
+import com.example.yg.wifibcscaner.service.foundBox;
+import com.example.yg.wifibcscaner.service.foundOrder;
 import com.example.yg.wifibcscaner.utils.AppUtils;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
@@ -60,6 +64,7 @@ import static com.example.yg.wifibcscaner.utils.AppUtils.isDepAndSotrOper;
 import static com.example.yg.wifibcscaner.utils.AppUtils.isOneOfFirstOper;
 import static com.example.yg.wifibcscaner.utils.AppUtils.isOneScanOnlyOper;
 import static com.example.yg.wifibcscaner.utils.AppUtils.isOutDocOnlyOper;
+import static com.example.yg.wifibcscaner.utils.MyStringUtils.completeOrderDef;
 
 
 public class MainActivity extends AppCompatActivity implements BarcodeReader.BarcodeListener {
@@ -68,6 +73,8 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
     private final UserRepo userRepo = new UserRepo();
     private final DefsRepo defsRepo = new DefsRepo();
     private final OutDocRepo outDocRepo = new OutDocRepo();
+    private final OrderRepo orderRepo = new OrderRepo();
+    private final BoxRepo boxRepo = new BoxRepo();
 
     private static BarcodeReader barcodeReader;
     private AidcManager manager;
@@ -77,8 +84,8 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
     TextView tVDBInfo, currentDocDetails, currentUser;
     EditText editTextRQ;
 
-    DataBaseHelper.foundbox fb;
-    DataBaseHelper.foundorder fo;
+    private foundBox fb = new foundBox();
+    private foundOrder fo = new foundOrder();
 
     private String getDeviceUniqueID(Activity activity){
         String device_unique_id = Settings.Secure.getString(activity.getContentResolver(),
@@ -298,32 +305,30 @@ private static String filter (String str){
             MessageUtils.showToast(MainActivity.this, getString(R.string.QR_invalid),true);
             return;
         }
-        fo = mDBHelper.searchOrder(currentbarcode);
-        if (fo.division_code != null && !fo.division_code.equals(AppController.getInstance().getDefs().getDivision_code())) {
+        fo = orderRepo.searchOrder(currentbarcode);
+        if (fo.getDivision_code() != null && !fo.getDivision_code().equals(AppController.getInstance().getDefs().getDivision_code())) {
             Log.d(TAG, "scanResultHandler -> division mismatch -> return");
             MessageUtils.showToast(MainActivity.this, getString(R.string.wrong_division_order),true);
             return;
         }
-        if (!fo.archive) { // архив
-            if (fo._id != 0) {                                      //Заказ найден, ищем коробку
-                fb = mDBHelper.searchBox(fo._id, currentbarcode);
+        if (!fo.isArchive()) { // архив
+            if (fo.get_id() != 0) {                                      //Заказ найден, ищем коробку
+                fb = mDBHelper.searchBox(fo.get_id(), currentbarcode);
                 //---Получаем строку данных о коробке для вывода в tVDBInfo и количество для редактирования
                 tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
-                if (StringUtils.isNotEmpty(fb.boxdef))
-                    fo.orderdef += fb.boxdef+ "\n";
-                if (StringUtils.isNotEmpty(fb.depSotr))
-                    fo.orderdef += fb.depSotr+ "\n";
-                if (StringUtils.isNotEmpty(fb.outDocs))
-                    fo.orderdef += fb.outDocs;
-                tVDBInfo.setText(fo.orderdef);
-                if (!fb._archive){
-                    if (StringUtils.isNotEmpty(fb._id)) {                                  //Коробка есть
+                if (StringUtils.isNotEmpty(fb.getBoxdef()))
+                    completeOrderDef(fb);
+                tVDBInfo.setText(fo.getOrderdef());
+                if (!fb.is_archive()){
+                    if (StringUtils.isNotEmpty(fb.get_id())) {                                  //Коробка есть
                         //if it isOneScanOnlyOper and there is another outDoc record, set Quantity equal, bcs it can be only one shot
-                        if (isOneScanOnlyOper(AppController.getInstance().getDefs().get_Id_o()) & StringUtils.isNotEmpty(fb.outDocs)) fb.QB = fb.RQ;
-                        if (fb.QB == fb.RQ) {//Коробка заполнена
+                        if (isOneScanOnlyOper(AppController.getInstance().getDefs().get_Id_o()) & StringUtils.isNotEmpty(fb.getOutDocs()))
+                            fb.setQB( fb.getRQ() );
+
+                        if (fb.getQB() == fb.getRQ()) {//Коробка заполнена
 
                             editTextRQ = (EditText) findViewById(R.id.editTextRQ);
-                            editTextRQ.setText(String.valueOf(fb.QB - fb.RQ));
+                            editTextRQ.setText(String.valueOf(fb.getQB() - fb.getRQ()));
                             editTextRQ.setEnabled(false);
 
                             MessageUtils.showToast(this, "Эта коробка уже принята на "+AppController.getInstance().getDefs().getDescOper(), false);
@@ -331,18 +336,18 @@ private static String filter (String str){
                             Button bScan = (Button) findViewById(R.id.bScan);
                             bScan.setText("OK!");
                             editTextRQ = (EditText) findViewById(R.id.editTextRQ);
-                            editTextRQ.setText(String.valueOf(fb.QB - fb.RQ));
+                            editTextRQ.setText(String.valueOf(fb.getQB() - fb.getRQ()));
                             final boolean isSetEnabled = true; //!AppUtils.isOutComeOper(AppController.getInstance().getDefs().get_Id_o());
                             editTextRQ.setEnabled(isSetEnabled);
                             editTextRQ.setSelection(editTextRQ.getText().length());
-                            if (fb.RQ != 0) {showMessage("Эта коробка ранее принималась неполной!");}
+                            if (fb.getRQ() != 0) {showMessage("Эта коробка ранее принималась неполной!");}
                         }
                     } else {                                                //Коробки нет , подставить колво в поле редактирования колва и дожаться ОК.
                         if (isOneOfFirstOper(AppController.getInstance().getDefs().get_Id_o())){ //Добавить коробку если это операция приемки baseOper = 1
                             Button bScan = (Button) findViewById(R.id.bScan);
                             bScan.setText("OK!");
                             editTextRQ = (EditText) findViewById(R.id.editTextRQ);
-                            editTextRQ.setText(String.valueOf(fb.QB - fb.RQ)); //устанавливаетяся количество как разница
+                            editTextRQ.setText(String.valueOf(fb.getQB() - fb.getRQ())); //устанавливаетяся количество как разница
                             editTextRQ.setEnabled(true);
                             editTextRQ.setSelection(editTextRQ.getText().length());
                         }else{
@@ -378,12 +383,12 @@ private static String filter (String str){
 
         if (!AppUtils.isIncomeOper(AppController.getInstance().getDefs().get_Id_o())) { //entered number should be checked
             if (AppUtils.isOutComeOper(AppController.getInstance().getDefs().get_Id_o())) {//entered number should be equal
-                if (enteredNumber != fb.QB) {
+                if (enteredNumber != fb.getQB()) {
                     MessageUtils.showToast(this,"Ошибка! Количество должно быть равно оприходованному!", false);
                     return;
                 }
             }else{
-                if (enteredNumber > (fb.QB - fb.RQ)){
+                if (enteredNumber > (fb.getQB() - fb.getRQ())){
                     MessageUtils.showToast(this,"Ошибка! Введите количество верно!", false);
                     return;
                 }
@@ -396,10 +401,10 @@ private static String filter (String str){
             tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
             editTextRQ = (EditText) findViewById(R.id.editTextRQ);
             editTextRQ.setEnabled(false);
-            if (StringUtils.isNotEmpty(fb._id)) {                                            //коробка есть и не полная, добавить в prods
+            if (StringUtils.isNotEmpty(fb.get_id())) {                                            //коробка есть и не полная, добавить в prods
                 //новая операция по существующей коробке
-                boolean newBM = (fb.RQ != 0);
-                fb.RQ = enteredNumber;
+                boolean newBM = (fb.getRQ() != 0);
+                fb.setRQ( enteredNumber );
                 if (mDBHelper.addProds(fb)) {
                     if (newBM)
                         MessageUtils.showToast(AppController.getInstance().getApplicationContext(),
@@ -407,7 +412,7 @@ private static String filter (String str){
                                 true);
 
                     setTextViews();
-                    mDBHelper.lastBoxCheck(fo);
+                    boxRepo.lastBoxCheck(fo);
                 } else
                     MessageUtils.showToast(AppController.getInstance().getApplicationContext(),
                         AppController.getInstance().getDefs().getDescOper().concat(". Повторный прием коробки в смену! Повторный прием возможен в другую смену."),
@@ -419,7 +424,7 @@ private static String filter (String str){
                         true);
                 } else {
                     setTextViews();
-                    mDBHelper.lastBoxCheck(fo);
+                    boxRepo.lastBoxCheck(fo);
                 }
             }
         } catch (Exception e) {

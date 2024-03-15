@@ -1,5 +1,8 @@
 package com.example.yg.wifibcscaner.data.repo;
 
+import android.content.ContentValues;
+import android.database.Cursor;
+import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
 import android.util.Log;
@@ -7,10 +10,14 @@ import android.util.Log;
 import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.BoxMoves;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.Date;
 import java.util.List;
 
+import static com.example.yg.wifibcscaner.utils.AppUtils.tryCloseCursor;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDateTimeLong;
+import static com.example.yg.wifibcscaner.utils.DateTimeUtils.sDateTimeToLong;
 
 public class BoxMoveRepo {
     private static final String TAG = "sProject -> BoxMoveRepo.";
@@ -44,6 +51,36 @@ public class BoxMoveRepo {
             throw new RuntimeException("To catch into upper level.");
         } finally {
             mDataBase.endTransaction();
+        }
+    }
+    public boolean insertBoxMoves(BoxMoves bm) {
+        Cursor cursor = null;
+        SQLiteDatabase mDataBase = AppController.getInstance().getDbHelper().openDataBase();
+        try {
+            cursor = mDataBase.rawQuery("SELECT bm._id as _id FROM BoxMoves bm Where bm.Id_o=" + bm.get_Id_o() + " and bm.Id_b='" + bm.get_Id_b()+"'", null);
+            if (cursor != null && cursor.moveToFirst()) {
+                try {
+                    return StringUtils.isNotBlank(cursor.getString(0));
+                }catch (Exception e){
+                    return false;
+                }
+
+            } else {
+                ContentValues values = new ContentValues();
+                values.clear();
+                values.put(BoxMoves.COLUMN_ID, bm.get_id());
+                values.put(BoxMoves.COLUMN_Id_b, bm.get_Id_b());
+                values.put(BoxMoves.COLUMN_Id_o, bm.get_Id_o());
+                values.put(BoxMoves.COLUMN_DT, sDateTimeToLong(bm.get_DT()));
+                if (bm.get_sentToMasterDate() != null) values.put(BoxMoves.COLUMN_sentToMasterDate, sDateTimeToLong(bm.get_sentToMasterDate()));
+                return mDataBase.insertWithOnConflict(BoxMoves.TABLE_bm, null, values, 5) > 0;
+            }
+        } catch (SQLException e) {
+            Log.e(TAG, e.getMessage());
+            return false;
+        } finally {
+            tryCloseCursor(cursor);
+            AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
 }

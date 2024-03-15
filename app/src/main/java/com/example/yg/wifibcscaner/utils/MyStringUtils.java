@@ -6,6 +6,9 @@ import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.example.yg.wifibcscaner.data.repo.BoxRepo;
+import com.example.yg.wifibcscaner.service.foundBox;
+
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 import java.util.UUID;
@@ -155,5 +158,45 @@ public class MyStringUtils {
                 ". Регл: " + cursor.getString(7) +
                 ". Всего кор: " + cursor.getString(8) + "\n";
         return def;
+    }
+
+    private static String[] splitBarcode(String storedbarcode) {
+        String[] atmpBarcode = storedbarcode.split("[.]");  // по dot
+        if (atmpBarcode.length != 6) {
+            atmpBarcode[0] = "";
+        }
+        return atmpBarcode;
+    }
+    public static String getOrder_id(String storedbarcode) {
+        String so = "";
+        String[] atmpBarcode = splitBarcode(storedbarcode);  // по dot
+
+        if (StringUtils.isNotBlank(atmpBarcode[0])) {
+            so = (atmpBarcode[0] + "." + atmpBarcode[1] + "." + atmpBarcode[2] + "." + atmpBarcode[3]);
+        }
+        return so;
+    }
+    public static int getBarcodeQ_box(String storedbarcode) {
+        String[] atmpBarcode = storedbarcode.split("[.]");  // по dot
+
+        if (atmpBarcode.length == 6) {
+            return Integer.valueOf(atmpBarcode[4]);
+        }
+        return 0;
+    }
+    public static int getBarcodeN_box(String storedbarcode) {
+        String[] atmpBarcode = storedbarcode.split("[.]");  // по dot
+        if (atmpBarcode.length == 6) {
+            return Integer.valueOf(atmpBarcode[5]);
+        }
+        return 0;
+    }
+    public static String completeOrderDef(foundBox fb){
+        String result = fb.getBoxdef().concat("\n");
+        if (StringUtils.isNotEmpty(fb.getDepSotr()))
+            result = result.concat(fb.getDepSotr()).concat("\n");
+        if (StringUtils.isNotEmpty(fb.getOutDocs()))
+            result = result.concat(fb.getOutDocs()).concat("\n");
+        return result;
     }
 }

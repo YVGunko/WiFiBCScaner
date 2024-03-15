@@ -36,7 +36,7 @@ public interface OrderService {
                                                @Query("pageSize") int pageSize);
 
     @POST("/partBox")
-    Call<PartBoxRequest> addBoxes(@Body PartBoxRequest partBoxRequest, @Query("userId") int userId, @Query("deviceId") String deviceId);
+    Call<PartBoxRequest> partBox(@Body PartBoxRequest partBoxRequest, @Query("userId") int userId, @Query("deviceId") String deviceId);
 
     @GET("/order")
     Call<List<Orders>> getOrders(@Query("date") String date, @Query("userId") int userId, @Query("deviceId") String deviceId);

@@ -146,7 +146,7 @@ public class BoxesActivity extends AppCompatActivity {
                                     ArrayList<Boxes> boxesList = AppController.getInstance().getDbHelper().getBoxes();
                                     ArrayList<BoxMoves> boxMovesList = AppController.getInstance().getDbHelper().getBoxMoves();
                                     ArrayList<Prods> prodsList = AppController.getInstance().getDbHelper().getProds();
-                                    ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).addBoxes(new PartBoxRequest(boxesList, boxMovesList, prodsList),
+                                    ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).partBox(new PartBoxRequest(boxesList, boxMovesList, prodsList),
                                             AppController.getInstance().getDefs().get_idUser(),AppController.getInstance().getDefs().getDeviceId()).enqueue(new Callback<PartBoxRequest>() {
                                         @Override
                                         public void onResponse(Call<PartBoxRequest> call, Response<PartBoxRequest> response) {
