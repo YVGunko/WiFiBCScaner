@@ -1,6 +1,8 @@
 package com.example.yg.wifibcscaner.data.repo;
 
+import android.content.ContentValues;
 import android.database.Cursor;
+import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
 import android.util.Log;
@@ -12,6 +14,8 @@ import com.example.yg.wifibcscaner.service.foundBox;
 import com.example.yg.wifibcscaner.utils.AppUtils;
 import com.example.yg.wifibcscaner.utils.DateTimeUtils;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.Date;
 import java.util.List;
 
@@ -19,43 +23,13 @@ import static com.example.yg.wifibcscaner.utils.AppUtils.tryCloseCursor;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDateLong;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDateTimeLong;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.lDateToString;
+import static com.example.yg.wifibcscaner.utils.DateTimeUtils.sDateTimeToLong;
+import static com.example.yg.wifibcscaner.utils.DateTimeUtils.sDateToLong;
 import static com.example.yg.wifibcscaner.utils.MyStringUtils.getUUID;
 
 public class ProdRepo {
     private static final String TAG = "sProject -> ProdRepo.";
 
-    public boolean addProds(foundBox fb) {
-        try {
-            BoxMoves bm = new BoxMoves (getUUID(),fb.get_id(), AppController.getInstance().getDefs().get_Id_o(),lDateToString(new Date().getTime()),null);
-            if (insertBoxMoves(bm)) {
-                Prods prod ;
-                if (AppUtils.isDepAndSotrOper(bm.get_Id_o())) {// it needs Dep and Sotr
-                    prod = new Prods(getUUID(),
-                            bm.get_id(),
-                            AppController.getInstance().getDefs().get_Id_d(),
-                            AppController.getInstance().getDefs().get_Id_s(),
-                            fb.getRQ(),
-                            DateTimeUtils.getStartOfDayString(new Date()),
-                            null,
-                            AppController.getInstance().getCurrentOutDoc().get_id());
-                }
-                else {
-                    prod = new Prods(getUUID(),
-                            bm.get_id(),
-                            0,
-                            0,
-                            fb.getRQ(),
-                            DateTimeUtils.getStartOfDayString(new Date()),
-                            null,
-                            AppController.getInstance().getCurrentOutDoc().get_id());
-                }
-                return (insertOneProd(prod) > 0);
-            } else return false;
-        } catch (Exception e) {
-            Log.e(TAG, "insertOneProd exception -> ".concat(e.getMessage()));
-            return false;
-        }
-    }
     public void insertProdInBulk(List<Prods> list) {
         SQLiteDatabase mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         try {

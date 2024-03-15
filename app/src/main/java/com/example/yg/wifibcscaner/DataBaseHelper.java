@@ -12,6 +12,7 @@ import android.database.sqlite.SQLiteConstraintException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.example.yg.wifibcscaner.controller.AppController;
@@ -47,6 +48,8 @@ import static com.example.yg.wifibcscaner.utils.AppUtils.tryCloseCursor;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.lDateToString;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.sDateTimeToLong;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.sDateToLong;
+import static com.example.yg.wifibcscaner.utils.MyStringUtils.getBarcodeN_box;
+import static com.example.yg.wifibcscaner.utils.MyStringUtils.getBarcodeQ_box;
 import static com.example.yg.wifibcscaner.utils.MyStringUtils.getUUID;
 import static com.example.yg.wifibcscaner.utils.MyStringUtils.makeOrderdef;
 
@@ -55,7 +58,6 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
     private static String DB_PATH = "";
     private static String DB_NAME = "SQR.db";
-
 
     public static final String COLUMN_sentToMasterDate = "sentToMasterDate";
     public long serverUpdateTime;
@@ -518,26 +520,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         }
     }
 
-    public long insertOneProd(Prods prods) {
-        try {
-            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-            ContentValues values = new ContentValues();
-            values.clear();
-            values.put(Prods.COLUMN_ID, prods.get_id());
-            values.put(Prods.COLUMN_Id_bm, prods.get_Id_bm());
-            values.put(Prods.COLUMN_Id_d, prods.get_Id_d());
-            values.put(Prods.COLUMN_Id_s, prods.get_Id_s());
-            values.put(Prods.COLUMN_RQ_box, prods.get_RQ_box());
-            values.put(Prods.COLUMN_P_date, sDateToLong(prods.get_P_date()));
-            values.put(Prods.COLUMN_idOutDocs, prods.get_idOutDocs());
-            if (prods.get_sentToMasterDate() != null) values.put(Prods.COLUMN_sentToMasterDate, sDateTimeToLong(prods.get_sentToMasterDate()));
 
-            return mDataBase.insertWithOnConflict(Prods.TABLE_prods, null, values, 5) ;
-        } catch (SQLException e) {
-            Log.e(TAG, "insertOneProd exception -> ".concat(e.getMessage()));
-            return 0L;
-        }
-    }
 
 
     public boolean updateProdsSentDate(Prods prods) {
@@ -560,6 +543,8 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         } catch (Exception e) {
             Log.e(TAG, e.getMessage());
             return false;
+        } finally {
+            AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
 
@@ -644,7 +629,178 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         }
     }
 
+ //
+     private boolean insertBoxMoves(@NonNull BoxMoves bm) {
+         Cursor cursor = null;
+         long n = 0;
+         try {
+             cursor = mDataBase.rawQuery("SELECT bm._id as _id FROM BoxMoves bm Where bm.Id_o=" + bm.get_Id_o() + " and bm.Id_b='" + bm.get_Id_b()+"'", null);
+             if (cursor != null && cursor.moveToFirst()) {
+                 try {
+                     return StringUtils.isNotBlank(cursor.getString(0));
+                 }catch (Exception e){
+                     return false;
+                 }
+             } else {
+                 ContentValues values = new ContentValues();
+                 values.clear();
+                 values.put(BoxMoves.COLUMN_ID, bm.get_id());
+                 values.put(BoxMoves.COLUMN_Id_b, bm.get_Id_b());
+                 values.put(BoxMoves.COLUMN_Id_o, bm.get_Id_o());
+                 values.put(BoxMoves.COLUMN_DT, sDateTimeToLong(bm.get_DT()));
+                 if (bm.get_sentToMasterDate() != null) values.put(BoxMoves.COLUMN_sentToMasterDate, sDateTimeToLong(bm.get_sentToMasterDate()));
 
+                 boolean doAsTransaction = !mDataBase.inTransaction();
+                 try {
+                     if (doAsTransaction)
+                         mDataBase.beginTransaction();
+                     n = mDataBase.insertWithOnConflict(BoxMoves.TABLE_bm, null, values, 5) ;
+                     if (doAsTransaction)
+                         mDataBase.setTransactionSuccessful();
+                 }catch (Exception e){
+                     Log.e(TAG, e.getMessage());
+                 } finally {
+                     if (doAsTransaction)
+                         mDataBase.endTransaction();
+                 }
+             }
+         } catch (SQLException e) {
+             Log.e(TAG, e.getMessage());
+             return false;
+         } finally {
+             tryCloseCursor(cursor);
+         }
+         return n > 0;
+     }
+     private boolean insertOneProd(@NonNull Prods prods) {
+        long n = 0;
+         try {
+             ContentValues values = new ContentValues();
+             values.clear();
+             values.put(Prods.COLUMN_ID, prods.get_id());
+             values.put(Prods.COLUMN_Id_bm, prods.get_Id_bm());
+             values.put(Prods.COLUMN_Id_d, prods.get_Id_d());
+             values.put(Prods.COLUMN_Id_s, prods.get_Id_s());
+             values.put(Prods.COLUMN_RQ_box, prods.get_RQ_box());
+             values.put(Prods.COLUMN_P_date, sDateToLong(prods.get_P_date()));
+             values.put(Prods.COLUMN_idOutDocs, prods.get_idOutDocs());
+             if (prods.get_sentToMasterDate() != null) values.put(Prods.COLUMN_sentToMasterDate, sDateTimeToLong(prods.get_sentToMasterDate()));
+
+             boolean doAsTransaction = !mDataBase.inTransaction();
+             try {
+                 if (doAsTransaction)
+                     mDataBase.beginTransaction();
+                 n = mDataBase.insertWithOnConflict(Prods.TABLE_prods, null, values, 5) ;
+                 if (doAsTransaction)
+                     mDataBase.setTransactionSuccessful();
+             }catch (Exception e){
+                 Log.e(TAG, e.getMessage());
+             } finally {
+                 if (doAsTransaction)
+                     mDataBase.endTransaction();
+             }
+         } catch (SQLException e) {
+             Log.e(TAG, "insertOneProd exception -> ".concat(e.getMessage()));
+             return false;
+         }
+         return n > 0;
+     }
+     public boolean addProds(foundBox fb) {
+         mDataBase = AppController.getInstance().getDbHelper().openDataBase();
+         try {
+             BoxMoves bm = new BoxMoves (getUUID(),fb.get_id(), AppController.getInstance().getDefs().get_Id_o(),lDateToString(new Date().getTime()),null);
+
+             if (insertBoxMoves(bm)) {
+                 Prods prod ;
+                 if (AppUtils.isDepAndSotrOper(bm.get_Id_o())) {// it needs Dep and Sotr
+                     prod = new Prods(getUUID(),
+                             bm.get_id(),
+                             AppController.getInstance().getDefs().get_Id_d(),
+                             AppController.getInstance().getDefs().get_Id_s(),
+                             fb.getRQ(),
+                             DateTimeUtils.getStartOfDayString(new Date()),
+                             null,
+                             AppController.getInstance().getCurrentOutDoc().get_id());
+                 }
+                 else {
+                     prod = new Prods(getUUID(),
+                             bm.get_id(),
+                             0,
+                             0,
+                             fb.getRQ(),
+                             DateTimeUtils.getStartOfDayString(new Date()),
+                             null,
+                             AppController.getInstance().getCurrentOutDoc().get_id());
+                 }
+                 return (insertOneProd(prod));
+             } else return false;
+         } catch (Exception e) {
+             Log.e(TAG, "insertOneProd exception -> ".concat(e.getMessage()));
+             return false;
+         } finally {
+            AppController.getInstance().getDbHelper().closeDataBase();
+         }
+     }
+     private boolean insertOneBox(Boxes boxes) {
+        long n = 0;
+         try {
+             ContentValues values = new ContentValues();
+             values.clear();
+             values.put(Boxes.COLUMN_ID, boxes.get_id());
+             values.put(Boxes.COLUMN_Id_m, boxes.get_Id_m());
+             values.put(Boxes.COLUMN_Q_box, boxes.get_Q_box());
+             values.put(Boxes.COLUMN_N_box, boxes.get_N_box());
+             values.put(Boxes.COLUMN_DT, sDateTimeToLong(boxes.get_DT()));
+             if (boxes.get_sentToMasterDate() != null) values.put(Boxes.COLUMN_sentToMasterDate, sDateTimeToLong(boxes.get_sentToMasterDate()));
+             
+             boolean doAsTransaction = !mDataBase.inTransaction();
+             try {
+                 if (doAsTransaction)
+                     mDataBase.beginTransaction();
+                 n = mDataBase.insertWithOnConflict(Boxes.TABLE_boxes, null, values, 5) ;
+                 if (doAsTransaction)
+                     mDataBase.setTransactionSuccessful();
+             }catch (Exception e){
+                 Log.e(TAG, e.getMessage());
+             } finally {
+                 if (doAsTransaction)
+                     mDataBase.endTransaction();
+             }
+         } catch (SQLiteConstraintException e) {
+             Log.e(TAG, e.getMessage());
+             Cursor cursor = null;
+             try {
+                 cursor = mDataBase.rawQuery("SELECT ROWID FROM Boxes b Where b.Id_m='" + boxes.get_Id_m() +"'"+
+                         " b.Q_box=" + boxes.get_Q_box() + " and b.N_box=" + boxes.get_N_box(), null);
+                 if (cursor != null && cursor.moveToFirst()) {
+                     return (cursor.getLong(0)>0);
+                 }
+             }finally {
+                 tryCloseCursor(cursor);
+             }
+             return false;
+         }
+         return n > 0;
+     }
+    public boolean addBox(foundOrder fo, int iRQ) {
+        try {
+            Boxes boxes = new Boxes(getUUID(), fo.get_id(), getBarcodeQ_box(fo.getBarcode()), getBarcodeN_box(fo.getBarcode()), DateTimeUtils.getDayTimeString(new Date()), null, false);
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
+
+            if (insertOneBox(boxes)) {
+                foundBox fb = new foundBox();
+                fb.set_id( boxes.get_id() );
+                fb.setRQ( iRQ );
+                return addProds(fb);
+            }
+            return false;
+        } catch (Exception ex) {
+            Log.e(TAG, ex.getMessage());
+            return false;
+        }finally {
+            AppController.getInstance().getDbHelper().closeDataBase();
+        }
+    }
 
 
 

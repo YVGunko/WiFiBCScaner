@@ -418,7 +418,7 @@ private static String filter (String str){
                         AppController.getInstance().getDefs().getDescOper().concat(". Повторный прием коробки в смену! Повторный прием возможен в другую смену."),
                         true);
             } else {
-                if (!mDBHelper.addBoxes(fo,enteredNumber)) {
+                if (!mDBHelper.addBox(fo,enteredNumber)) {
                     MessageUtils.showToast(AppController.getInstance().getApplicationContext(),
                         AppController.getInstance().getDefs().getDescOper().concat(". Ошибка! Коробка не добавлена в БД!"),
                         true);

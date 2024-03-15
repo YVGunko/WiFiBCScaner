@@ -65,7 +65,7 @@ public class BoxesActivity extends AppCompatActivity {
 
 
 //Создаем адаптер
-        adapter = new SimpleAdapter(this, AppController.getInstance().getDbHelper().listboxes(), R.layout.adapter_item, from, to);
+        adapter = new SimpleAdapter(this, boxRepo.listboxes(), R.layout.adapter_item, from, to);
         listView = (ListView) findViewById(R.id.listView);
         listView.setAdapter(adapter);
 

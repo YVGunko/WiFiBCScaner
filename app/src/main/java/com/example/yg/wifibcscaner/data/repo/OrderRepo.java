@@ -5,14 +5,11 @@ import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
-import android.os.Build;
 import android.support.annotation.NonNull;
-import android.support.annotation.RequiresApi;
 import android.util.Log;
 
 import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.Orders;
-import com.example.yg.wifibcscaner.service.SharedPrefs;
 import com.example.yg.wifibcscaner.service.foundOrder;
 
 import org.apache.commons.lang3.StringUtils;
@@ -25,46 +22,15 @@ import static com.example.yg.wifibcscaner.utils.AppUtils.tryCloseCursor;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDateTimeLong;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.lDateToString;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.sDateTimeToLong;
-import static com.example.yg.wifibcscaner.utils.MyStringUtils.makeOrderdef;
 import static com.example.yg.wifibcscaner.utils.MyStringUtils.getOrder_id;
+import static com.example.yg.wifibcscaner.utils.MyStringUtils.makeOrderdef;
 import static com.example.yg.wifibcscaner.utils.MyStringUtils.retStringFollowingCRIfNotNull;
 
 public class OrderRepo {
     private static final String TABLE_MD = "MasterData";
     private static final String TAG = "sProject -> OrderRepo.";
-    private SQLiteDatabase mDataBase = AppController.getInstance().getDbHelper().openDataBase();
+    private SQLiteDatabase mDataBase ;
 
-    private long insertOrder(Orders orders) {
-        try {
-            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-            ContentValues values = new ContentValues();
-            values.clear();
-            values.put(Orders.COLUMN_ID, orders.get_id());
-            values.put(Orders.COLUMN_Ord_Id, orders.get_Ord_Id());
-            values.put(Orders.COLUMN_Ord, orders.get_Ord());
-            values.put(Orders.COLUMN_Cust, orders.get_Cust());
-            values.put(Orders.COLUMN_Nomen, orders.get_Nomen());
-            values.put(Orders.COLUMN_Attrib, orders.get_Attrib());
-            values.put(Orders.COLUMN_Q_ord, orders.get_Q_ord());
-            values.put(Orders.COLUMN_Q_box, orders.get_Q_box());
-            values.put(Orders.COLUMN_N_box, orders.get_N_box());
-            values.put(Orders.COLUMN_DT, sDateTimeToLong(orders.get_DT()));
-            values.put(Orders.COLUMN_Division_code, orders.getDivision_code());
-            return (mDataBase.insertWithOnConflict(Orders.TABLE_orders, null, values, 5));
-        } catch (SQLException e) {
-            Log.e(TAG, e.getMessage());
-            return 0;
-        }
-    }
-    /*private long addOrders(foundOrder fo) {
-        try {
-            Orders orders = new Orders(fo.get_id(), fo.Ord_Id, fo.Ord, fo.Cust, fo.Nomen, fo.Attrib, fo.QO, fo.QB, fo.NB, fo.DT, fo.division_code, fo.archive);
-            return insertOrder(orders);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            return 0;
-        }
-    }*/
     public foundOrder searchOrder(String storedbarcode) {
 
         String Order_Id = getOrder_id(storedbarcode);  // по dot
@@ -97,9 +63,10 @@ public class OrderRepo {
     }
     public ArrayList<HashMap<String, String>> listorders() {
         ArrayList<HashMap<String, String>> readOrders = new ArrayList<HashMap<String, String>>();
+        Cursor cursor = null;
         mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         try {
-            Cursor cursor = mDataBase.rawQuery("SELECT MasterData.Ord, MasterData.Cust, MasterData.Nomen, MasterData.Attrib, MasterData.Q_ord,MasterData.Q_box, " +
+            cursor = mDataBase.rawQuery("SELECT MasterData.Ord, MasterData.Cust, MasterData.Nomen, MasterData.Attrib, MasterData.Q_ord,MasterData.Q_box, " +
                     "MasterData.N_box, MasterData.DT " +
                     "FROM MasterData WHERE division_code=? ORDER BY MasterData._id DESC", new String [] {String.valueOf(AppController.getInstance().getDefs().getDivision_code())});
             while (cursor.moveToNext()) {
@@ -111,13 +78,16 @@ public class OrderRepo {
                         ": " + cursor.getString(6) + ". Регл: " + cursor.getString(5) + "\n" + " Загружен: " + lDateToString(cursor.getLong(7)));
                 readOrders.add(readOrder);
             }
-            tryCloseCursor(cursor);
+
         }catch (Exception e){
             Log.e (TAG, "listorders -> ".concat(e.getMessage()));
             HashMap readBox = new HashMap<String, String>();
             readBox.put("Ord", "Ошибка!");
             readBox.put("Cust", "Ошибка!");
             readOrders.add(readBox);
+        }finally {
+            tryCloseCursor(cursor);
+            AppController.getInstance().getDbHelper().closeDataBase();
         }
         return readOrders;
     }

@@ -3,7 +3,6 @@ package com.example.yg.wifibcscaner.data.repo;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.SQLException;
-import android.database.sqlite.SQLiteConstraintException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteStatement;
@@ -13,15 +12,12 @@ import android.util.Log;
 import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.BoxMoves;
 import com.example.yg.wifibcscaner.data.model.Boxes;
-import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.data.model.Prods;
 import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.service.PartBoxRequest;
-import com.example.yg.wifibcscaner.service.foundBox;
 import com.example.yg.wifibcscaner.service.foundOrder;
 import com.example.yg.wifibcscaner.utils.AppUtils;
-import com.example.yg.wifibcscaner.utils.DateTimeUtils;
 import com.example.yg.wifibcscaner.utils.executors.DefaultExecutorSupplier;
 
 import java.util.ArrayList;
@@ -29,7 +25,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
-import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -38,9 +33,6 @@ import static com.example.yg.wifibcscaner.service.MessageUtils.showToast;
 import static com.example.yg.wifibcscaner.utils.AppUtils.tryCloseCursor;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDateTimeLong;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.sDateTimeToLong;
-import static com.example.yg.wifibcscaner.utils.MyStringUtils.getBarcodeN_box;
-import static com.example.yg.wifibcscaner.utils.MyStringUtils.getBarcodeQ_box;
-import static com.example.yg.wifibcscaner.utils.MyStringUtils.getUUID;
 import static com.example.yg.wifibcscaner.utils.MyStringUtils.retStringFollowingCRIfNotNull;
 
 public class BoxRepo {
@@ -62,52 +54,7 @@ public class BoxRepo {
         sb.append(q);
         return sb.toString();
     }
-    public boolean insertBoxes(Boxes boxes) {
-        Cursor cursor = null;
-        SQLiteDatabase mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-        try {
-            try {
-                ContentValues values = new ContentValues();
-                values.clear();
-                values.put(Boxes.COLUMN_ID, boxes.get_id());
-                values.put(Boxes.COLUMN_Id_m, boxes.get_Id_m());
-                values.put(Boxes.COLUMN_Q_box, boxes.get_Q_box());
-                values.put(Boxes.COLUMN_N_box, boxes.get_N_box());
-                values.put(Boxes.COLUMN_DT, sDateTimeToLong(boxes.get_DT()));
-                if (boxes.get_sentToMasterDate() != null) values.put(Boxes.COLUMN_sentToMasterDate, sDateTimeToLong(boxes.get_sentToMasterDate()));
-                return (mDataBase.insertWithOnConflict(Boxes.TABLE_boxes, null, values, 5) > 0);
-            } catch (SQLiteConstraintException e) {
-                Log.e(TAG, e.getMessage());
-                cursor = mDataBase.rawQuery("SELECT ROWID FROM Boxes b Where b.Id_m='" + boxes.get_Id_m() +"'"+
-                        " b.Q_box=" + boxes.get_Q_box() + " and b.N_box=" + boxes.get_N_box(), null);
-                if ((cursor != null) & (cursor.getCount() > 0)) {
-                    cursor.moveToFirst();
-                    return (cursor.getLong(0)>0);
-                }
-                return false;
-            }
-        }finally {
-            tryCloseCursor(cursor);
-            AppController.getInstance().getDbHelper().closeDataBase();
-        }
-    }
-    public boolean addBoxes(foundOrder fo, int iRQ) {
-        try {
-            foundBox fb = new foundBox();
-            String sDate = DateTimeUtils.getDayTimeString(new Date());
-            Boxes boxes = new Boxes(getUUID(), fo.get_id(), getBarcodeQ_box(fo.getBarcode()), getBarcodeN_box(fo.getBarcode()), sDate, null, false);
-            //Дату DT пишем прямо в insertBoxes
-            if (insertBoxes(boxes)) {
-                fb.set_id( boxes.get_id() );
-                fb.setRQ( iRQ );
-                return addProds(fb);
-            }
-            return false;
-        } catch (Exception ex) {
-            Log.e(TAG, ex.getMessage());
-            return false;
-        }
-    }
+
     public void lastBoxCheck(foundOrder fo){
         Cursor c = null;
         String query;

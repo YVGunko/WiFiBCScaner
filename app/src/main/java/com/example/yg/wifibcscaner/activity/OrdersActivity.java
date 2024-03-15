@@ -1,24 +1,23 @@
 package com.example.yg.wifibcscaner.activity;
 
 import android.os.AsyncTask;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.Menu;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
 
-import com.example.yg.wifibcscaner.DataBaseHelper;
 import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.controller.AppController;
+import com.example.yg.wifibcscaner.data.repo.OrderRepo;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
 
 public class OrdersActivity extends AppCompatActivity {
-    //Переменная для работы с БД
+    private final OrderRepo orderRepo = new OrderRepo();
 
     private class SyncIncoData extends AsyncTask<Void, Integer, ArrayList<HashMap<String, String>>> {
         TextView pbar;
@@ -29,7 +28,7 @@ public class OrdersActivity extends AppCompatActivity {
         protected ArrayList<HashMap<String, String>> doInBackground(Void... urls) {
             counter = 0;
             try {
-                readOrders = AppController.getInstance().getDbHelper().listorders();
+                readOrders = orderRepo.listorders();
             } catch (Exception e) {
                 Log.d("OrdersActivity","OrdersActivity.mDBHelper.listorders(): " + e.getMessage());
             }
@@ -67,14 +66,6 @@ public class OrdersActivity extends AppCompatActivity {
         setContentView(R.layout.activity_orders);
         SyncIncoData task = new SyncIncoData();
         task.execute();
-    }
-
-    private void browseOrders() {
-        String[] from = {"Ord", "Cust"};
-        int[] to = {R.id.textView, R.id.textView2};
-        SimpleAdapter adapter = new SimpleAdapter(this, AppController.getInstance().getDbHelper().listorders(), R.layout.adapter_item, from, to);
-        ListView listView = (ListView) findViewById(R.id.listView);
-        listView.setAdapter(adapter);
     }
 
     @Override
