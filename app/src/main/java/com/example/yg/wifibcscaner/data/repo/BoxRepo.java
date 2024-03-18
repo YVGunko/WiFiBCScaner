@@ -124,45 +124,8 @@ public class BoxRepo {
             AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
-    public void insertBoxInBulk(List<Boxes> list){
-        SQLiteDatabase mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-        try {
-            mDataBase.beginTransaction();
-            String sql = "INSERT OR REPLACE INTO Boxes (_id, Id_m, Q_box, N_box, DT, sentToMasterDate, archive) " +
-                    " VALUES (?,?,?,?,?,?,?);";
 
-            SQLiteStatement statement = mDataBase.compileStatement(sql);
-
-            for (Boxes o : list) {
-                statement.clearBindings();
-                statement.bindString(1, o.get_id());
-                statement.bindLong(2, o.get_Id_m());
-                statement.bindLong(3, o.get_Q_box());
-                statement.bindLong(4, o.get_N_box());
-                statement.bindLong(5, getDateTimeLong(o.get_DT()));
-
-                if (o.get_sentToMasterDate() == null)
-                    statement.bindLong(6, new Date().getTime());
-                else
-                    statement.bindLong(6, getDateTimeLong(o.get_sentToMasterDate()));
-
-                statement.bindLong(7, (o.isArchive() ? 1 : 0));
-                statement.executeInsert();
-            }
-
-            mDataBase.setTransactionSuccessful();
-            // TODO to remove
-
-            showToast("insertBoxInBulk. success", true);
-        } catch (Exception e) {
-            Log.w(TAG, e);
-            throw new RuntimeException("To catch into upper level.");
-        } finally {
-            mDataBase.endTransaction();
-            AppController.getInstance().getDbHelper().closeDataBase();
-        }
-    }
-    /* send outDocs in background
+    /* send boxes in background
      * */
     public void sendData(String updateDate) {
         DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
@@ -214,6 +177,7 @@ public class BoxRepo {
                     values.put(BoxMoves.COLUMN_sentToMasterDate, sDateTimeToLong(bm.get_sentToMasterDate()));
                     mDataBase.update(BoxMoves.TABLE_bm, values,BoxMoves.COLUMN_ID +"='"+bm.get_id()+"'",null);
                 }
+                // TODO updateBoxesSetArchiveTrue
             }catch (SQLiteException e) {
                 Log.e(TAG, "updateWithResponse -> BoxMoves sentToMasterDate update exception -> ".concat(e.getMessage()));
                 throw new RuntimeException("To catch into upper level.");

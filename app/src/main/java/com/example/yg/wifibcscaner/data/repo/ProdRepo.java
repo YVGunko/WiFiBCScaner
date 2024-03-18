@@ -30,41 +30,6 @@ import static com.example.yg.wifibcscaner.utils.MyStringUtils.getUUID;
 public class ProdRepo {
     private static final String TAG = "sProject -> ProdRepo.";
 
-    public void insertProdInBulk(List<Prods> list) {
-        SQLiteDatabase mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-        try {
-            mDataBase.beginTransaction();
-            String sql = "INSERT OR REPLACE INTO Prods (_id, Id_bm, Id_d, Id_s, RQ_box, P_date, sentToMasterDate, idOutDocs) " +
-                    " VALUES (?,?,?,?,?,?,?,?);";
-
-            SQLiteStatement statement = mDataBase.compileStatement(sql);
-
-            for (Prods o : list) {
-                statement.clearBindings();
-                statement.bindString(1, o.get_id());
-                statement.bindString(2, o.get_Id_bm());
-                statement.bindLong(3, o.get_Id_d());
-                statement.bindLong(4, o.get_Id_s());
-                statement.bindLong(5, o.get_RQ_box());
-                statement.bindLong(6, getDateLong(o.get_P_date()));
-
-                if (o.get_sentToMasterDate() == null)
-                    statement.bindLong(7, new Date().getTime());
-                else
-                    statement.bindLong(7, getDateTimeLong(o.get_sentToMasterDate()));
-                statement.bindString(8, o.get_idOutDocs());
-                statement.executeInsert();
-            }
-
-            mDataBase.setTransactionSuccessful();
-        } catch (Exception e) {
-            Log.w(TAG, e);
-            throw new RuntimeException("To catch into upper level.");
-        } finally {
-            mDataBase.endTransaction();
-            AppController.getInstance().getDbHelper().closeDataBase();
-        }
-    }
     public String getProdsMinAndMaxDate(){
         SQLiteDatabase mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         Cursor cursor = null;

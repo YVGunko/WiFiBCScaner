@@ -9,10 +9,7 @@ import android.os.Build;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
 
-import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.controller.AppController;
-import com.example.yg.wifibcscaner.data.model.Boxes;
-import com.example.yg.wifibcscaner.data.model.Defs;
 import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.data.model.Sotr;
 import com.example.yg.wifibcscaner.service.ApiUtils;
@@ -229,45 +226,7 @@ public class OutDocRepo {
             AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
-    public void insertOutDocInBulk(List<OutDocs> list){
-        try {
-            mDataBase.beginTransaction();
-            String sql = "INSERT OR REPLACE INTO OutDocs (_id, Id_o, number, comment, DT, sentToMasterDate, division_code, idUser) " +
-                    " VALUES (?,?,?,?,?,?,?,?);";
 
-            SQLiteStatement statement = mDataBase.compileStatement(sql);
-
-            for (OutDocs o : list) {
-                statement.clearBindings();
-                statement.bindString(1, o.get_id());
-                statement.bindLong(2, o.get_Id_o());
-                statement.bindLong(3, o.get_number());
-                if (o.get_comment() == null)
-                    statement.bindString(4, "");
-                else
-                    statement.bindString(4, o.get_comment());
-
-                statement.bindLong(5, getDateTimeLong(o.get_DT()));
-
-                if (o.get_sentToMasterDate() == null)
-                    statement.bindLong(6, new Date().getTime());
-                else
-                    statement.bindLong(6, getDateTimeLong(o.get_sentToMasterDate()));
-
-                statement.bindString(7, o.getDivision_code());
-                statement.bindLong(8, o.getIdUser());
-                statement.executeInsert();
-            }
-
-            mDataBase.setTransactionSuccessful(); // This commits the transaction if there were no exceptions
-            //mDataBase.execSQL("PRAGMA foreign_keys = 1;");
-        } catch (Exception e) {
-            Log.w(TAG, e);
-            throw new RuntimeException("To catch into upper level.");
-        } finally {
-            mDataBase.endTransaction();
-        }
-    }
     public ArrayList<OutDocs> getOutDocNotSent(){
         Cursor cursor = null;
         ArrayList<OutDocs> readBoxMoves = new ArrayList<OutDocs>();

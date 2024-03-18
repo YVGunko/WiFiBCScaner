@@ -1,8 +1,6 @@
 package com.example.yg.wifibcscaner.data.repo;
 
-import android.content.ContentValues;
 import android.database.Cursor;
-import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
 import android.support.annotation.NonNull;
@@ -120,46 +118,5 @@ public class OrderRepo {
             return globalUpdateDate;
         }
     }*/
-    public void insertOrdersInBulk(List<Orders> list){
-        try {
-            //mDataBase.execSQL("PRAGMA foreign_keys = 0;");
-            mDataBase.beginTransaction();
-            String sql = "INSERT OR REPLACE INTO MasterData (_id, Ord_id, Ord, Cust, Nomen, Attrib," +
-                    " Q_ord, Q_box, N_box, DT, archive, division_code)" +
-                    " VALUES (?,?,?,?,?,?,?,?,?,?,?,?);";
 
-            SQLiteStatement statement = mDataBase.compileStatement(sql);
-
-            for (Orders o : list) {
-                statement.clearBindings();
-                statement.bindLong(1, o.get_id());
-                statement.bindString(2, o.get_Ord_Id());
-                statement.bindString(3, o.get_Ord());
-                statement.bindString(4, o.get_Cust());
-                statement.bindString(5, o.get_Nomen());
-                if (o.get_Attrib() == null)
-                    statement.bindString(6, "");
-                else
-                    statement.bindString(6, (o.get_Attrib()));
-                statement.bindLong(7, o.get_Q_ord());
-                statement.bindLong(8, o.get_Q_box());
-                statement.bindLong(9, o.get_N_box());
-                statement.bindLong(10, getDateTimeLong(o.get_DT()));
-                if (o.getArchive() == null)
-                    statement.bindLong(11, 0);
-                else
-                    statement.bindLong(11, (o.getArchive() ? 1 : 0));
-                statement.bindString(12, o.getDivision_code());
-                statement.executeInsert();
-            }
-
-            mDataBase.setTransactionSuccessful(); // This commits the transaction if there were no exceptions
-            //mDataBase.execSQL("PRAGMA foreign_keys = 1;");
-        } catch (Exception e) {
-            Log.w(TAG, e);
-            throw new RuntimeException("To catch into upper level.");
-        } finally {
-            mDataBase.endTransaction();
-        }
-    }
 }
