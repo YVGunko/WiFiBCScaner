@@ -132,7 +132,6 @@ public class UpdateActivity extends AppCompatActivity {
             try {
                 //Запросить с сервера время
                 ApiUtils.getOrderService(defs.getUrl()).getServerUpdateTime().enqueue(new Callback<Long>() {
-                    // TODO Обработать результат. Записать поле sent... если успешно
                     @Override
                     public void onResponse(Call<Long> call, Response<Long> response) {
                         if (response.isSuccessful() && response.body() != null) {

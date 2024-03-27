@@ -37,7 +37,7 @@ public class OrderOutDocBoxMovePartRepository {
     private AtomicInteger nextPage = new AtomicInteger(0);
     private static int pageSize = 200;
     private static final String TAG = "sProject -> OutDocBoxMovePartRepository.";
-    SQLiteDatabase mDataBase;
+    SQLiteDatabase mDataBase = AppController.getInstance().getDbHelper().openDataBase();
 
 //
 
@@ -117,7 +117,6 @@ public class OrderOutDocBoxMovePartRepository {
     }
     @RequiresApi(api = Build.VERSION_CODES.N)
     public String saveToDB(OrderOutDocBoxMovePart r) {
-        SQLiteDatabase mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         try {
             mDataBase.beginTransaction();
             if ( insertOrdersInBulk(r.orderReqList) ) {

@@ -48,6 +48,7 @@ import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.service.foundBox;
 import com.example.yg.wifibcscaner.service.foundOrder;
 import com.example.yg.wifibcscaner.utils.AppUtils;
+import com.example.yg.wifibcscaner.utils.DataSyncTimerUtil;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 import com.honeywell.aidc.AidcManager;
@@ -67,7 +68,7 @@ import static com.example.yg.wifibcscaner.utils.AppUtils.isOutDocOnlyOper;
 import static com.example.yg.wifibcscaner.utils.MyStringUtils.completeOrderDef;
 
 
-public class MainActivity extends AppCompatActivity implements BarcodeReader.BarcodeListener {
+public class MainActivity extends AppCompatActivity implements BarcodeReader.BarcodeListener, DataSyncTimerUtil.DataSyncListener {
     private static final String TAG = "sProject -> MainActivity.";
 
     private final UserRepo userRepo = new UserRepo();
@@ -115,13 +116,12 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
                 barcodeReader = manager.createBarcodeReader();
                 try {
                     if(barcodeReader!=null) {
-                        Log.d("honeywellscanner: ", "barcodereader not claimed in OnCreate()");
+                        Log.d(TAG, "barcodereader not claimed in OnCreate()");
                         barcodeReader.claim();
                     }
                 }
                 catch (ScannerUnavailableException e) {
-                    showMessage("Невозможно включить встроенный сканер.");
-                    //e.printStackTrace();
+                    MessageUtils.showToast(MainActivity.this, "Встроенный сканер не включается!",true);
                 }
                 // register bar code event listener
                 barcodeReader.addBarcodeListener(MainActivity.this);
@@ -131,12 +131,38 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+        // DataSyncTimerUtil.startDataSyncTimer(this, this);
+        // Log.e(TAG, "OnStart () &&& Starting timer");
+
+        if (AppController.getInstance().getDefs().getDeviceId().isEmpty() || AppController.getInstance().getDefs().getDeviceId() == null || AppController.getInstance().getDefs().getDeviceId().contentEquals("0")) {
+            String DeviceId = getDeviceUniqueID(this);
+            AppController.getInstance().getDefs().setDeviceId(DeviceId);
+        }
+
+        if (userRepo.checkIfUserTableEmpty()) {
+            startActivity(new Intent(this,SettingsActivity.class));
+            return;
+        } else {
+            if (AppController.getInstance().getDefs().get_idUser()==0) {
+                startActivity(new Intent(this, LoginActivity.class));
+            }
+        }
+
+    }
+    @Override
     public void onStop(){
         super.onStop();
         if(barcodeReader!=null)
             barcodeReader.release();
     }
-
+    @Override
+    public void onUserInteraction() {
+        super.onUserInteraction();
+        DataSyncTimerUtil.startDataSyncTimer(this, this);
+        Log.d(TAG, "User interacting with screen");
+    }
     @Override
     protected void onResume() {
         super.onResume();
@@ -162,13 +188,66 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
                 barcodeReader.claim();
                 Log.d("honeywellscanner: ", "scanner claimed");
             } catch (ScannerUnavailableException e) {
-                e.printStackTrace();
-                showMessage("Встроенный сканер не включается!");
+                Log.e(TAG, e.getMessage());
+                MessageUtils.showToast(MainActivity.this, "Встроенный сканер не включается!",true);
             }
         }
     }
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
 
+        if (barcodeReader != null) {
+            // close BarcodeReader to clean up resources.
+            barcodeReader.close();
+            barcodeReader = null;
+        }
 
+        if (manager != null) {
+            // close AidcManager to disconnect from the scanner service.
+            // once closed, the object can no longer be used.
+            manager.close();
+        }
+
+    }
+    @Override
+    public void onBarcodeEvent(final BarcodeReadEvent event) {
+        try {
+            barcodeReader.softwareTrigger(false);
+        } catch (ScannerNotClaimedException e) {
+            Log.e(TAG, e.getMessage());
+        } catch (ScannerUnavailableException e) {
+            Log.e(TAG, e.getMessage());
+        }
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (event.getBarcodeData() != null) {
+                    // handle scan result
+                    String currentbarcode = event.getBarcodeData();
+                    scanResultHandler(currentbarcode);
+                }else{
+                    MessageUtils.showToast(MainActivity.this, "Ошибка сканера !",true);
+                }
+            }
+        });
+    }
+
+    @Override
+    public void onFailureEvent(BarcodeFailureEvent arg0) {
+        try {
+            barcodeReader.softwareTrigger(false);
+        } catch (ScannerNotClaimedException e) {
+            Log.e(TAG, e.getMessage());
+        } catch (ScannerUnavailableException e) {
+            Log.e(TAG, e.getMessage());
+        }
+    }
+    @Override
+    public void doDataSync() {
+        Log.d(TAG, "doDataSync !");
+        boxRepo.sendData();
+    }
     @RequiresApi(api = Build.VERSION_CODES.N)
     public void ocl_scan(View v) { //Вызов активности Сканирования
         if (AppController.getInstance().getDefs().get_idUser()==0){
@@ -340,7 +419,11 @@ private static String filter (String str){
                             final boolean isSetEnabled = true; //!AppUtils.isOutComeOper(AppController.getInstance().getDefs().get_Id_o());
                             editTextRQ.setEnabled(isSetEnabled);
                             editTextRQ.setSelection(editTextRQ.getText().length());
-                            if (fb.getRQ() != 0) {showMessage("Эта коробка ранее принималась неполной!");}
+                            if (fb.getRQ() != 0) {
+                                MessageUtils.showToast(AppController.getInstance().getApplicationContext(),
+                                        "Эта коробка ранее принималась неполной!",
+                                        true);
+                            }
                         }
                     } else {                                                //Коробки нет , подставить колво в поле редактирования колва и дожаться ОК.
                         if (isOneOfFirstOper(AppController.getInstance().getDefs().get_Id_o())){ //Добавить коробку если это операция приемки baseOper = 1
@@ -451,26 +534,7 @@ private static String filter (String str){
         startActivity(new Intent(this, ProdsActivity.class)); //Вызов активности Коробки
     }
 
-    @Override
-    protected void onStart() {
-        // TODO Auto-generated method stub
-        super.onStart();
 
-        if (AppController.getInstance().getDefs().getDeviceId().isEmpty() || AppController.getInstance().getDefs().getDeviceId() == null || AppController.getInstance().getDefs().getDeviceId().contentEquals("0")) {
-            String DeviceId = getDeviceUniqueID(this);
-            AppController.getInstance().getDefs().setDeviceId(DeviceId);
-        }
-
-        if (userRepo.checkIfUserTableEmpty()) {
-            startActivity(new Intent(this,SettingsActivity.class));
-            return;
-        } else {
-            if (AppController.getInstance().getDefs().get_idUser()==0) {
-                startActivity(new Intent(this, LoginActivity.class));
-            }
-        }
-
-    }
 
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
         IntentResult scanResult = IntentIntegrator.parseActivityResult(requestCode, resultCode, intent);
@@ -479,78 +543,12 @@ private static String filter (String str){
             String currentbarcode = scanResult.getContents();
             scanResultHandler(currentbarcode);
         }else{
-            showMessage("Ошибка сканера !");
+            MessageUtils.showToast(AppController.getInstance().getApplicationContext(),
+                    "Ошибка сканера !",
+                    true);
         }
     }
 
-    @Override
-    public void onBarcodeEvent(final BarcodeReadEvent event) {
-        try {
-            barcodeReader.softwareTrigger(false);
-        } catch (ScannerNotClaimedException e) {
-            e.printStackTrace();
-        } catch (ScannerUnavailableException e) {
-            e.printStackTrace();
-        }
-        // TODO Auto-generated method stub
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (event.getBarcodeData() != null) {
-                    // handle scan result
-                    String currentbarcode = event.getBarcodeData();
-                    scanResultHandler(currentbarcode);
-                }else{
-                    showMessage("Ошибка сканера !");
-                }
-            }
-        });
-    }
-
-    @Override
-    public void onFailureEvent(BarcodeFailureEvent arg0) {
-        // TODO Auto-generated method stub
-        try {
-            barcodeReader.softwareTrigger(false);
-        } catch (ScannerNotClaimedException e) {
-            e.printStackTrace();
-        } catch (ScannerUnavailableException e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Override
-    protected void onDestroy() {
-        // TODO Auto-generated method stub
-        super.onDestroy();
-
-        if (barcodeReader != null) {
-            // close BarcodeReader to clean up resources.
-            barcodeReader.close();
-            barcodeReader = null;
-        }
-
-        if (manager != null) {
-            // close AidcManager to disconnect from the scanner service.
-            // once closed, the object can no longer be used.
-            manager.close();
-        }
-
-    }
-
-    private void showMessage (String s){
-        Context context = getApplicationContext();
-        int duration = Toast.LENGTH_SHORT;
-
-        if (android.os.Build.VERSION.SDK_INT >= 25) {
-            ToastCompat.makeText(context, s, duration)
-                        .setBadTokenListener(toast -> {
-                            Log.e("failed toast",s);
-                        }).show();
-        } else {
-            Toast.makeText(context, s, duration).show();
-        }
-    }
     private void showLongMessage (String s){
         Context context = getApplicationContext();
         int duration = Toast.LENGTH_LONG;

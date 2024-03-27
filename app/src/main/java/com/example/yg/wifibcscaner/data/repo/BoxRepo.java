@@ -127,30 +127,47 @@ public class BoxRepo {
 
     /* send boxes in background
      * */
-    public void sendData(String updateDate) {
+    public void sendData() {
         DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
             try {
-                ArrayList<Boxes> boxesList = AppController.getInstance().getDbHelper().getBoxes();
-                ArrayList<BoxMoves> boxMovesList = AppController.getInstance().getDbHelper().getBoxMoves();
-                ArrayList<Prods> prodsList = AppController.getInstance().getDbHelper().getProds();
-                ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).partBox(new PartBoxRequest(boxesList, boxMovesList, prodsList),
-                        AppController.getInstance().getDefs().get_idUser(),AppController.getInstance().getDefs().getDeviceId()).enqueue(new Callback<PartBoxRequest>() {
+                //check if connection is available
+                ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).getServerUpdateTime().enqueue(new Callback<Long>() {
                     @Override
-                    public void onResponse(Call<PartBoxRequest> call, Response<PartBoxRequest> response) {
-                        if (response.isSuccessful()) {
-                            updateWithResponse (response.body());
-                        } else {
-                            Log.e(TAG, "Box sending response wasn't successful");
+                    public void onResponse(Call<Long> call, Response<Long> response) {
+                        if (response.isSuccessful())
+                            try {
+                            ArrayList<Boxes> boxesList = AppController.getInstance().getDbHelper().getBoxes();
+                            ArrayList<BoxMoves> boxMovesList = AppController.getInstance().getDbHelper().getBoxMoves();
+                            ArrayList<Prods> prodsList = AppController.getInstance().getDbHelper().getProds();
+                            ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).partBox(new PartBoxRequest(boxesList, boxMovesList, prodsList),
+                                    AppController.getInstance().getDefs().get_idUser(),AppController.getInstance().getDefs().getDeviceId()).enqueue(new Callback<PartBoxRequest>() {
+                                @Override
+                                public void onResponse(Call<PartBoxRequest> call, Response<PartBoxRequest> response) {
+                                    if (response.isSuccessful()) {
+                                        updateWithResponse (response.body());
+                                    } else {
+                                        Log.e(TAG, "Box sending response wasn't successful");
+                                    }
+                                }
+
+                                @Override
+                                public void onFailure(Call<PartBoxRequest> call, Throwable t) {
+                                    Log.e(TAG, t.getMessage());
+                                }
+                            });
+                        }catch (Exception e) {
+                            Log.e(TAG, "sendData -> " + e.getMessage());
                         }
                     }
 
                     @Override
-                    public void onFailure(Call<PartBoxRequest> call, Throwable t) {
-                        Log.e(TAG, t.getMessage());
+                    public void onFailure(Call<Long> call, Throwable t) {
+                        Log.d(TAG, "onFailure при запросе времени обновления с сервера: " + t.getMessage());
                     }
                 });
-            }catch (Exception e) {
-                Log.e(TAG, "sendData -> " + e.getMessage());
+            } catch (Exception e) {
+                Log.d(TAG, "Exception запроса времени обновления с сервера : " + e.getMessage());
+                return ;
             }
         });
         return;
@@ -193,7 +210,7 @@ public class BoxRepo {
                 throw new RuntimeException("To catch into upper level.");
             }
 
-            showToast("Коробки выгружены успешно.", true);
+            Log.d(TAG, "Коробки выгружены успешно!");
             mDataBase.setTransactionSuccessful();
         } catch (Exception e) {
             Log.w(TAG, e);

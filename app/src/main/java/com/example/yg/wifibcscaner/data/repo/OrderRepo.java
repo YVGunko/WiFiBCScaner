@@ -55,6 +55,7 @@ public class OrderRepo {
                 return fo;
             } finally {
                 tryCloseCursor(c);
+                AppController.getInstance().getDbHelper().closeDataBase();
             }
         }
         return fo;
@@ -62,8 +63,8 @@ public class OrderRepo {
     public ArrayList<HashMap<String, String>> listorders() {
         ArrayList<HashMap<String, String>> readOrders = new ArrayList<HashMap<String, String>>();
         Cursor cursor = null;
-        mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         try {
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             cursor = mDataBase.rawQuery("SELECT MasterData.Ord, MasterData.Cust, MasterData.Nomen, MasterData.Attrib, MasterData.Q_ord,MasterData.Q_box, " +
                     "MasterData.N_box, MasterData.DT " +
                     "FROM MasterData WHERE division_code=? ORDER BY MasterData._id DESC", new String [] {String.valueOf(AppController.getInstance().getDefs().getDivision_code())});
@@ -92,6 +93,7 @@ public class OrderRepo {
     public String getOrderUpdateDate(@NonNull String globalUpdateDate){
         Cursor cursor = null;
         try {
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             cursor = mDataBase.rawQuery("SELECT max(DT) FROM Orders ", null);
             if (cursor != null && cursor.moveToFirst()) {
                 return lDateToString(cursor.getLong(0) > sDateTimeToLong(globalUpdateDate) ? cursor.getLong(0) : sDateTimeToLong(globalUpdateDate));
@@ -102,6 +104,7 @@ public class OrderRepo {
             return globalUpdateDate;
         } finally {
             tryCloseCursor(cursor);
+            AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
     /*@RequiresApi(api = Build.VERSION_CODES.O)
