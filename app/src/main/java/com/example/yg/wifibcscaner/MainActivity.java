@@ -160,7 +160,7 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
     @Override
     public void onUserInteraction() {
         super.onUserInteraction();
-        DataSyncTimerUtil.startDataSyncTimer(this, this);
+        DataSyncTimerUtil.startDataSyncTimer(this);
         Log.d(TAG, "User interacting with screen");
     }
     @Override
