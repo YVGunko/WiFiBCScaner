@@ -154,6 +154,7 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
     @Override
     public void onStop(){
         super.onStop();
+        DataSyncTimerUtil.stopDataSyncTimer();
         if(barcodeReader!=null)
             barcodeReader.release();
     }
@@ -246,6 +247,7 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
     @Override
     public void doDataSync() {
         Log.d(TAG, "doDataSync !");
+        /* what I wanted to do here */
         boxRepo.sendData();
     }
     @RequiresApi(api = Build.VERSION_CODES.N)
