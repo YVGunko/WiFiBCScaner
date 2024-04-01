@@ -3,6 +3,7 @@
     package="com.example.yg.wifibcscaner">
 
 
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <application
         android:name=".controller.AppController"
         android:allowBackup="true"
@@ -31,6 +32,12 @@
         <activity android:name=".activity.OutDocsActivity" />
         <activity android:name=".activity.UpdateActivity" />
         <activity android:name=".activity.lastUpdateActivity" />
+
+        <service
+            android:name=".service.MyJobService"
+            android:enabled="true"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE"/>
     </application>
     <uses-permission android:name="com.honeywell.decode.permission.DECODE" />
     <uses-permission android:name="android.permission.CAMERA" />

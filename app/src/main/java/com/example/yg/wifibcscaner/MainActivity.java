@@ -2,6 +2,9 @@ package com.example.yg.wifibcscaner;
 
 
 import android.app.Activity;
+import android.app.job.JobInfo;
+import android.app.job.JobScheduler;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -45,6 +48,7 @@ import com.example.yg.wifibcscaner.data.repo.OutDocRepo;
 import com.example.yg.wifibcscaner.data.repo.SotrRepo;
 import com.example.yg.wifibcscaner.data.repo.UserRepo;
 import com.example.yg.wifibcscaner.service.MessageUtils;
+import com.example.yg.wifibcscaner.service.MyJobService;
 import com.example.yg.wifibcscaner.service.foundBox;
 import com.example.yg.wifibcscaner.service.foundOrder;
 import com.example.yg.wifibcscaner.utils.AppUtils;
@@ -58,6 +62,9 @@ import com.honeywell.aidc.BarcodeReader;
 import com.honeywell.aidc.ScannerNotClaimedException;
 import com.honeywell.aidc.ScannerUnavailableException;
 import org.apache.commons.lang3.StringUtils;
+
+import java.util.concurrent.TimeUnit;
+
 import me.drakeet.support.toast.ToastCompat;
 
 import static android.text.TextUtils.substring;
@@ -127,7 +134,7 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
                 barcodeReader.addBarcodeListener(MainActivity.this);
             }
         });
-
+        scheduleJob();
     }
 
     @Override
@@ -616,5 +623,47 @@ private static String filter (String str){
             }
         });
         quitDialog.show();
+    }
+
+    private void scheduleJob() {
+        final JobScheduler jobScheduler = (JobScheduler) getSystemService(
+                Context.JOB_SCHEDULER_SERVICE);
+
+        // The JobService that we want to run
+        final ComponentName name = new ComponentName(this, MyJobService.class);
+
+        // Schedule the job
+        final int result = jobScheduler.schedule(getJobInfo(123, 1, name));
+
+        // If successfully scheduled, log this thing
+        if (result == JobScheduler.RESULT_SUCCESS) {
+            Log.d(TAG, "Scheduled job successfully!");
+        }
+
+    }
+    private JobInfo getJobInfo(final int id, final long hour, final ComponentName name) {
+        final long interval = TimeUnit.HOURS.toMillis(hour); // run every hour
+        final boolean isPersistent = true; // persist through boot
+        final int networkType = JobInfo.NETWORK_TYPE_ANY; // Requires some sort of connectivity
+
+        final JobInfo jobInfo;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            jobInfo = new JobInfo.Builder(id, name)
+                    .setMinimumLatency(interval)
+                    .setRequiredNetworkType(networkType)
+                    .setPersisted(isPersistent)
+                    .setRequiresDeviceIdle(true)
+                    .build();
+        } else {
+            jobInfo = new JobInfo.Builder(id, name)
+                    .setPeriodic(interval)
+                    .setRequiredNetworkType(networkType)
+                    .setPersisted(isPersistent)
+                    .setRequiresDeviceIdle(true)
+                    .build();
+        }
+
+        return jobInfo;
     }
 }
