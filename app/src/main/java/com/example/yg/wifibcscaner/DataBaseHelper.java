@@ -366,13 +366,11 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             readBox.put("Ord", "Ошибка!");
             readBox.put("Cust", "Ошибка!");
             readBoxes.add(readBox);
+        }finally {
+            AppController.getInstance().getDbHelper().closeDataBase();
         }
         return readBoxes;
     }
-
-
-
-
 
     //get all Boxes  records filtered by operation
     public ArrayList<Boxes> getBoxes() {
@@ -393,6 +391,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             return readBoxes;
         } finally {
             tryCloseCursor(cursor);
+            AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
     //get all Boxes  records filtered by operation
@@ -413,6 +412,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             return readBoxMoves;
         } finally {
             tryCloseCursor(cursor);
+            AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
     //get all Boxes  records filtered by operation
@@ -434,6 +434,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             return readProds;
         } finally {
             tryCloseCursor(cursor);
+            AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
 
@@ -499,6 +500,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         }finally {
             fb.setBoxdef(fb.getBoxdef().concat("Принято: " + fb.getRQ()));
             tryCloseCursor(c);
+            AppController.getInstance().getDbHelper().closeDataBase();
         }
         return fb;
     }
@@ -517,6 +519,8 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         } catch (SQLException e) {
             Log.e(TAG, e.getMessage());
             return 0;
+        }finally {
+            AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
 
@@ -533,6 +537,8 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         } catch (SQLiteException e) {
             Log.e(TAG, "updateProdsSentDate exception -> ".concat(e.getMessage()));
             return false;
+        }finally {
+            AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
 
@@ -593,6 +599,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             return product;
         } finally {
             tryCloseCursor(cursor);
+            AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
 
@@ -610,6 +617,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             return DateTimeUtils.getDayTimeString(new Date());
         } finally {
             tryCloseCursor(cursor);
+            AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
     public String getTableRecordsCount(String tableName){
@@ -626,6 +634,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             return "Ошибка!";
         } finally {
             tryCloseCursor(cursor);
+            AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
 
