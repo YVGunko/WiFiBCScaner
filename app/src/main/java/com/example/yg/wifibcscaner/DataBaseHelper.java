@@ -18,10 +18,8 @@ import android.util.Log;
 import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.BoxMoves;
 import com.example.yg.wifibcscaner.data.model.Boxes;
-import com.example.yg.wifibcscaner.data.model.Orders;
 import com.example.yg.wifibcscaner.data.model.Prods;
 import com.example.yg.wifibcscaner.data.model.lastUpdate;
-import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.service.SharedPrefs;
 import com.example.yg.wifibcscaner.service.foundBox;
 import com.example.yg.wifibcscaner.service.foundOrder;
@@ -51,7 +49,6 @@ import static com.example.yg.wifibcscaner.utils.DateTimeUtils.sDateToLong;
 import static com.example.yg.wifibcscaner.utils.MyStringUtils.getBarcodeN_box;
 import static com.example.yg.wifibcscaner.utils.MyStringUtils.getBarcodeQ_box;
 import static com.example.yg.wifibcscaner.utils.MyStringUtils.getUUID;
-import static com.example.yg.wifibcscaner.utils.MyStringUtils.makeOrderdef;
 
 public class DataBaseHelper extends SQLiteOpenHelper {
     private static final String TAG = "DataBaseHelper";

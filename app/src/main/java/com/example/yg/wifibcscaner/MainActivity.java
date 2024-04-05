@@ -635,7 +635,7 @@ private static String filter (String str){
         final ComponentName name = new ComponentName(this, MyJobService.class);
 
         // Schedule the job
-        final int result = jobScheduler.schedule(getJobInfo(123, 1, name));
+        final int result = jobScheduler.schedule(getJobInfo(123, 15, name));
 
         // If successfully scheduled, log this thing
         if (result == JobScheduler.RESULT_SUCCESS) {
@@ -643,28 +643,20 @@ private static String filter (String str){
         }
 
     }
-    private JobInfo getJobInfo(final int id, final long hour, final ComponentName name) {
-        final long interval = TimeUnit.HOURS.toMillis(hour); // run every hour
+    private JobInfo getJobInfo(final int id, final long minutes, final ComponentName name) {
+        final long interval = TimeUnit.MINUTES.toMillis(minutes); // run every hour
         final boolean isPersistent = true; // persist through boot
         final int networkType = JobInfo.NETWORK_TYPE_ANY; // Requires some sort of connectivity
 
         final JobInfo jobInfo;
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            jobInfo = new JobInfo.Builder(id, name)
-                    .setMinimumLatency(interval)
-                    .setRequiredNetworkType(networkType)
-                    .setPersisted(isPersistent)
-                    .setRequiresDeviceIdle(true)
-                    .build();
-        } else {
-            jobInfo = new JobInfo.Builder(id, name)
-                    .setPeriodic(interval)
-                    .setRequiredNetworkType(networkType)
-                    .setPersisted(isPersistent)
-                    .setRequiresDeviceIdle(true)
-                    .build();
-        }
+        Log.d(TAG, "setMinimumLatency !");
+        jobInfo = new JobInfo.Builder(id, name)
+                .setMinimumLatency(interval)
+                .setOverrideDeadline(interval*2)
+                .setRequiredNetworkType(networkType)
+                .setPersisted(isPersistent)
+                .build();
 
         return jobInfo;
     }

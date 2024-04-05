@@ -18,6 +18,7 @@ public class AppController extends Application {
     private Context mContext;
     private OutDocs currentOutDoc;
     private Defs defs;
+    private String globalUpdateDate ;
     /**
      * init all required objects in onCreate
      */
@@ -31,6 +32,7 @@ public class AppController extends Application {
         mDBHelper = DataBaseHelper.getInstance();
         currentOutDoc = new OutDocs();
         defs = new Defs();
+        globalUpdateDate = "";
     }
 
     /**
@@ -70,5 +72,13 @@ public class AppController extends Application {
     }
     public void setDefs(Defs defs) {
         this.defs = defs;
+    }
+
+    public String getGlobalUpdateDate() {
+        return globalUpdateDate;
+    }
+
+    public void setGlobalUpdateDate(String globalUpdateDate) {
+        this.globalUpdateDate = globalUpdateDate;
     }
 }

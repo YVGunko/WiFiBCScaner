@@ -94,7 +94,7 @@ public class OrderRepo {
         Cursor cursor = null;
         try {
             mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-            cursor = mDataBase.rawQuery("SELECT max(DT) FROM Orders ", null);
+            cursor = mDataBase.rawQuery("SELECT max(DT) FROM "+Orders.TABLE_orders, null);
             if (cursor != null && cursor.moveToFirst()) {
                 return lDateToString(cursor.getLong(0) > sDateTimeToLong(globalUpdateDate) ? cursor.getLong(0) : sDateTimeToLong(globalUpdateDate));
             }

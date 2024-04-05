@@ -16,6 +16,7 @@ import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.data.model.Prods;
 import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
+import com.example.yg.wifibcscaner.utils.DateTimeUtils;
 import com.example.yg.wifibcscaner.utils.executors.DefaultExecutorSupplier;
 
 import org.apache.commons.lang3.StringUtils;
@@ -45,6 +46,7 @@ public class OrderOutDocBoxMovePartRepository {
         DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
             try {
                 nextPage.set(0);
+
                 Log.d(TAG, "downloadData -> update date: " + updateDate);
                 Log.d(TAG, "downloadData -> current page to load: " + nextPage);
 
@@ -58,7 +60,7 @@ public class OrderOutDocBoxMovePartRepository {
 
             } catch (Exception e) {
                 Log.e(TAG, "downloadData -> " + R.string.error_something_went_wrong, e);
-                MessageUtils.showToast("Ошибка. downloadData. "+R.string.error_something_went_wrong, true);
+                MessageUtils.showToast("Ошибка. Загрузка данных. "+R.string.error_something_went_wrong, true);
             }
         });
         return;
@@ -74,7 +76,7 @@ public class OrderOutDocBoxMovePartRepository {
                     if (response.code() == 204) {
                         //no content, so prepare environment to stop current request and prepare for next one
                         nextPage.set(0);
-                        MessageUtils.showToast("Синхронизация завершена успешно. 204.", true);
+                        MessageUtils.showToast("Синхронизация завершена успешно.", true);
                         return;
                     }
                     if (response.code() != 200) return;
@@ -110,7 +112,7 @@ public class OrderOutDocBoxMovePartRepository {
             public void onFailure(Call<OrderOutDocBoxMovePart> call, Throwable t) {
                 Log.w(TAG, "downloadDataCallback -> API Request failed: " + t.getMessage());
                 nextPage.set(0);
-                MessageUtils.showToast("Ошибка. downloadDataCallback. onFailure", true);
+                MessageUtils.showToast("Сервер не отвечает. Проверьте подключение WiFi.", true);
             }
 
         };

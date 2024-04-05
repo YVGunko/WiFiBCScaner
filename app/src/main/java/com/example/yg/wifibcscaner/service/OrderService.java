@@ -5,16 +5,12 @@ package com.example.yg.wifibcscaner.service;
  */
 
 
-import com.example.yg.wifibcscaner.data.model.BoxMoves;
-import com.example.yg.wifibcscaner.data.model.Boxes;
+import com.example.yg.wifibcscaner.data.dto.OrderOutDocBoxMovePart;
 import com.example.yg.wifibcscaner.data.model.Deps;
 import com.example.yg.wifibcscaner.data.model.Division;
 import com.example.yg.wifibcscaner.data.model.Operation;
-import com.example.yg.wifibcscaner.data.model.Orders;
 import com.example.yg.wifibcscaner.data.model.OutDocs;
-import com.example.yg.wifibcscaner.data.model.Prods;
 import com.example.yg.wifibcscaner.data.model.Sotr;
-import com.example.yg.wifibcscaner.data.dto.OrderOutDocBoxMovePart;
 import com.example.yg.wifibcscaner.data.model.user;
 
 import java.util.ArrayList;
@@ -38,20 +34,6 @@ public interface OrderService {
     @POST("/partBox")
     Call<PartBoxRequest> partBox(@Body PartBoxRequest partBoxRequest, @Query("userId") int userId, @Query("deviceId") String deviceId);
 
-    @GET("/order")
-    Call<List<Orders>> getOrders(@Query("date") String date, @Query("userId") int userId, @Query("deviceId") String deviceId);
-    @GET("/boxesByDate")
-    Call<List<Boxes>> getBoxesByDate(@Query("date") String date, @Query("userId") int userId, @Query("deviceId") String deviceId);
-
-    @GET("/bmByDatePageble")
-    Call<List<BoxMoves>> getBoxMovesByDatePageble(@Query("date") String date, @Query("userId") int userId, @Query("deviceId") String deviceId, @Query("page") int page);
-    @GET("/bmByDatePagebleCount")
-    Call<Integer> getBoxMovesByDatePagebleCount(@Query("date") String date);
-    @GET("/pbByDatePageble")
-    Call<List<Prods>> getPartBoxByDatePageble(@Query("date") String date, @Query("userId") int userId, @Query("deviceId") String deviceId, @Query("page") int page);
-    @GET("/pbByDatePagebleCount")
-    Call<Integer> getPartBoxByDatePagebleCount(@Query("date") String date);
-
     @GET("/division")
     Call<List<Division>> getDivision();
 
@@ -69,9 +51,6 @@ public interface OrderService {
 
     @POST("/outDocSaveOrUpdate/v3")
     Call<List<OutDocs>> addOutDoc(@Body ArrayList<OutDocs> outDocs, @Query("deviceId") String deviceId);
-
-    @GET("/outDocGet")
-    Call<List<OutDocs>> getOutDocGet(@Query("date") String date);
 
     @GET("/serverUpdateTime")
     Call<Long> getServerUpdateTime();

@@ -56,8 +56,6 @@ public class UpdateActivity extends AppCompatActivity {
     private final SotrRepo sotrRepo = new SotrRepo();
     private final UserRepo userRepo = new UserRepo();
 
-    public String globalUpdateDate = "";
-
     private static final Long ldtMin = DateTimeUtils.getStartOfDayLong(DateTimeUtils.addDays(new Date(), -DateTimeUtils.numberOfDaysInMonth(new Date())));
     private static final String dtMin = DateTimeUtils.getStartOfDayString(ldtMin);
 
@@ -153,7 +151,9 @@ public class UpdateActivity extends AppCompatActivity {
             try {
 
                 ApiUtils.getOrderService(defs.getUrl())
-                        .getUser(StringUtils.isNotBlank(globalUpdateDate) ? globalUpdateDate : userRepo.getUserUpdateDate(dtMin))
+                        .getUser(StringUtils.isNotBlank(AppController.getInstance().getGlobalUpdateDate())
+                                ? AppController.getInstance().getGlobalUpdateDate()
+                                : userRepo.getUserUpdateDate(dtMin))
                         .enqueue(new Callback<List<user>>() {
                     // TODO Обработать результат. Записать поле sent... если успешно
                     @Override
@@ -195,7 +195,9 @@ public class UpdateActivity extends AppCompatActivity {
                     }
                 });
                 ApiUtils.getOrderService(defs.getUrl())
-                        .getOperation(StringUtils.isNotBlank(globalUpdateDate) ? globalUpdateDate : operRepo.getOperUpdateDate(dtMin))
+                        .getOperation(StringUtils.isNotBlank(AppController.getInstance().getGlobalUpdateDate())
+                                ? AppController.getInstance().getGlobalUpdateDate()
+                                 : operRepo.getOperUpdateDate(dtMin))
                         .enqueue(new Callback<List<Operation>>() {
                     // TODO Обработать результат. Записать поле sent... если успешно
                     @Override
@@ -216,7 +218,9 @@ public class UpdateActivity extends AppCompatActivity {
                     }
                 });
                 ApiUtils.getOrderService(defs.getUrl())
-                        .getSotr(StringUtils.isNotBlank(globalUpdateDate) ? globalUpdateDate : sotrRepo.getSotrUpdateDate(dtMin))
+                        .getSotr(StringUtils.isNotBlank(AppController.getInstance().getGlobalUpdateDate())
+                                ? AppController.getInstance().getGlobalUpdateDate()
+                                : sotrRepo.getSotrUpdateDate(dtMin))
                         .enqueue(new Callback<List<Sotr>>() {
                     @Override
                     public void onResponse(Call<List<Sotr>> call, Response<List<Sotr>> response) {
@@ -239,7 +243,9 @@ public class UpdateActivity extends AppCompatActivity {
                 });
 
                 ApiUtils.getOrderService(defs.getUrl())
-                        .getDeps(StringUtils.isNotBlank(globalUpdateDate) ? globalUpdateDate : depRepo.getDepUpdateDate(dtMin))
+                        .getDeps(StringUtils.isNotBlank(AppController.getInstance().getGlobalUpdateDate())
+                                ? AppController.getInstance().getGlobalUpdateDate()
+                                : depRepo.getDepUpdateDate(dtMin))
                         .enqueue(new Callback<List<Deps>>() {
                     @Override
                     public void onResponse(Call<List<Deps>> call, Response<List<Deps>> response) {
@@ -261,7 +267,9 @@ public class UpdateActivity extends AppCompatActivity {
 
                 //выбрать максимальную дату загрузки заказа из MasterData. Запросить все заказы старше этой даты но только за месяц.
                 OrderOutDocBoxMovePartRepository orderOutDocBoxMovePartRepository = new OrderOutDocBoxMovePartRepository();
-                orderOutDocBoxMovePartRepository.downloadData(StringUtils.isNotBlank(globalUpdateDate) ? globalUpdateDate :  orderRepo.getOrderUpdateDate(dtMin));
+                orderOutDocBoxMovePartRepository.downloadData(StringUtils.isNotBlank(AppController.getInstance().getGlobalUpdateDate())
+                        ? AppController.getInstance().getGlobalUpdateDate()
+                        : orderRepo.getOrderUpdateDate(dtMin));
 
             } catch (Exception e) {
                 Log.d(TAG, "Error : " + e.getMessage());
@@ -318,7 +326,7 @@ public class UpdateActivity extends AppCompatActivity {
                 case 8:
                     values[0] = values[0] * 5;
                     MessageUtils.showToast(getApplicationContext(), "Синхронизация подошвы завершена.", false);
-                    globalUpdateDate = "";
+                    AppController.getInstance().setGlobalUpdateDate("");
                     break;
 
             }
@@ -349,7 +357,7 @@ public class UpdateActivity extends AppCompatActivity {
                     Log.d(TAG, "lastUpdateActivity.onActivityResult -> DateTimePicker returned 0");
                     return;
                 }
-                globalUpdateDate = DateTimeUtils.getStartOfDayString(longExtra);
+                AppController.getInstance().setGlobalUpdateDate(DateTimeUtils.getStartOfDayString(longExtra));
             }
             if (resultCode == Activity.RESULT_CANCELED) {
                 Log.w(TAG, "lastUpdateActivity.onActivityResult -> RESULT_CANCELED");
