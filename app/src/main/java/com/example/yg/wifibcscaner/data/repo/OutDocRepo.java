@@ -1,9 +1,7 @@
 package com.example.yg.wifibcscaner.data.repo;
 
-import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteStatement;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
@@ -12,11 +10,8 @@ import android.util.Log;
 import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.data.model.Sotr;
-import com.example.yg.wifibcscaner.service.ApiUtils;
-import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.service.SharedPrefs;
 import com.example.yg.wifibcscaner.utils.DateTimeUtils;
-import com.example.yg.wifibcscaner.utils.executors.DefaultExecutorSupplier;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -25,16 +20,10 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-
-import static com.example.yg.wifibcscaner.DataBaseHelper.COLUMN_sentToMasterDate;
 import static com.example.yg.wifibcscaner.utils.AppUtils.isDepAndSotrOper;
 import static com.example.yg.wifibcscaner.utils.AppUtils.tryCloseCursor;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDateTimeLong;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDayTimeString;
-import static com.example.yg.wifibcscaner.utils.DateTimeUtils.lDateToString;
 import static com.example.yg.wifibcscaner.utils.MyStringUtils.getUUID;
 
 public class OutDocRepo {
@@ -203,58 +192,7 @@ public class OutDocRepo {
             return result;
         }
     }
-    public void updateOutDocsetSentToMasterDate (List<OutDocs> outDocs) {
-        SQLiteDatabase mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-        try {
-            mDataBase.beginTransaction();
-            ContentValues values = new ContentValues();
-            try {
-                for (OutDocs od : outDocs) {
-                    values.put(COLUMN_sentToMasterDate, new Date().getTime());
-                    mDataBase.update(OutDocs.TABLE, values, OutDocs.COLUMN_Id + "='" + od.get_id() + "'", null);
-                }
-            }catch (SQLiteException e) {
-                Log.e(TAG, "updateWithResponse -> Boxes sentToMasterDate update exception -> ".concat(e.getMessage()));
-                throw new RuntimeException("To catch into upper level.");
-            }
-            mDataBase.setTransactionSuccessful();
-            MessageUtils.showToast("updateOutDocsetSentToMasterDate", true);
-        } catch (Exception e) {
-            Log.e( TAG, "updateOutDocsetSentToMasterDate exception ".concat(e.getMessage()) );
-        } finally {
-            mDataBase.endTransaction();
-            AppController.getInstance().getDbHelper().closeDataBase();
-        }
-    }
 
-    public ArrayList<OutDocs> getOutDocNotSent(){
-        Cursor cursor = null;
-        ArrayList<OutDocs> readBoxMoves = new ArrayList<OutDocs>();
-        mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-        try {
-            cursor = mDataBase.rawQuery("SELECT _id, Id_o, number, comment, DT, division_code, idUser, idSotr, idDeps" +
-                    " FROM OutDocs where ((" + COLUMN_sentToMasterDate + " IS NULL) OR (" + COLUMN_sentToMasterDate + " = ''))", null);
-            while (cursor.moveToNext()) {
-                OutDocs readBoxMove = new OutDocs(cursor.getString(0),
-                        cursor.getInt(1),
-                        cursor.getInt(2),
-                        cursor.getString(3),
-                        lDateToString(cursor.getLong(4)),
-                        cursor.getString(5),
-                        cursor.getInt(6),
-                        cursor.getInt(7),
-                        cursor.getInt(8));
-                //Закидываем в список
-                readBoxMoves.add(readBoxMove);
-            }
-            return readBoxMoves;
-        }catch (Exception e) {
-            Log.e(TAG, "getOutDocNotSent -> ".concat(e.getMessage()) );
-            return readBoxMoves;
-        } finally {
-            tryCloseCursor(cursor);
-        }
-    }
     public String selectCurrentOutDocDetails (String id){
         if (StringUtils.isEmpty(id)) return "";
         mDataBase = AppController.getInstance().getDbHelper().openDataBase();
@@ -318,32 +256,5 @@ public class OutDocRepo {
             return cursor;
         }
     }
-    /* send outDocs in background
-        * */
-    public void sendData(String updateDate) {
-        DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
-            try {
-                Log.d(TAG, "sendData -> update date: " + updateDate);
 
-                ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).
-                        addOutDoc(getOutDocNotSent(),AppController.getInstance().getDefs().getDeviceId()).enqueue(new Callback<List<OutDocs>>() {
-                    @Override
-                    public void onResponse(Call<List<OutDocs>> call, Response<List<OutDocs>> response) {
-                        Log.d(TAG,"Ответ сервера на запрос синхронизации накладных: " + response.body().size());
-                        if(response.isSuccessful()) {
-                            updateOutDocsetSentToMasterDate(response.body());
-                        }
-                    }
-                    @Override
-                    public void onFailure(Call<List<OutDocs>> call, Throwable t) {
-                        Log.e(TAG, "OutDocs Error: " + t.getMessage());
-                    }
-                });
-
-            } catch (Exception e) {
-                Log.e(TAG, "sendData -> " + e.getMessage());
-            }
-        });
-        return;
-    }
 }

@@ -1,44 +1,24 @@
 package com.example.yg.wifibcscaner.data.repo;
 
-import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteException;
-import android.database.sqlite.SQLiteStatement;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
-import com.example.yg.wifibcscaner.MainActivity;
 import com.example.yg.wifibcscaner.controller.AppController;
-import com.example.yg.wifibcscaner.data.model.BoxMoves;
-import com.example.yg.wifibcscaner.data.model.Boxes;
-import com.example.yg.wifibcscaner.data.model.Prods;
-import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
-import com.example.yg.wifibcscaner.service.PartBoxRequest;
 import com.example.yg.wifibcscaner.service.foundOrder;
 import com.example.yg.wifibcscaner.utils.AppUtils;
-import com.example.yg.wifibcscaner.utils.DataSyncTimerUtil;
-import com.example.yg.wifibcscaner.utils.executors.DefaultExecutorSupplier;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-
-import static com.example.yg.wifibcscaner.service.MessageUtils.showToast;
 import static com.example.yg.wifibcscaner.utils.AppUtils.tryCloseCursor;
-import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDateTimeLong;
-import static com.example.yg.wifibcscaner.utils.DateTimeUtils.sDateTimeToLong;
 import static com.example.yg.wifibcscaner.utils.MyStringUtils.retStringFollowingCRIfNotNull;
 
 public class BoxRepo {
-    private static final String TAG = "sProject -> BoxRepo.";
+    private static final String TAG = "sProject -> BoxRepo";
 
     public static String makeBoxNumber(@NonNull String num) {
         StringBuilder sb = new StringBuilder();
@@ -102,6 +82,7 @@ public class BoxRepo {
                         " Order by MasterData.Ord_id,  Boxes.N_box", null);
 
             while (cursor.moveToNext()) {
+                Log.d(TAG, "listboxes -> ".concat(String.valueOf(cursor.getCount())) );
                 HashMap readBox = new HashMap<String, Integer>();
                 String sTmp = null;
                 if (!AppUtils.isDepAndSotrOper(AppController.getInstance().getDefs().get_Id_o())) sTmp = "";
@@ -127,112 +108,4 @@ public class BoxRepo {
         }
     }
 
-    /* send boxes in background
-     * */
-    public void sendData() {
-        DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
-            try {
-                //check if connection is available
-                ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).getServerUpdateTime().enqueue(new Callback<Long>() {
-                    @Override
-                    public void onResponse(Call<Long> call, Response<Long> response) {
-                        if (response.isSuccessful())
-                            try {
-                            ArrayList<Boxes> boxesList = AppController.getInstance().getDbHelper().getBoxes();
-                            ArrayList<BoxMoves> boxMovesList = AppController.getInstance().getDbHelper().getBoxMoves();
-                            ArrayList<Prods> prodsList = AppController.getInstance().getDbHelper().getProds();
-                            ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).partBox(new PartBoxRequest(boxesList, boxMovesList, prodsList),
-                                    AppController.getInstance().getDefs().get_idUser(),AppController.getInstance().getDefs().getDeviceId()).enqueue(new Callback<PartBoxRequest>() {
-                                @Override
-                                public void onResponse(Call<PartBoxRequest> call, Response<PartBoxRequest> response) {
-                                    if (response.isSuccessful()) {
-                                        updateWithResponse (response.body());
-                                    } else {
-                                        Log.e(TAG, "Box sending response wasn't successful");
-                                    }
-                                }
-
-                                @Override
-                                public void onFailure(Call<PartBoxRequest> call, Throwable t) {
-                                    Log.e(TAG, t.getMessage());
-                                }
-                            });
-                        }catch (Exception e) {
-                            Log.e(TAG, "sendData -> " + e.getMessage());
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(Call<Long> call, Throwable t) {
-                        Log.d(TAG, "onFailure при запросе времени обновления с сервера: " + t.getMessage());
-                    }
-                });
-            } catch (Exception e) {
-                Log.d(TAG, "Exception запроса времени обновления с сервера : " + e.getMessage());
-                return ;
-            }
-        });
-        return;
-    }
-    public void updateWithResponse(@NonNull PartBoxRequest body) {
-        SQLiteDatabase mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-        try {
-            mDataBase.beginTransaction();
-            ContentValues values = new ContentValues();
-
-            try {
-                for (Boxes b : body.boxReqList) {
-                    values.put(Boxes.COLUMN_sentToMasterDate, sDateTimeToLong(b.get_sentToMasterDate()));
-                    values.put(Boxes.COLUMN_archive, b.isArchive());
-                    mDataBase.update(Boxes.TABLE_boxes, values, Boxes.COLUMN_ID + "='" + b.get_id() + "'", null) ;
-                }
-            }catch (SQLiteException e) {
-                Log.e(TAG, "updateWithResponse -> Boxes sentToMasterDate update exception -> ".concat(e.getMessage()));
-                throw new RuntimeException("To catch into upper level.");
-            }
-            try {
-                values.clear();
-                for (BoxMoves bm : body.movesReqList) {
-                    values.put(BoxMoves.COLUMN_sentToMasterDate, sDateTimeToLong(bm.get_sentToMasterDate()));
-                    mDataBase.update(BoxMoves.TABLE_bm, values,BoxMoves.COLUMN_ID +"='"+bm.get_id()+"'",null);
-                }
-                // TODO updateBoxesSetArchiveTrue
-            }catch (SQLiteException e) {
-                Log.e(TAG, "updateWithResponse -> BoxMoves sentToMasterDate update exception -> ".concat(e.getMessage()));
-                throw new RuntimeException("To catch into upper level.");
-            }
-            try {
-                values.clear();
-                for (Prods pb : body.partBoxReqList) {
-                    values.put(Prods.COLUMN_sentToMasterDate, sDateTimeToLong(pb.get_sentToMasterDate()));
-                    mDataBase.update(Prods.TABLE_prods, values,Prods.COLUMN_ID +"='"+pb.get_id()+ "'",null);
-                }
-            }catch (SQLiteException e) {
-                Log.e(TAG, "updateWithResponse -> Prods sentToMasterDate update exception -> ".concat(e.getMessage()));
-                throw new RuntimeException("To catch into upper level.");
-            }
-
-            Log.d(TAG, "Коробки выгружены успешно!");
-            mDataBase.setTransactionSuccessful();
-        } catch (Exception e) {
-            Log.w(TAG, e);
-        } finally {
-            mDataBase.endTransaction();
-            AppController.getInstance().getDbHelper().closeDataBase();
-        }
-    }
-
-    public boolean updateBoxesSetArchiveTrue(String bId) {
-        SQLiteDatabase mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-        try {
-            ContentValues values = new ContentValues();
-            values.clear();
-
-            values.put(Boxes.COLUMN_archive, true);
-            return (mDataBase.update(Boxes.TABLE_boxes, values,Boxes.COLUMN_ID +"='"+bId+"'",null) > 0) ;
-        } catch (SQLiteException e) {
-            Log.e(TAG, e.getMessage());
-            return false;
-        }
-    }
 }

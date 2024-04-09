@@ -15,10 +15,8 @@ import android.provider.Settings;
 import android.support.annotation.RequiresApi;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.text.Editable;
 import android.text.Html;
 import android.text.TextUtils;
-import android.text.TextWatcher;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -36,16 +34,11 @@ import com.example.yg.wifibcscaner.activity.ProdsActivity;
 import com.example.yg.wifibcscaner.activity.SettingsActivity;
 import com.example.yg.wifibcscaner.activity.UpdateActivity;
 import com.example.yg.wifibcscaner.controller.AppController;
-import com.example.yg.wifibcscaner.data.model.Defs;
-import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.data.repo.BoxRepo;
+import com.example.yg.wifibcscaner.data.repo.DataSendRepo;
 import com.example.yg.wifibcscaner.data.repo.DefsRepo;
-import com.example.yg.wifibcscaner.data.repo.DepartmentRepo;
-import com.example.yg.wifibcscaner.data.repo.DivisionRepo;
-import com.example.yg.wifibcscaner.data.repo.OperRepo;
 import com.example.yg.wifibcscaner.data.repo.OrderRepo;
 import com.example.yg.wifibcscaner.data.repo.OutDocRepo;
-import com.example.yg.wifibcscaner.data.repo.SotrRepo;
 import com.example.yg.wifibcscaner.data.repo.UserRepo;
 import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.service.MyJobService;
@@ -61,13 +54,13 @@ import com.honeywell.aidc.BarcodeReadEvent;
 import com.honeywell.aidc.BarcodeReader;
 import com.honeywell.aidc.ScannerNotClaimedException;
 import com.honeywell.aidc.ScannerUnavailableException;
+
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.concurrent.TimeUnit;
 
 import me.drakeet.support.toast.ToastCompat;
 
-import static android.text.TextUtils.substring;
 import static com.example.yg.wifibcscaner.utils.AppUtils.isDepAndSotrOper;
 import static com.example.yg.wifibcscaner.utils.AppUtils.isOneOfFirstOper;
 import static com.example.yg.wifibcscaner.utils.AppUtils.isOneScanOnlyOper;
@@ -254,8 +247,8 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
     @Override
     public void doDataSync() {
         Log.d(TAG, "doDataSync !");
-        /* what I wanted to do here */
-        boxRepo.sendData();
+        DataSendRepo dsRepo = new DataSendRepo();
+        dsRepo.sendData();
     }
     @RequiresApi(api = Build.VERSION_CODES.N)
     public void ocl_scan(View v) { //Вызов активности Сканирования
@@ -635,7 +628,7 @@ private static String filter (String str){
         final ComponentName name = new ComponentName(this, MyJobService.class);
 
         // Schedule the job
-        final int result = jobScheduler.schedule(getJobInfo(123, 15, name));
+        final int result = jobScheduler.schedule(getJobInfo(123, 30, name));
 
         // If successfully scheduled, log this thing
         if (result == JobScheduler.RESULT_SUCCESS) {

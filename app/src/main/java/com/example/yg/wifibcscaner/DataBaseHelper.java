@@ -51,7 +51,7 @@ import static com.example.yg.wifibcscaner.utils.MyStringUtils.getBarcodeQ_box;
 import static com.example.yg.wifibcscaner.utils.MyStringUtils.getUUID;
 
 public class DataBaseHelper extends SQLiteOpenHelper {
-    private static final String TAG = "DataBaseHelper";
+    private static final String TAG = "sProject -> DataBaseHelper";
 
     private static String DB_PATH = "";
     private static String DB_NAME = "SQR.db";
@@ -113,6 +113,8 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         }
         try {
             this.updateDataBase(mNeedUpdate);
+            SharedPrefs.getInstance().setDbNeedReplace(false);
+            Log.d(TAG, "Db update's been made. DbNeedReplace flag was set to false.");
         } catch (IOException mIOException) {
             throw new Error("UnableToUpdateDatabase");
         }
@@ -782,12 +784,6 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
-
-
-
-
-
-
 
 }
 

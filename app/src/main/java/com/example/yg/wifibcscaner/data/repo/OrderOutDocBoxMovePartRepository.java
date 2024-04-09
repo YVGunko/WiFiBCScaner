@@ -6,7 +6,6 @@ import android.os.Build;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
 
-import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.dto.OrderOutDocBoxMovePart;
 import com.example.yg.wifibcscaner.data.model.BoxMoves;
@@ -16,7 +15,6 @@ import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.data.model.Prods;
 import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
-import com.example.yg.wifibcscaner.utils.DateTimeUtils;
 import com.example.yg.wifibcscaner.utils.executors.DefaultExecutorSupplier;
 
 import org.apache.commons.lang3.StringUtils;
@@ -59,8 +57,8 @@ public class OrderOutDocBoxMovePartRepository {
                         .enqueue(downloadDataCallback(updateDate));
 
             } catch (Exception e) {
-                Log.e(TAG, "downloadData -> " + R.string.error_something_went_wrong, e);
-                MessageUtils.showToast("Ошибка. Загрузка данных. "+R.string.error_something_went_wrong, true);
+                Log.e(TAG, "downloadData -> ", e);
+                MessageUtils.showToast("Ошибка. Загрузка данных. ", true);
             }
         });
         return;
@@ -76,6 +74,7 @@ public class OrderOutDocBoxMovePartRepository {
                     if (response.code() == 204) {
                         //no content, so prepare environment to stop current request and prepare for next one
                         nextPage.set(0);
+                        AppController.getInstance().setGlobalUpdateDate("");
                         MessageUtils.showToast("Синхронизация завершена успешно.", true);
                         return;
                     }
@@ -283,7 +282,7 @@ public class OrderOutDocBoxMovePartRepository {
         }
     }
     public boolean insertProdInBulk(List<Prods> list) {
-        SQLiteDatabase mDataBase = AppController.getInstance().getDbHelper().openDataBase();
+        // SQLiteDatabase mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         try {
             String sql = "INSERT OR REPLACE INTO Prods (_id, Id_bm, Id_d, Id_s, RQ_box, P_date, sentToMasterDate, idOutDocs) " +
                     " VALUES (?,?,?,?,?,?,?,?);";

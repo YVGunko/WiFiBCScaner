@@ -15,7 +15,7 @@ public class DataSyncTimerUtil {
     }
 
     static Timer longTimer;
-    static final int SYNC_TIME = 100000; // delay in milliseconds i.e. 5 min = 300000 ms or use timeout argument
+    static final int SYNC_TIME = 300000; // delay in milliseconds i.e. 5 min = 300000 ms or use timeout argument
 
     public static synchronized void startDataSyncTimer(final DataSyncListener dataSyncListener) {
         if (longTimer != null) {

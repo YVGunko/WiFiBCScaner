@@ -3,7 +3,6 @@ package com.example.yg.wifibcscaner.activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
-//import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -13,22 +12,15 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
 
+import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.BoxMoves;
 import com.example.yg.wifibcscaner.data.model.Boxes;
-import com.example.yg.wifibcscaner.DataBaseHelper;
-import com.example.yg.wifibcscaner.data.model.Defs;
 import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.data.model.Prods;
-import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.data.repo.BoxRepo;
-import com.example.yg.wifibcscaner.data.repo.DefsRepo;
-import com.example.yg.wifibcscaner.data.repo.DepartmentRepo;
-import com.example.yg.wifibcscaner.data.repo.DivisionRepo;
-import com.example.yg.wifibcscaner.data.repo.OperRepo;
+import com.example.yg.wifibcscaner.data.repo.DataSendRepo;
 import com.example.yg.wifibcscaner.data.repo.OutDocRepo;
-import com.example.yg.wifibcscaner.data.repo.SotrRepo;
-import com.example.yg.wifibcscaner.data.repo.UserRepo;
 import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.service.PartBoxRequest;
@@ -36,9 +28,12 @@ import com.example.yg.wifibcscaner.service.PartBoxRequest;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+
+//import android.support.v7.app.AppCompatActivity;
 
 
 public class BoxesActivity extends AppCompatActivity {
@@ -130,57 +125,8 @@ public class BoxesActivity extends AppCompatActivity {
         // Операции для выбранного пункта меню
         switch (id) {
             case R.id.action_sendboxes:
-//ТУт отправляем коробки на сервер
-                try {
-                    ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).
-                            addOutDoc(outDocRepo.getOutDocNotSent(),AppController.getInstance().getDefs().getDeviceId()).enqueue(new Callback<List<OutDocs>>() {
-                        @Override
-                        public void onResponse(Call<List<OutDocs>> call, Response<List<OutDocs>> response) {
-                            if(response.isSuccessful()) {
-                                outDocRepo.updateOutDocsetSentToMasterDate(response.body());
-
-                                if (response.body().size()!=0) {
-                                    MessageUtils.showToast(getApplicationContext(), "Ок! Накладные выгружены!", false);
-                                }
-                                try {
-                                    ArrayList<Boxes> boxesList = AppController.getInstance().getDbHelper().getBoxes();
-                                    ArrayList<BoxMoves> boxMovesList = AppController.getInstance().getDbHelper().getBoxMoves();
-                                    ArrayList<Prods> prodsList = AppController.getInstance().getDbHelper().getProds();
-                                    ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).partBox(new PartBoxRequest(boxesList, boxMovesList, prodsList),
-                                            AppController.getInstance().getDefs().get_idUser(),AppController.getInstance().getDefs().getDeviceId()).enqueue(new Callback<PartBoxRequest>() {
-                                        @Override
-                                        public void onResponse(Call<PartBoxRequest> call, Response<PartBoxRequest> response) {
-                                            if (response.isSuccessful()) {
-                                                boxRepo.updateWithResponse(response.body());
-                                            } else {
-                                                MessageUtils.showToast(getApplicationContext(), "Ошибка при выгрузке данных на сервер!", true);
-                                            }
-                                        }
-
-                                        @Override
-                                        public void onFailure(Call<PartBoxRequest> call, Throwable t) {
-                                            Log.d(TAG, t.getMessage());
-                                            MessageUtils.showToast(getApplicationContext(),  "Ошибка. ТаймАут.", true);
-                                        }
-                                    });
-                                }catch (Exception e) {
-                                   MessageUtils.showToast(getApplicationContext(),"Ошибка при выгрузке коробок.", true);
-                                }
-                            }else {
-                                MessageUtils.showToast(getApplicationContext(), "Ошибка при выгрузке накладных!", true);
-                            }
-                        }
-                        @Override
-                        public void onFailure(Call<List<OutDocs>> call, Throwable t) {
-                            MessageUtils messageUtils = new MessageUtils();
-                            messageUtils.showLongMessage(getApplicationContext(), t.getMessage() + ". Ошибка при выгрузке накладных!");
-                            Log.d("getOrderService", "OutDocs Error: " + t.getMessage());
-                        }
-                    });
-                }catch (Exception e) {
-                    MessageUtils messageUtils = new MessageUtils();
-                    messageUtils.showMessage(getApplicationContext(), "Отправлено неудачно.");
-                }
+                DataSendRepo dsRepo = new DataSendRepo();
+                dsRepo.sendData();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);

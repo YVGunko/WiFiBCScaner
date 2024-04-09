@@ -1,18 +1,17 @@
 package com.example.yg.wifibcscaner.activity;
 
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.database.Cursor;
-import android.os.AsyncTask;
 import android.os.Build;
+import android.os.Bundle;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.SimpleCursorAdapter;
-import android.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -21,30 +20,17 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ListView;
 
-import com.example.yg.wifibcscaner.DataBaseHelper;
+import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.Defs;
 import com.example.yg.wifibcscaner.data.model.OutDocs;
-import com.example.yg.wifibcscaner.R;
+import com.example.yg.wifibcscaner.data.repo.DataSendRepo;
 import com.example.yg.wifibcscaner.data.repo.DefsRepo;
 import com.example.yg.wifibcscaner.data.repo.DepartmentRepo;
-import com.example.yg.wifibcscaner.data.repo.DivisionRepo;
-import com.example.yg.wifibcscaner.data.repo.OperRepo;
 import com.example.yg.wifibcscaner.data.repo.OutDocRepo;
-import com.example.yg.wifibcscaner.data.repo.SotrRepo;
 import com.example.yg.wifibcscaner.data.repo.UserRepo;
-import com.example.yg.wifibcscaner.service.SharedPrefs;
-import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
-import com.example.yg.wifibcscaner.utils.executors.DefaultExecutorSupplier;
-
-import java.util.List;
-
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-
-import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDayTimeString;
+import com.example.yg.wifibcscaner.service.SharedPrefs;
 
 public class OutDocsActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
     private static final String TAG = "sProject -> OutDocsActivity.";
@@ -53,6 +39,7 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
     private final OutDocRepo outDocRepo = new OutDocRepo();
     private final UserRepo userRepo = new UserRepo();
     private final DefsRepo defsRepo = new DefsRepo();
+
 
     ListView lvData;
     SimpleCursorAdapter scAdapter;
@@ -65,60 +52,6 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
         return true;
     }
 
-    private void showToast (String message, boolean duration) {
-        DefaultExecutorSupplier.getInstance().forMainThreadTasks().execute(() -> {
-            MessageUtils.showToast(getApplicationContext(), message, duration);
-        });
-    }
-    private class SyncIncoData extends AsyncTask<String, Integer, Integer> {
-        Integer counter;
-
-        @Override
-        protected Integer doInBackground(String... urls) {
-            counter = 0;
-            try {
-                ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).
-                        addOutDoc(outDocRepo.getOutDocNotSent(),AppController.getInstance().getDefs().getDeviceId()).enqueue(new Callback<List<OutDocs>>() {
-                    @Override
-                    public void onResponse(Call<List<OutDocs>> call, Response<List<OutDocs>> response) {
-                        Log.d(TAG,"Ответ сервера на запрос синхронизации накладных: " + response.body().size());
-                        if(response.isSuccessful()) {
-                            outDocRepo.updateOutDocsetSentToMasterDate(response.body());
-
-                            counter = response.body().size();
-                        }else {
-                            MessageUtils.showToast("Ошибка при выгрузке накладных!", true);
-                        }
-                    }
-                    @Override
-                    public void onFailure(Call<List<OutDocs>> call, Throwable t) {
-                        Log.d(TAG, "OutDocs Error: " + t.getMessage());
-                        MessageUtils.showToast("Ошибка при выгрузке накладных!", true);
-                    }
-                });
-            } catch (Exception e) {
-                Log.d(TAG,"Ответ сервера на запрос новых заказов: " + e.getMessage());
-                showToast("Ошибка при выгрузке накладных!", true);
-            }
-            return counter;
-        }
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            MessageUtils.showToast(getApplicationContext(), "Синхронизация данных начата.", false);
-        }
-
-        @Override
-        protected void onPostExecute(Integer result) {
-            MessageUtils.showToast(getApplicationContext(), "Синхронизация окончена. Отпрвлено накладных: ".concat(String.valueOf(result)), true);
-        }
-
-        @Override
-        protected void onProgressUpdate(Integer... values) {
-            super.onProgressUpdate(values);
-        }
-    }
     @Override
     protected void onResume() {
         super.onResume();
@@ -394,8 +327,8 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
         // Операции для выбранного пункта меню
         switch (id) {
             case R.id.action_out_docs:
-                SyncIncoData task = new SyncIncoData();
-                task.execute(new String[] { null });
+                DataSendRepo dsRepo = new DataSendRepo();
+                dsRepo.sendData();
                 return true;
             case R.id.add_outdocs_for_all_sotr:
                 return addOutDocForAllSotr ();
