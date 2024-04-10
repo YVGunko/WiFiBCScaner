@@ -28,7 +28,7 @@ import static com.example.yg.wifibcscaner.utils.MyStringUtils.getUUID;
 
 public class OutDocRepo {
     private static final String TAG = "sProject -> OutDocRepo.";
-    private SQLiteDatabase mDataBase = AppController.getInstance().getDbHelper().openDataBase();
+    private SQLiteDatabase mDataBase ;
 
     private final UserRepo userRepo = new UserRepo();
     private final SotrRepo sotrRepo = new SotrRepo();
@@ -50,6 +50,7 @@ public class OutDocRepo {
         Cursor cursor = null;
 
         try {
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             if (userRepo.checkSuperUser(AppController.getInstance().getDefs().get_idUser())) {
                 cursor = mDataBase.rawQuery(queryNextOutDocNumber,
                         new String[]{String.valueOf(AppController.getInstance().getDefs().getDivision_code()),
@@ -159,7 +160,7 @@ public class OutDocRepo {
     private boolean createOutDocsForCurrentOperInBulk(List<OutDocs> list){
         boolean result = false;
         try {
-
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             mDataBase.beginTransaction();
             String sql = "INSERT OR REPLACE INTO OutDocs (_id, Id_o, number, comment, DT, division_code, idUser, idSotr, idDeps) " +
                     " VALUES (?,?,?,?,?,?,?,?,?);";
@@ -189,6 +190,7 @@ public class OutDocRepo {
             Log.e(TAG, "createOutDocsForCurrentOperInBulk exception -> ", e);
         } finally {
             mDataBase.endTransaction();
+            AppController.getInstance().getDbHelper().closeDataBase();
             return result;
         }
     }
@@ -254,6 +256,8 @@ public class OutDocRepo {
                             " FROM OutDocs where _id=0",
                     null);
             return cursor;
+        } finally {
+            AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
 

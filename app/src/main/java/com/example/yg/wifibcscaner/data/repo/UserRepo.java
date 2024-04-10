@@ -8,6 +8,7 @@ import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.example.yg.wifibcscaner.controller.AppController;
+import com.example.yg.wifibcscaner.data.model.Prods;
 import com.example.yg.wifibcscaner.data.model.user;
 
 import java.util.ArrayList;
@@ -19,27 +20,12 @@ import static com.example.yg.wifibcscaner.utils.DateTimeUtils.sDateTimeToLong;
 
 public class UserRepo {
     private static final String TAG = "sProject -> UserRepo";
-    private SQLiteDatabase mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-
-    public String getUserUpdateDate(@NonNull String globalUpdateDate){
-        Cursor cursor = null;
-        try {
-            cursor = mDataBase.rawQuery("SELECT max(DT) FROM user", null);
-            if (cursor != null && cursor.moveToFirst()) {
-                return lDateToString(cursor.getLong(0) > sDateTimeToLong(globalUpdateDate) ? cursor.getLong(0) : sDateTimeToLong(globalUpdateDate));
-            }
-            return globalUpdateDate;
-        }catch (Exception e) {
-            Log.e(TAG, "getMaxDepsDate -> ".concat(e.getMessage()));
-            return globalUpdateDate;
-        } finally {
-            tryCloseCursor(cursor);
-        }
-    }
+    private SQLiteDatabase mDataBase ;
 
     public boolean checkSuperUser (int _id) {
         Cursor cursor = null;
         try {
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             cursor = mDataBase.rawQuery("SELECT superUser FROM user Where _id=?",
                     new String [] {String.valueOf(_id)});
             if (cursor != null && cursor.moveToFirst()) {
@@ -51,11 +37,13 @@ public class UserRepo {
             return false;
         } finally {
             tryCloseCursor(cursor);
+            AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
     public String getUserName(int code){
         Cursor cursor = null;
         try {
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             cursor = mDataBase.rawQuery("SELECT name FROM user Where _id=?", new String [] {String.valueOf(code)});
             if (cursor != null && cursor.moveToFirst()) {
                 return String.format("%s", cursor.getString(0));
@@ -66,12 +54,14 @@ public class UserRepo {
             return "";
         } finally {
             tryCloseCursor(cursor);
+            AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
 
     public int getUserSotrById(int _id){
         Cursor cursor = null;
         try {
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             cursor = mDataBase.rawQuery("SELECT Id_s FROM user Where _id=?", new String [] {String.valueOf(_id)});
             if (cursor != null && cursor.moveToFirst()) {
                 return cursor.getInt(0);
@@ -82,6 +72,7 @@ public class UserRepo {
             return 0;
         } finally {
             tryCloseCursor(cursor);
+            AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
     public Boolean checkUserPswdById(int id, String pswd){
@@ -99,12 +90,14 @@ public class UserRepo {
             return false;
         } finally {
             tryCloseCursor(cursor);
+            AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
     public List<String> getAllUserName() {
         ArrayList<String> alUserName = new ArrayList<String>();
         Cursor cursor = null;
         try {
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             cursor = mDataBase.rawQuery("SELECT name FROM user WHERE _id<>0 and NOT expired order by name", null);
             if ((cursor != null) && (cursor.getCount() > 0)) {
                 while (cursor.moveToNext()) {
@@ -117,6 +110,7 @@ public class UserRepo {
             return alUserName;
         } finally {
             tryCloseCursor(cursor);
+            AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
     public int getUserIdByName(String nm) {
@@ -133,11 +127,13 @@ public class UserRepo {
             return 0;
         } finally {
             tryCloseCursor(cursor);
+            AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
     public boolean checkIfUserTableEmpty () {
         Cursor cursor = null;
         try {
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             cursor = mDataBase.rawQuery("SELECT count(*) FROM user Where _id<>0",
                     null);
             if (cursor != null && cursor.moveToFirst()) {
@@ -149,25 +145,32 @@ public class UserRepo {
             return false;
         } finally {
             tryCloseCursor(cursor);
+            AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
-    public long insertUser(user user) {
+    public long insertUser(List<user> list) {
+        long counter = 0L;
         try {
             mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             ContentValues values = new ContentValues();
-            values.clear();
-            values.put(com.example.yg.wifibcscaner.data.model.user.COLUMN_id, user.get_id());
-            values.put(com.example.yg.wifibcscaner.data.model.user.COLUMN_Id_s, user.get_Id_s());
-            values.put(com.example.yg.wifibcscaner.data.model.user.COLUMN_name, user.getName());
-            values.put(com.example.yg.wifibcscaner.data.model.user.COLUMN_pswd, user.getPswd());
-            values.put(com.example.yg.wifibcscaner.data.model.user.COLUMN_DT, sDateTimeToLong(user.get_DT()));
-            values.put(com.example.yg.wifibcscaner.data.model.user.COLUMN_superUser, user.isSuperUser());
-            values.put(com.example.yg.wifibcscaner.data.model.user.COLUMN_EXPIRED, user.isExpired());
+            for (user user : list) {
+                values.clear();
+                values.put(com.example.yg.wifibcscaner.data.model.user.COLUMN_id, user.get_id());
+                values.put(com.example.yg.wifibcscaner.data.model.user.COLUMN_Id_s, user.get_Id_s());
+                values.put(com.example.yg.wifibcscaner.data.model.user.COLUMN_name, user.getName());
+                values.put(com.example.yg.wifibcscaner.data.model.user.COLUMN_pswd, user.getPswd());
+                values.put(com.example.yg.wifibcscaner.data.model.user.COLUMN_DT, sDateTimeToLong(user.get_DT()));
+                values.put(com.example.yg.wifibcscaner.data.model.user.COLUMN_superUser, user.isSuperUser());
+                values.put(com.example.yg.wifibcscaner.data.model.user.COLUMN_EXPIRED, user.isExpired());
 
-            return mDataBase.insertWithOnConflict(com.example.yg.wifibcscaner.data.model.user.TABLE, null, values, 5);
+                counter += mDataBase.insertWithOnConflict(com.example.yg.wifibcscaner.data.model.user.TABLE, null, values, 5);
+            }
+            return counter;
         } catch (SQLException e) {
             Log.e(TAG, e.getMessage());
             return 0;
+        } finally {
+            AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
 }

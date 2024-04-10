@@ -206,5 +206,11 @@ public class DateTimeUtils {
         return localDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();}
     @RequiresApi(api = Build.VERSION_CODES.O)
     public static long toMillis(final LocalDate localDate) {
-        return localDate.atTime(0,0) .atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();}
+        return localDate.atTime(0,0) .atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+    }
+
+    public static String getDtMin () {
+        Long ldtMin = DateTimeUtils.getStartOfDayLong(DateTimeUtils.addDays(new Date(), -DateTimeUtils.numberOfDaysInMonth(new Date())));
+        return DateTimeUtils.getStartOfDayString(ldtMin);
+    }
 }

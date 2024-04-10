@@ -4,6 +4,9 @@ import android.app.ActivityManager;
 import android.content.Context;
 import android.os.AsyncTask;
 
+import com.example.yg.wifibcscaner.BuildConfig;
+import com.example.yg.wifibcscaner.service.MessageUtils;
+
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -15,7 +18,7 @@ public class DataSyncTimerUtil {
     }
 
     static Timer longTimer;
-    static final int SYNC_TIME = 300000; // delay in milliseconds i.e. 5 min = 300000 ms or use timeout argument
+    static final int SYNC_TIME = (BuildConfig.DEBUG) ? 60000 : 300000; // delay in milliseconds i.e. 5 min = 300000 ms or use timeout argument
 
     public static synchronized void startDataSyncTimer(final DataSyncListener dataSyncListener) {
         if (longTimer != null) {

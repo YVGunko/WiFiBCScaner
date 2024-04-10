@@ -1,8 +1,12 @@
 package com.example.yg.wifibcscaner.data.repo;
 
+import android.content.ContentValues;
+import android.database.Cursor;
+import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
 import android.os.Build;
+import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
 
@@ -13,8 +17,10 @@ import com.example.yg.wifibcscaner.data.model.Boxes;
 import com.example.yg.wifibcscaner.data.model.Orders;
 import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.data.model.Prods;
+import com.example.yg.wifibcscaner.data.model.user;
 import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
+import com.example.yg.wifibcscaner.utils.DateTimeUtils;
 import com.example.yg.wifibcscaner.utils.executors.DefaultExecutorSupplier;
 
 import org.apache.commons.lang3.StringUtils;
@@ -29,38 +35,122 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+import static com.example.yg.wifibcscaner.utils.AppUtils.tryCloseCursor;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDateLong;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDateTimeLong;
+import static com.example.yg.wifibcscaner.utils.DateTimeUtils.lDateToString;
+import static com.example.yg.wifibcscaner.utils.DateTimeUtils.sDateTimeToLong;
 
-public class OrderOutDocBoxMovePartRepository {
+public class DataLoadRepo {
     private AtomicInteger nextPage = new AtomicInteger(0);
     private static int pageSize = 200;
     private static final String TAG = "sProject -> OutDocBoxMovePartRepository.";
     SQLiteDatabase mDataBase = AppController.getInstance().getDbHelper().openDataBase();
 
-//
-
-    public void downloadData(String updateDate) {
+    //
+    public void loadStuff() {
         DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
             try {
-                nextPage.set(0);
+                //check if connection is available
+                ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).getServerUpdateTime().enqueue(new Callback<Long>() {
+                    @Override
+                    public void onResponse(Call<Long> call, Response<Long> response) {
+                        if (response.isSuccessful()) {
+                            downloadUser();
+                        }
+                    }
 
-                Log.d(TAG, "downloadData -> update date: " + updateDate);
-                Log.d(TAG, "downloadData -> current page to load: " + nextPage);
-
-                ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).getDataPageableV1(
-                        updateDate,
-                        AppController.getInstance().getDefs().getDivision_code(),
-                        AppController.getInstance().getDefs().get_Id_o(),
-                        nextPage.getAndIncrement(),
-                        pageSize)
-                        .enqueue(downloadDataCallback(updateDate));
-
+                    @Override
+                    public void onFailure(Call<Long> call, Throwable t) {
+                        Log.e(TAG, "onFailure при запросе времени обновления с сервера: " + t.getMessage());
+                        MessageUtils.showToast("Ошибка при синхронизации данных!", true);
+                    }
+                });
             } catch (Exception e) {
-                Log.e(TAG, "downloadData -> ", e);
-                MessageUtils.showToast("Ошибка. Загрузка данных. ", true);
+                Log.e(TAG, "Exception запроса времени обновления с сервера : " + e.getMessage());
+                MessageUtils.showToast("Исключительная ситуация при запросе времени обновления с сервера.", true);
+                return;
             }
         });
+        return;
+    }
+    public void loadData() {
+        DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
+            try {
+                //check if connection is available
+                ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).getServerUpdateTime().enqueue(new Callback<Long>() {
+                    @Override
+                    public void onResponse(Call<Long> call, Response<Long> response) {
+                        if (response.isSuccessful()) {
+                            loadStuff();
+                            downloadData(StringUtils.isNotBlank(AppController.getInstance().getGlobalUpdateDate())
+                                    ? AppController.getInstance().getGlobalUpdateDate()
+                                    : getOrderUpdateDate(DateTimeUtils.getDtMin()));
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<Long> call, Throwable t) {
+                        Log.e(TAG, "onFailure при запросе времени обновления с сервера: " + t.getMessage());
+                        MessageUtils.showToast("Ошибка при синхронизации данных!", true);
+                    }
+                });
+            } catch (Exception e) {
+                Log.e(TAG, "Exception запроса времени обновления с сервера : " + e.getMessage());
+                MessageUtils.showToast("Исключительная ситуация при запросе времени обновления с сервера.", true);
+                return;
+            }
+        });
+        return;
+    }
+
+    private void downloadUser() {
+        try {
+            ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl())
+                    .getUser(StringUtils.isNotBlank(AppController.getInstance().getGlobalUpdateDate())
+                            ? AppController.getInstance().getGlobalUpdateDate()
+                            : getUserUpdateDate(DateTimeUtils.getDtMin()))
+                    .enqueue(new Callback<List<user>>() {
+                        @Override
+                        public void onResponse(Call<List<user>> call, Response<List<user>> response) {
+                            if (response.isSuccessful() && !response.body().isEmpty()) {
+                                for (user user : response.body())
+                                    insertUser(user);
+                                MessageUtils.showToast("Синхронизация еще продолжается... ", true);
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Call<List<user>> call, Throwable t) {
+                            Log.d(TAG, "Ответ сервера на запрос новых users: " + t.getMessage());
+                        }
+                    });
+        } catch (Exception e) {
+            Log.e(TAG, "downloadUser -> ", e);
+            MessageUtils.showToast("Ошибка. Загрузка данных. ", true);
+        }
+        return;
+    }
+
+    private void downloadData(String updateDate) {
+        try {
+            nextPage.set(0);
+
+            Log.d(TAG, "downloadData -> update date: " + updateDate);
+            Log.d(TAG, "downloadData -> current page to load: " + nextPage);
+
+            ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).getDataPageableV1(
+                    updateDate,
+                    AppController.getInstance().getDefs().getDivision_code(),
+                    AppController.getInstance().getDefs().get_Id_o(),
+                    nextPage.getAndIncrement(),
+                    pageSize)
+                    .enqueue(downloadDataCallback(updateDate));
+
+        } catch (Exception e) {
+            Log.e(TAG, "downloadData -> ", e);
+            MessageUtils.showToast("Ошибка. Загрузка данных. ", true);
+        }
         return;
     }
 
@@ -116,27 +206,28 @@ public class OrderOutDocBoxMovePartRepository {
 
         };
     }
+
     @RequiresApi(api = Build.VERSION_CODES.N)
     public String saveToDB(OrderOutDocBoxMovePart r) {
         try {
             mDataBase.beginTransaction();
-            if ( insertOrdersInBulk(r.orderReqList) ) {
+            if (insertOrdersInBulk(r.orderReqList)) {
 
                 if (r.outDocReqList != null &&
                         !r.outDocReqList.isEmpty() &&
-                            insertOutDocInBulk(r.outDocReqList)) {
+                        insertOutDocInBulk(r.outDocReqList)) {
 
                     if (r.boxReqList != null &&
                             !r.boxReqList.isEmpty() &&
-                                insertBoxInBulk(r.boxReqList)) {
+                            insertBoxInBulk(r.boxReqList)) {
 
                         if (r.movesReqList != null &&
                                 !r.movesReqList.isEmpty() &&
-                                    insertBoxMoveInBulk(r.movesReqList)) {
+                                insertBoxMoveInBulk(r.movesReqList)) {
 
                             if (r.partBoxReqList != null &&
                                     !r.partBoxReqList.isEmpty() &&
-                                        insertProdInBulk(r.partBoxReqList)) {
+                                    insertProdInBulk(r.partBoxReqList)) {
 
                                 mDataBase.setTransactionSuccessful();
                                 return Collections.max(r.orderReqList, Comparator.comparing(Orders::get_DT)).get_DT();
@@ -155,7 +246,8 @@ public class OrderOutDocBoxMovePartRepository {
         }
         return "";
     }
-    public boolean insertOrdersInBulk(List<Orders> list){
+
+    public boolean insertOrdersInBulk(List<Orders> list) {
         try {
             String sql = "INSERT OR REPLACE INTO MasterData (_id, Ord_id, Ord, Cust, Nomen, Attrib," +
                     " Q_ord, Q_box, N_box, DT, archive, division_code)" +
@@ -191,7 +283,8 @@ public class OrderOutDocBoxMovePartRepository {
             throw new RuntimeException("To catch into upper level.");
         }
     }
-    public boolean insertOutDocInBulk(List<OutDocs> list){
+
+    public boolean insertOutDocInBulk(List<OutDocs> list) {
         try {
             String sql = "INSERT OR REPLACE INTO OutDocs (_id, Id_o, number, comment, DT, sentToMasterDate, division_code, idUser) " +
                     " VALUES (?,?,?,?,?,?,?,?);";
@@ -225,7 +318,8 @@ public class OrderOutDocBoxMovePartRepository {
             throw new RuntimeException("To catch into upper level.");
         }
     }
-    public boolean insertBoxInBulk(List<Boxes> list){
+
+    public boolean insertBoxInBulk(List<Boxes> list) {
         try {
             String sql = "INSERT OR REPLACE INTO Boxes (_id, Id_m, Q_box, N_box, DT, sentToMasterDate, archive) " +
                     " VALUES (?,?,?,?,?,?,?);";
@@ -254,6 +348,7 @@ public class OrderOutDocBoxMovePartRepository {
             throw new RuntimeException("To catch into upper level.");
         }
     }
+
     public boolean insertBoxMoveInBulk(List<BoxMoves> list) {
         try {
             String sql = "INSERT OR REPLACE INTO BoxMoves (_id, Id_b, Id_o, DT, sentToMasterDate) " +
@@ -281,6 +376,7 @@ public class OrderOutDocBoxMovePartRepository {
             throw new RuntimeException("To catch into upper level.");
         }
     }
+
     public boolean insertProdInBulk(List<Prods> list) {
         // SQLiteDatabase mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         try {
@@ -309,6 +405,58 @@ public class OrderOutDocBoxMovePartRepository {
         } catch (Exception e) {
             Log.w(TAG, e);
             throw new RuntimeException("To catch into upper level.");
+        }
+    }
+
+    private String getOrderUpdateDate(@NonNull String globalUpdateDate) {
+        Cursor cursor = null;
+        try {
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
+            cursor = mDataBase.rawQuery("SELECT max(DT) FROM " + Orders.TABLE_orders, null);
+            if (cursor != null && cursor.moveToFirst()) {
+                return lDateToString(cursor.getLong(0) > sDateTimeToLong(globalUpdateDate) ? cursor.getLong(0) : sDateTimeToLong(globalUpdateDate));
+            }
+            return globalUpdateDate;
+        } catch (Exception e) {
+            Log.e(TAG, "getMaxDepsDate -> ".concat(e.getMessage()));
+            return globalUpdateDate;
+        } finally {
+            tryCloseCursor(cursor);
+            AppController.getInstance().getDbHelper().closeDataBase();
+        }
+    }
+
+    private String getUserUpdateDate(@NonNull String globalUpdateDate) {
+        Cursor cursor = null;
+        try {
+            cursor = mDataBase.rawQuery("SELECT max(DT) FROM user", null);
+            if (cursor != null && cursor.moveToFirst()) {
+                return lDateToString(cursor.getLong(0) > sDateTimeToLong(globalUpdateDate) ? cursor.getLong(0) : sDateTimeToLong(globalUpdateDate));
+            }
+            return globalUpdateDate;
+        } catch (Exception e) {
+            Log.e(TAG, "getMaxDepsDate -> ".concat(e.getMessage()));
+            return globalUpdateDate;
+        } finally {
+            tryCloseCursor(cursor);
+        }
+    }
+    private long insertUser(user user) {
+        try {
+            ContentValues values = new ContentValues();
+            values.clear();
+            values.put(com.example.yg.wifibcscaner.data.model.user.COLUMN_id, user.get_id());
+            values.put(com.example.yg.wifibcscaner.data.model.user.COLUMN_Id_s, user.get_Id_s());
+            values.put(com.example.yg.wifibcscaner.data.model.user.COLUMN_name, user.getName());
+            values.put(com.example.yg.wifibcscaner.data.model.user.COLUMN_pswd, user.getPswd());
+            values.put(com.example.yg.wifibcscaner.data.model.user.COLUMN_DT, sDateTimeToLong(user.get_DT()));
+            values.put(com.example.yg.wifibcscaner.data.model.user.COLUMN_superUser, user.isSuperUser());
+            values.put(com.example.yg.wifibcscaner.data.model.user.COLUMN_EXPIRED, user.isExpired());
+
+            return mDataBase.insertWithOnConflict(com.example.yg.wifibcscaner.data.model.user.TABLE, null, values, 5);
+        } catch (SQLException e) {
+            Log.e(TAG, e.getMessage());
+            return 0;
         }
     }
 }

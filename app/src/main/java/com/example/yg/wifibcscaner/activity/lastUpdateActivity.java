@@ -1,7 +1,5 @@
 package com.example.yg.wifibcscaner.activity;
 
-import android.app.Activity;
-import android.content.Intent;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
@@ -12,15 +10,13 @@ import android.widget.DatePicker;
 import android.widget.TextView;
 
 import com.example.yg.wifibcscaner.R;
+import com.example.yg.wifibcscaner.controller.AppController;
+import com.example.yg.wifibcscaner.data.repo.DataLoadRepo;
+import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.utils.AppUtils;
 import com.example.yg.wifibcscaner.utils.DateTimeUtils;
 
-import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-
-import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDateTimeLong;
 
 
 public class lastUpdateActivity extends AppCompatActivity {
@@ -62,9 +58,13 @@ public class lastUpdateActivity extends AppCompatActivity {
                 };
                 tvw.setText("Выбрана дата: "+ spDay+"."+ spMonth+"."+picker.getYear());
 
-                Intent returnIntent = new Intent();
+                /*Intent returnIntent = new Intent();
                 returnIntent.putExtra("presetDate", getDateTimeLong(spDay+"."+ spMonth+"."+picker.getYear()+" 00:00:00"));
-                setResult(Activity.RESULT_OK, returnIntent);
+                setResult(Activity.RESULT_OK, returnIntent);*/
+                AppController.getInstance().setGlobalUpdateDate(spDay+"."+ spMonth+"."+picker.getYear()+" 00:00:00");
+                MessageUtils.showToast("Начата синхронизация данных с даты "+spDay+"."+ spMonth+"."+picker.getYear(), true);
+                DataLoadRepo dataLoadRepo = new DataLoadRepo();
+                dataLoadRepo.loadData();
                 finish();
             }
         });

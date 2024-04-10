@@ -23,26 +23,25 @@ import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.example.yg.wifibcscaner.BuildConfig;
-import com.example.yg.wifibcscaner.DataBaseHelper;
+import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.Defs;
 import com.example.yg.wifibcscaner.data.model.Deps;
 import com.example.yg.wifibcscaner.data.model.Division;
+import com.example.yg.wifibcscaner.data.model.Operation;
 import com.example.yg.wifibcscaner.data.model.OutDocs;
-import com.example.yg.wifibcscaner.R;
+import com.example.yg.wifibcscaner.data.model.Sotr;
+import com.example.yg.wifibcscaner.data.model.user;
 import com.example.yg.wifibcscaner.data.repo.DefsRepo;
 import com.example.yg.wifibcscaner.data.repo.DepartmentRepo;
 import com.example.yg.wifibcscaner.data.repo.DivisionRepo;
 import com.example.yg.wifibcscaner.data.repo.OperRepo;
 import com.example.yg.wifibcscaner.data.repo.SotrRepo;
 import com.example.yg.wifibcscaner.data.repo.UserRepo;
-import com.example.yg.wifibcscaner.service.OrderService;
-import com.example.yg.wifibcscaner.service.SharedPrefs;
-import com.example.yg.wifibcscaner.data.model.Sotr;
-import com.example.yg.wifibcscaner.data.model.Operation;
 import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
-import com.example.yg.wifibcscaner.data.model.user;
+import com.example.yg.wifibcscaner.service.OrderService;
+import com.example.yg.wifibcscaner.service.SharedPrefs;
 import com.example.yg.wifibcscaner.utils.AppUtils;
 import com.example.yg.wifibcscaner.utils.DateTimeUtils;
 
@@ -74,38 +73,41 @@ public class SettingsActivity extends AppCompatActivity implements
     EditText host_v;
     TextView select_label, opers_select_label, labelSotr, labelDivision2;
     private int idd, ido, ids;
-    private String division_code ;
+    private String division_code;
     String strTitle = "Настройки";
 
     // Spinner element
-    Spinner spinner, opers_spinner, spinnerSotr,  spinnerDivision;
+    Spinner spinner, opers_spinner, spinnerSotr, spinnerDivision;
+
     @Override
     protected void onResume() {
         super.onResume();
         this.setTitle(strTitle);
     }
+
     @Override
-    public void onStop(){
+    public void onStop() {
         super.onStop();
         this.setTitle(strTitle);
     }
+
     @SuppressLint("SourceLockedOrientationActivity")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
-        setRequestedOrientation (ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
-        host_v=(EditText) findViewById(R.id.host);
+        host_v = (EditText) findViewById(R.id.host);
 
         String devId;
         try {
-            devId = ((AppController.getInstance().getDefs().getDeviceId().substring(0,6).length()==6) ? AppController.getInstance().getDefs().getDeviceId().substring(0,5) : "Unknown");}
-        catch (Exception e) {
+            devId = ((AppController.getInstance().getDefs().getDeviceId().substring(0, 6).length() == 6) ? AppController.getInstance().getDefs().getDeviceId().substring(0, 5) : "Unknown");
+        } catch (Exception e) {
             devId = "unKnown";
         }
 
-        strTitle = "Настройки"+". v."+ BuildConfig.VERSION_NAME+"."+BuildConfig.VERSION_CODE+". Id."+ devId;
+        strTitle = "Настройки" + ". v." + BuildConfig.VERSION_NAME + "." + BuildConfig.VERSION_CODE + ". Id." + devId;
 
         // Spinner element
         spinnerDivision = (Spinner) findViewById(R.id.spinnerDivision);
@@ -126,9 +128,8 @@ public class SettingsActivity extends AppCompatActivity implements
             boxesService = ApiUtils.getOrderService(url);
             host_v.setText(AppController.getInstance().getDefs().get_Host_IP());
             ocl_check(findViewById(R.id.check));
-        }
-        catch(Exception e){
-            Log.e(TAG, "onCreate -> " ,e);
+        } catch (Exception e) {
+            Log.e(TAG, "onCreate -> ", e);
             MessageUtils.showToast(getApplicationContext(), "Настройки не загружены.", false);
         }
 
@@ -148,11 +149,13 @@ public class SettingsActivity extends AppCompatActivity implements
         labelSotr = (TextView) findViewById(R.id.labelSotr);
         labelSotr.setText(sotrRepo.getNameById(AppController.getInstance().getDefs().get_Id_s()));
     }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.settings_menu, menu);
         return true;
     }
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // получим идентификатор выбранного пункта меню
@@ -200,15 +203,16 @@ public class SettingsActivity extends AppCompatActivity implements
         intent.putExtra("presetDate", dateFrom); // sent your putExtra data here to pass through intent
         startActivityForResult(intent, 1000);
     }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 
         if (requestCode == 1000) {
-            if(resultCode == Activity.RESULT_OK){
+            if (resultCode == Activity.RESULT_OK) {
                 //mDBHelper.globalUpdateDate = data.getStringExtra("presetDate");
                 final long longExtra = data.getExtras().getLong("presetDate", 0);
                 if (longExtra == 0) {
-                    Log.d(TAG,"lastUpdateActivity.onActivityResult -> DateTimePicker returned 0");
+                    Log.d(TAG, "lastUpdateActivity.onActivityResult -> DateTimePicker returned 0");
                     return;
                 }
                 if (SharedPrefs.getInstance() != null) {
@@ -216,10 +220,11 @@ public class SettingsActivity extends AppCompatActivity implements
                 }
             }
             if (resultCode == Activity.RESULT_CANCELED) {
-                Log.w(TAG,"lastUpdateActivity.onActivityResult -> RESULT_CANCELED");
+                Log.w(TAG, "lastUpdateActivity.onActivityResult -> RESULT_CANCELED");
             }
         }
     }
+
     private static void triggerRebirth(Context context) {
         PackageManager packageManager = context.getPackageManager();
         Intent intent = packageManager.getLaunchIntentForPackage(context.getPackageName());
@@ -228,30 +233,31 @@ public class SettingsActivity extends AppCompatActivity implements
         context.startActivity(mainIntent);
         Runtime.getRuntime().exit(0);
     }
+
     private void openDbReplaceDialog() {
         List<Integer> selectedItems = new ArrayList();
         AlertDialog.Builder quitDialog = new AlertDialog.Builder(
                 SettingsActivity.this);
         quitDialog.setTitle(R.string.dialog_db_need_replace)
-            .setMultiChoiceItems(R.array.options_db_need_replace,null,
-                    new DialogInterface.OnMultiChoiceClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which,
-                                            boolean isChecked) {
-                            if (isChecked) {
-                                // If the user checked the item, add it to the selected items
-                                selectedItems.add(which);
-                            } else if (selectedItems.contains(which)) {
-                                // Else, if the item is already in the array, remove it
-                                selectedItems.remove(which);
+                .setMultiChoiceItems(R.array.options_db_need_replace, null,
+                        new DialogInterface.OnMultiChoiceClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which,
+                                                boolean isChecked) {
+                                if (isChecked) {
+                                    // If the user checked the item, add it to the selected items
+                                    selectedItems.add(which);
+                                } else if (selectedItems.contains(which)) {
+                                    // Else, if the item is already in the array, remove it
+                                    selectedItems.remove(which);
+                                }
                             }
-                        }
-                    });
+                        });
 
         quitDialog.setPositiveButton("Да!", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                int length =getResources().getStringArray(R.array.options_db_need_replace).length;
+                int length = getResources().getStringArray(R.array.options_db_need_replace).length;
                 if (selectedItems.size() == length) {
                     if (SharedPrefs.getInstance() != null) {
                         SharedPrefs.getInstance().setDbNeedReplace(true);
@@ -259,9 +265,8 @@ public class SettingsActivity extends AppCompatActivity implements
                     //SharedPreferences prefs = getSharedPreferences(SharedPrefs.PREFS_NAME, MODE_PRIVATE);
                     //prefs.edit().putBoolean(SharedPrefs.PREF_DB_NEED_REPLACE, true).apply();
                     triggerRebirth(SettingsActivity.this);
-                } else
-                {
-                    MessageUtils.showToast(getApplicationContext(),"Операция не выполнена!", false);
+                } else {
+                    MessageUtils.showToast(getApplicationContext(), "Операция не выполнена!", false);
                 }
             }
         });
@@ -274,8 +279,9 @@ public class SettingsActivity extends AppCompatActivity implements
         });
         quitDialog.show();
     }
+
     public void ocl_check(View v) { //Вызов активности проверки подключения к серверу
-        MessageUtils.showToast(getApplicationContext(),"Поиск сервера....", true);
+        MessageUtils.showToast(getApplicationContext(), "Поиск сервера....", true);
         checkConnection();
     }
 
@@ -286,7 +292,7 @@ Pattern pattern = Pattern.compile(regex);
 Matcher matcher = pattern.matcher(ip);
 matcher.matches();*/
     private String getUrlUserEntered() {
-        if (StringUtils.isNotBlank (StringUtils.trim(host_v.getText().toString())) & StringUtils.isNumeric(AppController.getInstance().getDefs().get_Port())) {
+        if (StringUtils.isNotBlank(StringUtils.trim(host_v.getText().toString())) & StringUtils.isNumeric(AppController.getInstance().getDefs().get_Port())) {
             AppController.getInstance().getDefs().set_Host_IP(host_v.getText().toString());
             return "http://" + host_v.getText().toString() + ":" + AppController.getInstance().getDefs().get_Port();
         } else {
@@ -295,7 +301,7 @@ matcher.matches();*/
     }
 
     public void checkConnection() {
-        String url =  (StringUtils.isNotBlank(getUrlUserEntered())) ? getUrlUserEntered() : AppController.getInstance().getDefs().getUrl(); //host_v.getText().toString();
+        String url = (StringUtils.isNotBlank(getUrlUserEntered())) ? getUrlUserEntered() : AppController.getInstance().getDefs().getUrl(); //host_v.getText().toString();
 
         try {
             boxesService = ApiUtils.getOrderService(url);
@@ -304,21 +310,22 @@ matcher.matches();*/
 
                 @Override
                 public void onResponse(Call<Object> call, Response<Object> response) {
-                    if(!response.isSuccessful()) {
-                        MessageUtils.showToast(AppController.getInstance().getContext(),"Введенный URL недоступен! Введите верный!", false);
+                    if (!response.isSuccessful()) {
+                        MessageUtils.showToast(AppController.getInstance().getContext(), "Введенный URL недоступен! Введите верный!", false);
                         host_v.requestFocus();
-                    }else {
-                        MessageUtils.showToast(AppController.getInstance().getContext(),"Соединение установлено!", false);
+                    } else {
+                        MessageUtils.showToast(AppController.getInstance().getContext(), "Соединение установлено!", false);
                     }
                 }
+
                 @Override
                 public void onFailure(Call<Object> call, Throwable t) {
-                    MessageUtils.showToast(AppController.getInstance().getContext(),"Введенный URL недоступен! Введите верный!", false);
+                    MessageUtils.showToast(AppController.getInstance().getContext(), "Введенный URL недоступен! Введите верный!", false);
                     host_v.requestFocus();
                 }
             });
         } catch (Exception e) {
-            MessageUtils.showToast(AppController.getInstance().getContext(),"Введенный URL недоступен! Введите верный!", false);
+            MessageUtils.showToast(AppController.getInstance().getContext(), "Введенный URL недоступен! Введите верный!", false);
         }
     }
 
@@ -331,6 +338,7 @@ matcher.matches();*/
         spinnerDivision.setAdapter(dataAdapter);
         dataAdapter.notifyDataSetChanged();
     }
+
     private void loadOpers_spinnerData() {
         if (AppUtils.isEmpty(division_code)) {
             if (AppUtils.isNotEmpty(AppController.getInstance().getDefs().getDivision_code()))
@@ -338,7 +346,7 @@ matcher.matches();*/
         }
         List<String> lables = (AppUtils.isEmpty(division_code))
                 ? new ArrayList<>()
-                    : operRepo.getAllOperNameByDivisionCode(division_code);
+                : operRepo.getAllOperNameByDivisionCode(division_code);
         ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
                 android.R.layout.simple_spinner_item, lables);
         dataAdapter
@@ -346,16 +354,17 @@ matcher.matches();*/
         opers_spinner.setAdapter(dataAdapter);
         dataAdapter.notifyDataSetChanged();
     }
+
     private void loadSpinnerData() { //Departments Deps Бригады
         if (AppUtils.isEmpty(division_code)) {
             if (AppUtils.isNotEmpty(AppController.getInstance().getDefs().getDivision_code()))
                 division_code = AppController.getInstance().getDefs().getDivision_code();
         }
-        if (ido<=0) ido=AppController.getInstance().getDefs().get_Id_o();
+        if (ido <= 0) ido = AppController.getInstance().getDefs().get_Id_o();
 
-        List<String> lables = (AppUtils.isEmpty(division_code) || ido<=0)
+        List<String> lables = (AppUtils.isEmpty(division_code) || ido <= 0)
                 ? new ArrayList<>()
-                    : depRepo.getAllDepartmentNameByDivisionCodeAndOperationId(division_code, ido);
+                : depRepo.getAllDepartmentNameByDivisionCodeAndOperationId(division_code, ido);
 
         ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
                 android.R.layout.simple_spinner_item, lables);
@@ -364,17 +373,18 @@ matcher.matches();*/
         spinner.setAdapter(dataAdapter);
         dataAdapter.notifyDataSetChanged();
     }
+
     private void loadSpinnerSotrData() {
         if (AppUtils.isEmpty(division_code)) {
             if (AppUtils.isNotEmpty(AppController.getInstance().getDefs().getDivision_code()))
                 division_code = AppController.getInstance().getDefs().getDivision_code();
         }
-        if (ido<=0) ido=AppController.getInstance().getDefs().get_Id_o();
-        if (idd<=0) idd=AppController.getInstance().getDefs().get_Id_d();
+        if (ido <= 0) ido = AppController.getInstance().getDefs().get_Id_o();
+        if (idd <= 0) idd = AppController.getInstance().getDefs().get_Id_d();
 
-        List<String> lables = (AppUtils.isEmpty(division_code) || ido<=0 || idd<=0)
+        List<String> lables = (AppUtils.isEmpty(division_code) || ido <= 0 || idd <= 0)
                 ? new ArrayList<>()
-                    : sotrRepo.getAllSotrName(division_code, idd, ido);
+                : sotrRepo.getAllSotrName(division_code, idd, ido);
 
         ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
                 android.R.layout.simple_spinner_item, lables);
@@ -383,90 +393,91 @@ matcher.matches();*/
         spinnerSotr.setAdapter(dataAdapter);
         dataAdapter.notifyDataSetChanged();
     }
+
     @Override
     public void onItemSelected(AdapterView<?> parent, View view, int position,
                                long id) {
 // On selecting a spinner item
         Spinner sp = (Spinner) parent;
-        if(sp.getId() == R.id.spinnerDivision) {
+        if (sp.getId() == R.id.spinnerDivision) {
             if (position != 0) {
                 String label = parent.getItemAtPosition(position).toString();
 //Выбрать _id Division и записать в Defs;
                 division_code = divRepo.getDivisionsCodeByName(label);
-                ido=idd=ids=-1;
+                ido = idd = ids = -1;
                 labelDivision2 = (TextView) findViewById(R.id.labelDivision2);
                 labelDivision2.setText(label);
                 try {
                     loadOpers_spinnerData();
                     opers_select_label = (TextView) findViewById(R.id.select_label);
-                    opers_select_label.setText(spinner.getItemAtPosition(0).toString());}
-                catch (Exception e){
-                    Log.d(TAG, "Error : " + e.getMessage());
+                    opers_select_label.setText(spinner.getItemAtPosition(0).toString());
+                } catch (Exception e) {
+                    Log.e(TAG, "loadOpers Error : " + e.getMessage());
                 }
                 try {
                     loadSpinnerData();
                     select_label = (TextView) findViewById(R.id.select_label);
-                    select_label.setText(spinner.getItemAtPosition(0).toString());}
-                catch (Exception e){
-                    Log.d(TAG, "Error : " + e.getMessage());
+                    select_label.setText(spinner.getItemAtPosition(0).toString());
+                } catch (Exception e) {
+                    Log.e(TAG, "SpinnerData Error : " + e.getMessage());
                 }
                 try {
                     loadSpinnerSotrData();
                     labelSotr = (TextView) findViewById(R.id.labelSotr);
-                    labelSotr.setText(spinnerSotr.getItemAtPosition(0).toString());}
-                catch (Exception e){
-                    Log.d(TAG, "Error : " + e.getMessage());
+                    labelSotr.setText(spinnerSotr.getItemAtPosition(0).toString());
+                } catch (Exception e) {
+                    Log.e(TAG, "spinnerSotr Exception : " + e.getMessage());
                 }
-                MessageUtils.showToast(getApplicationContext(),"Вы выбрали: " + label, false);
+                MessageUtils.showToast(getApplicationContext(), "Вы выбрали: " + label, false);
             }
         }
 
-        if(sp.getId() == R.id.opers_spinner) {
+        if (sp.getId() == R.id.opers_spinner) {
             if (position != 0) {
                 String label = parent.getItemAtPosition(position).toString();
 //Выбрать _id Opers и записать в Defs;
                 ido = operRepo.getOperIdByName(label);
                 opers_select_label = (TextView) findViewById(R.id.opers_select_label);
                 opers_select_label.setText(label);
-               // Showing selected spinner item
+                // Showing selected spinner item
                 //messageUtils.showMessage(getApplicationContext(),"Вы выбрали: " + label);
                 try {
                     loadSpinnerData();
                     select_label = (TextView) findViewById(R.id.select_label);
-                    select_label.setText(spinner.getItemAtPosition(0).toString());}
-                catch (Exception e){
-                    Log.d(TAG, "Error : " + e.getMessage());
+                    select_label.setText(spinner.getItemAtPosition(0).toString());
+                } catch (Exception e) {
+                    Log.e(TAG, "Oper Exception : " + e.getMessage());
                 }
                 try {
                     loadSpinnerSotrData();
                     labelSotr = (TextView) findViewById(R.id.labelSotr);
-                    labelSotr.setText(spinnerSotr.getItemAtPosition(0).toString());}
-                catch (Exception e){
-                    Log.d(TAG, "Error : " + e.getMessage());
+                    labelSotr.setText(spinnerSotr.getItemAtPosition(0).toString());
+                } catch (Exception e) {
+                    Log.e(TAG, "Sotr load after oper. Exception : " + e.getMessage());
                 }
             }
         }
 
-        if(sp.getId() == R.id.spinner) {
+        if (sp.getId() == R.id.spinner) {
             if (position != 0) {
-               String mlabel = parent.getItemAtPosition(position).toString();
+                String mlabel = parent.getItemAtPosition(position).toString();
 //Выбрать _id Deps и записать в Defs;
                 idd = depRepo.getDepIdByName(mlabel);
                 select_label = (TextView) findViewById(R.id.select_label);
                 select_label.setText(mlabel);
-               // Showing selected spinner item
+                // Showing selected spinner item
                 //messageUtils.showMessage(getApplicationContext(), "Вы выбрали: " + mlabel);
-                ids=-1;
+                ids = -1;
                 try {
                     loadSpinnerSotrData();
                     labelSotr = (TextView) findViewById(R.id.labelSotr);
-                    labelSotr.setText(spinnerSotr.getItemAtPosition(0).toString());}
-                catch (Exception e){
-                    Log.e(TAG, "Deps selection -> ", e);
+                    labelSotr.setText(spinnerSotr.getItemAtPosition(0).toString());
+                } catch (Exception e) {
+                    Log.e(TAG, "Deps selection Exception -> ", e);
                 }
             }
         }
-        if(sp.getId() == R.id.spinnerSotr) {
+        if (sp.getId() == R.id.spinnerSotr) {
             if (position != 0) {
                 String slabel = parent.getItemAtPosition(position).toString();
                 //Выбрать _id Sotr и записать в Defs;
@@ -474,9 +485,9 @@ matcher.matches();*/
                 if (ids != 0) {
                     labelSotr = (TextView) findViewById(R.id.labelSotr);
                     labelSotr.setText(slabel);
-                }else{
-                    MessageUtils.showToast(getApplicationContext(),"Ошибка при поиске выбранного сотрудника!", false);
-                    Log.w(TAG, "Ошибка при поиске выбранного сотрудника!"+slabel);
+                } else {
+                    MessageUtils.showToast(getApplicationContext(), "Ошибка при поиске выбранного сотрудника!", false);
+                    Log.w(TAG, "Ошибка при поиске выбранного сотрудника!" + slabel);
                 }
             } else {
                 if (idd != 0) {
@@ -488,12 +499,11 @@ matcher.matches();*/
                         if (ids != 0) {
                             labelSotr = (TextView) findViewById(R.id.labelSotr);
                             labelSotr.setText(slabel);
-                        }else{
-                            Log.w(TAG, "Ошибка при поиске выбранного сотрудника!"+slabel);
+                        } else {
+                            Log.w(TAG, "Ошибка при поиске выбранного сотрудника!" + slabel);
                         }
-                    }
-                    catch (Exception e){
-                        Log.d(TAG, "Error : " + e.getMessage());
+                    } catch (Exception e) {
+                        Log.e(TAG, "Sotr Exception : " + e.getMessage());
                     }
                 }
             }
@@ -505,29 +515,30 @@ matcher.matches();*/
         // TODO Auto-generated method stub
 
     }
+
     public void ocl_bSave(View v) {
         if (AppUtils.isEmpty(division_code)) {
-            MessageUtils.showToast(getApplicationContext(),"Выберите подразделение. Настройки не будут сохранены!", true);
+            MessageUtils.showToast(getApplicationContext(), "Выберите подразделение. Настройки не будут сохранены!", true);
             return;
         }
         if (ido <= 0) {
-            MessageUtils.showToast(getApplicationContext(),"Выберите операцию. Настройки не будут сохранены!", true);
+            MessageUtils.showToast(getApplicationContext(), "Выберите операцию. Настройки не будут сохранены!", true);
             return;
         }
         if (ido != AppController.getInstance().getDefs().get_Id_o()) {
             AppController.getInstance().getDefs().set_Id_o(ido);
-            AppController.getInstance().setCurrentOutDoc( new OutDocs() );
+            AppController.getInstance().setCurrentOutDoc(new OutDocs());
         }
 
-        if (isDepAndSotrOper(AppController.getInstance().getDefs().get_Id_o()) & idd<=0) {
-            MessageUtils.showToast(getApplicationContext(),"Выберите бригаду. Настройки не будут сохранены!", true);
+        if (isDepAndSotrOper(AppController.getInstance().getDefs().get_Id_o()) & idd <= 0) {
+            MessageUtils.showToast(getApplicationContext(), "Выберите бригаду. Настройки не будут сохранены!", true);
             return;
         } else {
             AppController.getInstance().getDefs().set_Id_d(idd);
         }
 
-        if (isDepAndSotrOper(AppController.getInstance().getDefs().get_Id_o()) & ids<=0) {
-            MessageUtils.showToast(getApplicationContext(),"Выберите сотрудника. Настройки не будут сохранены!", true);
+        if (isDepAndSotrOper(AppController.getInstance().getDefs().get_Id_o()) & ids <= 0) {
+            MessageUtils.showToast(getApplicationContext(), "Выберите сотрудника. Настройки не будут сохранены!", true);
             return;
         } else {
             AppController.getInstance().getDefs().set_Id_s(ids);
@@ -538,23 +549,24 @@ matcher.matches();*/
         if (defsRepo.updateDefsTable(new Defs(idd, ido, ids, ip, "4242", division_code,
                 StringUtils.isNotBlank(AppController.getInstance().getDefs().getDeviceId()) ? AppController.getInstance().getDefs().getDeviceId() : "")) != 0) {
             defsRepo.selectDefsTable().ifPresent(d -> AppController.getInstance().setDefs(d));
-            MessageUtils.showToast(getApplicationContext(),"Сохранено.", false);
+            MessageUtils.showToast(getApplicationContext(), "Сохранено.", false);
         } else {
-            MessageUtils.showToast(getApplicationContext(),"Ошибка при сохранении.", false);
+            MessageUtils.showToast(getApplicationContext(), "Ошибка при сохранении.", false);
         }
     }
 
     private class SyncIncoData extends AsyncTask<String, Integer, String> {
-    boolean checkResponce (Response<List<Object>> response) {
-        return response.isSuccessful() && response.body()!=null && !response.body().isEmpty();
-    }
+        boolean checkResponce(Response<List<Object>> response) {
+            return response.isSuccessful() && response.body() != null && !response.body().isEmpty();
+        }
+
         @Override
         protected String doInBackground(String... urls) {
             try {
                 ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).getDivision().enqueue(new Callback<List<Division>>() {
                     @Override
                     public void onResponse(Call<List<Division>> call, Response<List<Division>> response) {
-                        if (response.isSuccessful() && response.body()!=null && !response.body().isEmpty()) {
+                        if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
                             divRepo.insertDivisionInBulk(response.body());
                         }
                         publishProgress(1);
@@ -569,11 +581,10 @@ matcher.matches();*/
                     @Override
                     public void onResponse(Call<List<Operation>> call, Response<List<Operation>> response) {
 
-                        if (response.isSuccessful() && response.body()!=null && !response.body().isEmpty()) {
-                            for (Operation opers : response.body())
-                                operRepo.insertOpers(opers);
+                        if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                            operRepo.insertOpers(response.body());
                         }
-                        publishProgress(3);
+                        publishProgress(2);
                     }
 
                     @Override
@@ -585,11 +596,10 @@ matcher.matches();*/
                 ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).getDeps("01.01.2018 00:00:00").enqueue(new Callback<List<Deps>>() {
                     @Override
                     public void onResponse(Call<List<Deps>> call, Response<List<Deps>> response) {
-                        if (response.isSuccessful() && response.body()!=null && !response.body().isEmpty()) {
-                            for (Deps deps : response.body())
-                                depRepo.insertDeps(deps);
+                        if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                            depRepo.insertDeps(response.body());
                         }
-                        publishProgress(2);
+                        publishProgress(3);
                     }
 
                     @Override
@@ -601,11 +611,10 @@ matcher.matches();*/
                 ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).getSotr("01.01.2018 00:00:00").enqueue(new Callback<List<Sotr>>() {
                     @Override
                     public void onResponse(Call<List<Sotr>> call, Response<List<Sotr>> response) {
-                        if (response.isSuccessful() && response.body()!=null && !response.body().isEmpty()) {
-                            for (Sotr sotr : response.body())
-                                sotrRepo.insertSotr(sotr);
+                        if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                            sotrRepo.insertSotr(response.body());
                         }
-                        publishProgress(1);
+                        publishProgress(4);
                     }
 
                     @Override
@@ -618,9 +627,8 @@ matcher.matches();*/
                     // TODO Обработать результат. Записать поле sent... если успешно
                     @Override
                     public void onResponse(Call<List<user>> call, Response<List<user>> response) {
-                        if (response.isSuccessful() && response.body()!=null && !response.body().isEmpty()) {
-                            for (user user : response.body())
-                                userRepo.insertUser(user);
+                        if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                            userRepo.insertUser(response.body());
                         }
                         publishProgress(5);
                     }
@@ -631,7 +639,7 @@ matcher.matches();*/
                     }
                 });
             } catch (Exception e) {
-                Log.e(TAG, "Error : " + e.getMessage());
+                Log.e(TAG, "SyncIncoData Exception : " + e.getMessage());
             }
             return null;
         }
@@ -644,16 +652,18 @@ matcher.matches();*/
         @Override
         protected void onPostExecute(String result) {
             super.onPostExecute(result);
-            loadSpinnerDivisionData();
-            loadOpers_spinnerData();
-            loadSpinnerData();
-            loadSpinnerSotrData();
         }
 
         @Override
         protected void onProgressUpdate(Integer... values) {
             super.onProgressUpdate(values);
-            MessageUtils.showToast(getApplicationContext(), "Обновление продолжается... Подождите...", true);
+            for (Integer v : values) {
+                if (v == 1) loadSpinnerDivisionData();
+                if (v == 2) loadOpers_spinnerData();
+                if (v == 3) loadSpinnerData();
+                if (v == 4) loadSpinnerSotrData();
+                MessageUtils.showToast(getApplicationContext(), "Обновление продолжается... Подождите...", true);
+            }
         }
     }
 }

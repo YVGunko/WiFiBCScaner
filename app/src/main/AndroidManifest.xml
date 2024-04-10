@@ -30,7 +30,6 @@
         <activity android:name=".activity.OrdersActivity" />
         <activity android:name=".activity.ProdsActivity" />
         <activity android:name=".activity.OutDocsActivity" />
-        <activity android:name=".activity.UpdateActivity" />
         <activity android:name=".activity.lastUpdateActivity" />
 
         <service

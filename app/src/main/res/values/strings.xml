@@ -30,7 +30,7 @@
     <string name="title_activity_out_doc">OutDocActivity</string>
     <string name="action_quik_sync">Синхронизировать накладные</string>
     <string name="action_update">Синхронизация</string>
-    <string name="title_activity_update">Синхронизация данных.</string>
+    <string name="title_activity_update">Синхронизировать данные</string>
     <string name="title_home">Home</string>
     <string name="title_dashboard">Dashboard</string>
     <string name="title_notifications">Notifications</string>
@@ -41,6 +41,8 @@
     <string name="QR_invalid">QR код не распознан!</string>
     <string name="wrong_division_order">Это коробка другого подразделения</string>
     <string name="set_outdocs_number_start_date">Установить дату начала нумерации</string>
+    <string name="set_update_global_date">Синхрон. данные с даты</string>
+    <string name="start_update_with_global_date">Начать синхронизацию</string>
     <string name="add_outdocs_for_all_sotr">Создать накладные для всех сотрудников бригады</string>
     <string name="add_outdocs_for_all_deps">Создать накладные для всех бригад</string>
     <string name="error_something_went_wrong">Что-то пошло не так</string>

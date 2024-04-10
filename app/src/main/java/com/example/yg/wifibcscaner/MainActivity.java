@@ -32,11 +32,12 @@ import com.example.yg.wifibcscaner.activity.OrdersActivity;
 import com.example.yg.wifibcscaner.activity.OutDocsActivity;
 import com.example.yg.wifibcscaner.activity.ProdsActivity;
 import com.example.yg.wifibcscaner.activity.SettingsActivity;
-import com.example.yg.wifibcscaner.activity.UpdateActivity;
+import com.example.yg.wifibcscaner.activity.lastUpdateActivity;
 import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.repo.BoxRepo;
 import com.example.yg.wifibcscaner.data.repo.DataSendRepo;
 import com.example.yg.wifibcscaner.data.repo.DefsRepo;
+import com.example.yg.wifibcscaner.data.repo.DataLoadRepo;
 import com.example.yg.wifibcscaner.data.repo.OrderRepo;
 import com.example.yg.wifibcscaner.data.repo.OutDocRepo;
 import com.example.yg.wifibcscaner.data.repo.UserRepo;
@@ -46,6 +47,7 @@ import com.example.yg.wifibcscaner.service.foundBox;
 import com.example.yg.wifibcscaner.service.foundOrder;
 import com.example.yg.wifibcscaner.utils.AppUtils;
 import com.example.yg.wifibcscaner.utils.DataSyncTimerUtil;
+import com.example.yg.wifibcscaner.utils.DateTimeUtils;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 import com.honeywell.aidc.AidcManager;
@@ -57,6 +59,7 @@ import com.honeywell.aidc.ScannerUnavailableException;
 
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 import me.drakeet.support.toast.ToastCompat;
@@ -343,12 +346,23 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
             case R.id.action_test:
                 startActivity(new Intent(this,OutDocsActivity.class));
                 return true;
-            case R.id.action_update:
-                startActivity(new Intent(this, UpdateActivity.class));
+            case R.id.set_update_global_date:
+                setDate();
+                return true;
+            case R.id.action_get_data:
+                DataLoadRepo dataLoadRepo = new DataLoadRepo();
+                dataLoadRepo.loadData();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+    public void setDate() { //Вызов активности выбора даты начала
+        Intent intent = new Intent(this, lastUpdateActivity.class); //Вызов активности lastUpdate
+        final long dateFrom = DateTimeUtils.getStartOfDayLong(DateTimeUtils.addDays(new Date(), -1));
+        intent.putExtra("presetDate", dateFrom); // sent your putExtra data here to pass through intent
+        startActivity(intent);
+        //startActivityForResult(intent, 1000);
     }
 
     @Override
@@ -387,7 +401,9 @@ private static String filter (String str){
             return;
         }
         fo = orderRepo.searchOrder(currentbarcode);
-        if (fo.getDivision_code() != null && !fo.getDivision_code().equals(AppController.getInstance().getDefs().getDivision_code())) {
+        if (StringUtils.isNotBlank(fo.getDivision_code()) && !fo.getDivision_code().equals(AppController.getInstance().getDefs().getDivision_code())) {
+            Log.d(TAG, "scanResultHandler -> currentbarcode.division ->"+fo.getDivision_code());
+            Log.d(TAG, "scanResultHandler -> Defs ->"+AppController.getInstance().getDefs().getDivision_code());
             Log.d(TAG, "scanResultHandler -> division mismatch -> return");
             MessageUtils.showToast(MainActivity.this, getString(R.string.wrong_division_order),true);
             return;

@@ -16,12 +16,13 @@ import static com.example.yg.wifibcscaner.utils.AppUtils.tryCloseCursor;
 
 public class DivisionRepo {
     private static final String TAG = "sProject -> DivisionRepo";
-    private SQLiteDatabase mDataBase = AppController.getInstance().getDbHelper().openDataBase();
+    private SQLiteDatabase mDataBase ;
 
     public List<String> getAllDivisionName() {
         ArrayList<String> list = new ArrayList<String>();
         Cursor cursor = null;
         try {
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             cursor = mDataBase.rawQuery("SELECT name FROM Division", null);
             if ((cursor != null) && (cursor.getCount() > 0)) {
                 while (cursor.moveToNext()) {
@@ -34,11 +35,13 @@ public class DivisionRepo {
             return list;
         } finally {
             tryCloseCursor(cursor);
+            AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
     public String getDivisionNameByCode(@NonNull String code){
         Cursor cursor = null;
         try {
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             cursor = mDataBase.rawQuery("SELECT name FROM Division Where code=?", new String [] {code});
             if (cursor != null && cursor.moveToFirst()) {
                 return String.format("%s", cursor.getString(0));
@@ -49,11 +52,13 @@ public class DivisionRepo {
             return "";
         } finally {
             tryCloseCursor(cursor);
+            AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
     public String getDivisionsCodeByName(String name){
         Cursor cursor = null;
         try {
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             cursor = mDataBase.rawQuery("SELECT code FROM Division Where name=?", new String [] {String.valueOf(name)});
             if (cursor != null && cursor.moveToFirst()) {
                 return cursor.getString(0);
@@ -64,10 +69,12 @@ public class DivisionRepo {
             return "";
         } finally {
             tryCloseCursor(cursor);
+            AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
     public void insertDivisionInBulk(List<Division> list) {
         try {
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             mDataBase.beginTransaction();
             String sql = "INSERT OR REPLACE INTO "+Division.TABLE+" (code, name) " +
                     " VALUES (?,?) ";
@@ -87,6 +94,7 @@ public class DivisionRepo {
             throw new RuntimeException("To catch into upper level.");
         } finally {
             mDataBase.endTransaction();
+            AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
 }

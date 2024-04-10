@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class dbService extends AppCompatActivity {
+    private static final String TAG = "dbService";
     private DataBaseHelper mDBHelper = AppController.getInstance().getDbHelper();
     private final ProdRepo pbRepo = new ProdRepo();
 
@@ -134,7 +135,7 @@ public class dbService extends AppCompatActivity {
 
 
             } catch (Exception e) {
-                Log.d("UpdateActivity", "Error : " + e.getMessage());
+                Log.d(TAG, "Error : " + e.getMessage());
                 publishProgress(-1);
             }
             return null;

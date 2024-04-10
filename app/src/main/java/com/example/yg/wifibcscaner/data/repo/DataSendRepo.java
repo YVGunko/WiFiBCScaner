@@ -153,6 +153,14 @@ public class DataSendRepo {
     }
     private void uploadData() {
         try {
+            ArrayList<OutDocs> dataToSend = getOutDocNotSent();
+            ArrayList<Boxes> boxesList = AppController.getInstance().getDbHelper().getBoxes();
+            ArrayList<BoxMoves> boxMovesList = AppController.getInstance().getDbHelper().getBoxMoves();
+            ArrayList<Prods> prodsList = AppController.getInstance().getDbHelper().getProds();
+            if (boxesList.isEmpty() & boxMovesList.isEmpty() & prodsList.isEmpty()) {
+                if (BuildConfig.DEBUG) MessageUtils.showToast("uploadData -> Нечего отправлять", true);
+                return;
+            }
             ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).
                     addOutDoc(getOutDocNotSent(),AppController.getInstance().getDefs().getDeviceId()).enqueue(new Callback<List<OutDocs>>() {
                 @Override
