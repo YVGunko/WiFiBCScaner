@@ -49,6 +49,7 @@ import static com.example.yg.wifibcscaner.utils.DateTimeUtils.sDateToLong;
 import static com.example.yg.wifibcscaner.utils.MyStringUtils.getBarcodeN_box;
 import static com.example.yg.wifibcscaner.utils.MyStringUtils.getBarcodeQ_box;
 import static com.example.yg.wifibcscaner.utils.MyStringUtils.getUUID;
+import static com.example.yg.wifibcscaner.utils.MyStringUtils.isValidUUID;
 
 public class DataBaseHelper extends SQLiteOpenHelper {
     private static final String TAG = "sProject -> DataBaseHelper";
@@ -638,15 +639,17 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     }
 
  //
-     private boolean insertBoxMoves(@NonNull BoxMoves bm) {
+     private String insertBoxMoves(@NonNull BoxMoves bm) {
          Cursor cursor = null;
          try {
-             cursor = mDataBase.rawQuery("SELECT bm._id as _id FROM BoxMoves bm Where bm.Id_o=" + bm.get_Id_o() + " and bm.Id_b='" + bm.get_Id_b()+"'", null);
+             cursor = mDataBase.rawQuery("SELECT bm._id FROM BoxMoves bm Where bm.Id_o=" + bm.get_Id_o() + " and bm.Id_b='" + bm.get_Id_b()+"'", null);
              if (cursor != null && cursor.moveToFirst()) {
                  try {
-                     return StringUtils.isNotBlank(cursor.getString(0));
+                     if (StringUtils.isNotBlank(cursor.getString(0)))
+                        return cursor.getString(0);
+                     return "";
                  }catch (Exception e){
-                     return false;
+                     return "";
                  }
              } else {
                  ContentValues values = new ContentValues();
@@ -657,11 +660,13 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                  values.put(BoxMoves.COLUMN_DT, sDateTimeToLong(bm.get_DT()));
                  if (bm.get_sentToMasterDate() != null) values.put(BoxMoves.COLUMN_sentToMasterDate, sDateTimeToLong(bm.get_sentToMasterDate()));
 
-                 return mDataBase.insertWithOnConflict(BoxMoves.TABLE_bm, null, values, 5) > 0;
+                 long res = mDataBase.insertWithOnConflict(BoxMoves.TABLE_bm, null, values, 5);
+                 Log.d(TAG, "insertBoxMoves insertWithOnConflict result"+String.valueOf(res));
+                 return String.valueOf(res);
              }
          } catch (SQLException e) {
              Log.e(TAG, e.getMessage());
-             return false;
+             return "";
          } finally {
              tryCloseCursor(cursor);
          }
@@ -679,7 +684,9 @@ public class DataBaseHelper extends SQLiteOpenHelper {
              values.put(Prods.COLUMN_idOutDocs, prods.get_idOutDocs());
              if (prods.get_sentToMasterDate() != null) values.put(Prods.COLUMN_sentToMasterDate, sDateTimeToLong(prods.get_sentToMasterDate()));
 
-             return mDataBase.insertWithOnConflict(Prods.TABLE_prods, null, values, 5) > 0;
+             long res = mDataBase.insertWithOnConflict(Prods.TABLE_prods, null, values, 5) ;
+             Log.d(TAG, "insertOneProd insertWithOnConflict result"+String.valueOf(res));
+             return res > 0;
          } catch (SQLException e) {
              Log.e(TAG, "insertOneProd exception -> ".concat(e.getMessage()));
              return false;
@@ -693,7 +700,9 @@ public class DataBaseHelper extends SQLiteOpenHelper {
              BoxMoves bm = new BoxMoves (getUUID(),fb.get_id(), AppController.getInstance().getDefs().get_Id_o(),lDateToString(new Date().getTime()),null);
              if (doAsTransaction)
                 mDataBase.beginTransaction();
-             if (insertBoxMoves(bm)) {
+             final String bmIdOrRowId = insertBoxMoves(bm);
+             if ((StringUtils.isNotBlank(bmIdOrRowId))) {
+                 if (isValidUUID(bmIdOrRowId)) bm.set_id(bmIdOrRowId);
                  Prods prod ;
                  if (AppUtils.isDepAndSotrOper(bm.get_Id_o())) {// it needs Dep and Sotr
                      prod = new Prods(getUUID(),

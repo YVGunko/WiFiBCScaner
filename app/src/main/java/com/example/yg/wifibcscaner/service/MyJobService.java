@@ -4,12 +4,8 @@ import android.app.job.JobParameters;
 import android.app.job.JobService;
 import android.util.Log;
 
-import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.repo.DataLoadRepo;
 import com.example.yg.wifibcscaner.data.repo.OrderRepo;
-import com.example.yg.wifibcscaner.utils.DateTimeUtils;
-
-import org.apache.commons.lang3.StringUtils;
 
 public class MyJobService extends JobService {
 

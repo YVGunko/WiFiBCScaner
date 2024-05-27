@@ -10,6 +10,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
 
+import com.example.yg.wifibcscaner.BuildConfig;
 import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.dto.OrderOutDocBoxMovePart;
 import com.example.yg.wifibcscaner.data.model.BoxMoves;
@@ -188,7 +189,8 @@ public class DataLoadRepo {
                                         nextPage.getAndIncrement(),
                                         pageSize)
                                         .enqueue(downloadDataCallback(updateDate));
-                                MessageUtils.showToast("Синхронизация еще продолжается... ".concat(nextPage.toString()), false);
+                                MessageUtils.showToast("Синхронизация еще продолжается...", false);
+                                if (BuildConfig.DEBUG) MessageUtils.showToast("Page ".concat(nextPage.toString()).concat(" has been requested."), true);
                             }
                         } catch (RuntimeException re) {
                             Log.w(TAG, re);
@@ -210,6 +212,7 @@ public class DataLoadRepo {
     @RequiresApi(api = Build.VERSION_CODES.N)
     public String saveToDB(OrderOutDocBoxMovePart r) {
         try {
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             mDataBase.beginTransaction();
             if (insertOrdersInBulk(r.orderReqList)) {
 

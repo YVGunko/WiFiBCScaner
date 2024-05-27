@@ -68,6 +68,7 @@ import static com.example.yg.wifibcscaner.utils.AppUtils.isDepAndSotrOper;
 import static com.example.yg.wifibcscaner.utils.AppUtils.isOneOfFirstOper;
 import static com.example.yg.wifibcscaner.utils.AppUtils.isOneScanOnlyOper;
 import static com.example.yg.wifibcscaner.utils.AppUtils.isOutDocOnlyOper;
+import static com.example.yg.wifibcscaner.utils.AppUtils.isReleaseOper;
 import static com.example.yg.wifibcscaner.utils.MyStringUtils.completeOrderDef;
 
 
@@ -421,7 +422,9 @@ private static String filter (String str){
                         //if it isOneScanOnlyOper and there is another outDoc record, set Quantity equal, bcs it can be only one shot
                         if (isOneScanOnlyOper(AppController.getInstance().getDefs().get_Id_o()) & StringUtils.isNotEmpty(fb.getOutDocs()))
                             fb.setQB( fb.getRQ() );
-
+                        //if it is 9999 oper and there is another outDoc record, set Quantity equal, bcs it can be only one shot
+                        if (isReleaseOper(AppController.getInstance().getDefs().get_Id_o()) & StringUtils.isNotEmpty(fb.getOutDocs()))
+                            fb.setQB( fb.getRQ() );
                         if (fb.getQB() == fb.getRQ()) {//Коробка заполнена
 
                             editTextRQ = (EditText) findViewById(R.id.editTextRQ);

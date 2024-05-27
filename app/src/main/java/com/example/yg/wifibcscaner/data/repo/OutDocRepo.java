@@ -141,8 +141,12 @@ public class OutDocRepo {
         if (StringUtils.isNotEmpty(sotrName)) sotrName = sotrName.substring(0, sotrName.indexOf(" "));
 
         String description = (depId == 0 & sotrId == 0)
-                ? AppController.getInstance().getDefs().getDescDep().concat(", ").concat(AppController.getInstance().getDefs().getDescUser())
+                ? AppController.getInstance().getDefs().getDescUser()
                 : (depRepo.getDepNameById(depId).concat(", ").concat(sotrName));
+
+        /*String description = (depId == 0 & sotrId == 0)
+                ? AppController.getInstance().getDefs().getDescDep().concat(", ").concat(AppController.getInstance().getDefs().getDescUser())
+                : (depRepo.getDepNameById(depId).concat(", ").concat(sotrName));*/
 
         OutDocs outDoc = new OutDocs(getUUID(), AppController.getInstance().getDefs().get_Id_o(), outDocNumber,
                 description,

@@ -18,6 +18,14 @@ public class MyStringUtils {
     public static final char SINGLE_QUOTE = '\'';
     public static final char COMMA = ',';
 
+    public static boolean isValidUUID(String possibleUUID) {
+        // Regular expression for UUID format 8-4-4-4-12
+        // Note that a UUID can contain lowercase and uppercase letters and numbers with `-`
+        String uuidRegex = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$";
+
+        // Check if the string matches the given regex, if not it's invalid
+        return possibleUUID.matches(uuidRegex);
+    }
     public static String getUUID() {
         // Creating a random UUID (Universally unique identifier).
         UUID uuid = UUID.randomUUID();

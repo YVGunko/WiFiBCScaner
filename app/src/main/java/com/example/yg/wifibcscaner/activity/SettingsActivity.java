@@ -534,14 +534,22 @@ matcher.matches();*/
             MessageUtils.showToast(getApplicationContext(), "Выберите бригаду. Настройки не будут сохранены!", true);
             return;
         } else {
-            AppController.getInstance().getDefs().set_Id_d(idd);
+            if (isDepAndSotrOper(AppController.getInstance().getDefs().get_Id_o())) {
+                AppController.getInstance().getDefs().set_Id_d(idd);
+            } else {
+                AppController.getInstance().getDefs().set_Id_d(0);
+            }
         }
 
         if (isDepAndSotrOper(AppController.getInstance().getDefs().get_Id_o()) & ids <= 0) {
             MessageUtils.showToast(getApplicationContext(), "Выберите сотрудника. Настройки не будут сохранены!", true);
             return;
         } else {
-            AppController.getInstance().getDefs().set_Id_s(ids);
+            if (isDepAndSotrOper(AppController.getInstance().getDefs().get_Id_o())) {
+                AppController.getInstance().getDefs().set_Id_s(ids);
+            } else {
+                AppController.getInstance().getDefs().set_Id_s(0);
+            }
         }
 
         String ip = host_v.getText().toString();
