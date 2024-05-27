@@ -422,7 +422,7 @@ private static String filter (String str){
                         //if it isOneScanOnlyOper and there is another outDoc record, set Quantity equal, bcs it can be only one shot
                         if (isOneScanOnlyOper(AppController.getInstance().getDefs().get_Id_o()) & StringUtils.isNotEmpty(fb.getOutDocs()))
                             fb.setQB( fb.getRQ() );
-                        //if it is 9999 oper and there is another outDoc record, set Quantity equal, bcs it can be only one shot
+                        //if it is 9999 oper and there is another outDoc record it is not allowed to add items
                         if (isReleaseOper(AppController.getInstance().getDefs().get_Id_o()) & StringUtils.isNotEmpty(fb.getOutDocs()))
                             fb.setQB( fb.getRQ() );
                         if (fb.getQB() == fb.getRQ()) {//Коробка заполнена

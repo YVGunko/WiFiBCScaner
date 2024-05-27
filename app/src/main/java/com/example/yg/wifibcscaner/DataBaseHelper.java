@@ -341,16 +341,13 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             }
     }
 
-    //list all boxes
-
-
+    //last shift. changed. check for sentToMasterDate removed because it should show all items been commited by current operation for max(p.p_date)
     public ArrayList<HashMap<String, String>> listprods() {
         ArrayList<HashMap<String, String>> readBoxes = new ArrayList<HashMap<String, String>>();
         mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         try {
             Cursor cursor = mDataBase.rawQuery("select d.Name_Deps, count(bm.Id_b), sum(RQ_box)" +
                     " from Prods p , BoxMoves bm, Deps d where bm.Id_o=" + AppController.getInstance().getDefs().get_Id_o() + " and bm._id=p.Id_bm and p.Id_d=d._id" +
-                    " and (p.sentToMasterDate is null)" +
                     " and p.p_date=(select max(p.p_date) from Prods p , BoxMoves bm where bm._id=p.Id_bm and bm.Id_o=" + AppController.getInstance().getDefs().get_Id_o() + ")" +
                     " group by d.Name_Deps", null);
             while (cursor.moveToNext()) {
