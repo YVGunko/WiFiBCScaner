@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Html;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -16,51 +17,71 @@ import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.BoxMoves;
 import com.example.yg.wifibcscaner.data.model.Boxes;
-import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.data.model.Prods;
 import com.example.yg.wifibcscaner.data.repo.BoxRepo;
 import com.example.yg.wifibcscaner.data.repo.DataSendRepo;
 import com.example.yg.wifibcscaner.data.repo.OutDocRepo;
-import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
-import com.example.yg.wifibcscaner.service.PartBoxRequest;
 
-import java.util.ArrayList;
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.Date;
-import java.util.List;
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-
-//import android.support.v7.app.AppCompatActivity;
+import static com.example.yg.wifibcscaner.data.model.OutDocs.COLUMN_number;
+import static com.example.yg.wifibcscaner.data.model.Prods.COLUMN_Id_d;
+import static com.example.yg.wifibcscaner.data.model.Prods.COLUMN_idOutDocs;
 
 
 public class BoxesActivity extends AppCompatActivity {
     private static final String TAG = "sProject -> BoxesActivity.";
 
-    private final OutDocRepo outDocRepo = new OutDocRepo();
     private final BoxRepo boxRepo = new BoxRepo();
+    private final OutDocRepo outDocRepo = new OutDocRepo();
 
     SimpleAdapter adapter = null;
     ListView listView = null;
     String[] from = {"Ord", "Cust"};
     int[] to = {R.id.textView, R.id.textView2};
+    boolean sentToMasterDate;
+    String strTitle = "";
+    String boxTotal = "";
 
     @Override
     protected void onResume() {
         super.onResume();
-        this.setTitle("Коробки.");
+        if (StringUtils.isBlank(strTitle))
+            this.setTitle("Коробки. Приняты, не отправлены.");
+        else {
+            android.support.v7.app.ActionBar actionBar = getSupportActionBar();
+            actionBar.setTitle(strTitle);
+            actionBar.setSubtitle(Html.fromHtml("<font color='#FFBF00'>"+boxTotal+"</font>"));
+        }
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        Bundle b = getIntent().getExtras();
+        String outDocId = "";
+
+        if (b != null) {
+            outDocId = b.getString(COLUMN_idOutDocs);
+            if (StringUtils.isNotBlank(outDocId)) boxTotal = outDocRepo.selectCurrentOutDocDetails(outDocId);
+        }
+        String outDocNumber = "";
+        if (b != null) {
+            outDocNumber = b.getString(COLUMN_number);
+            if (StringUtils.isNotBlank(outDocNumber)) strTitle = "Коробки накладной №".concat(outDocNumber);
+        }
+        int depId = 0;
+        if (b != null) depId = b.getInt(COLUMN_Id_d, 0);
+
         setContentView(R.layout.activity_boxes);
 
 
 //Создаем адаптер
-        adapter = new SimpleAdapter(this, boxRepo.listboxes(), R.layout.adapter_item, from, to);
+        adapter = new SimpleAdapter(this, boxRepo.listboxes(outDocId, depId, StringUtils.isBlank(outDocId)), R.layout.adapter_item, from, to);
         listView = (ListView) findViewById(R.id.listView);
         listView.setAdapter(adapter);
 

@@ -336,7 +336,8 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
                 startActivity(new Intent(this,LoginActivity.class));  //Вызов активности
                 return true;
             case R.id.action_boxes:
-                startActivity(new Intent(this, BoxesActivity.class)); //Вызов активности Коробки
+                Intent i = new Intent(this, BoxesActivity.class);
+                startActivity(i);
                 return true;
             case R.id.action_orders:
                 startActivity(new Intent(this, OrdersActivity.class));
@@ -543,7 +544,8 @@ private static String filter (String str){
         tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
         tVDBInfo.setText(mDBHelper.lastBox());
         currentDocDetails  = (TextView) findViewById(R.id.currentDocDetails);
-        currentDocDetails.setText("Накл.№" +AppController.getInstance().getCurrentOutDoc().getNumberString() + outDocRepo.selectCurrentOutDocDetails(AppController.getInstance().getCurrentOutDoc().get_id()));
+        currentDocDetails.setText("Накл.№".concat(AppController.getInstance().getCurrentOutDoc().getNumberString())
+                .concat(" ").concat(outDocRepo.selectCurrentOutDocDetails(AppController.getInstance().getCurrentOutDoc().get_id())));
     }
     public void ocl_boxes(View v) {
         startActivity(new Intent(this,BoxesActivity.class)); //Вызов активности Коробки

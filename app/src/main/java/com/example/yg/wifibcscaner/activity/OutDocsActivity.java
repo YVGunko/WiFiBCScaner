@@ -3,6 +3,7 @@ package com.example.yg.wifibcscaner.activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.database.Cursor;
 import android.os.Build;
 import android.os.Bundle;
@@ -31,6 +32,10 @@ import com.example.yg.wifibcscaner.data.repo.OutDocRepo;
 import com.example.yg.wifibcscaner.data.repo.UserRepo;
 import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.service.SharedPrefs;
+
+import static com.example.yg.wifibcscaner.data.model.OutDocs.COLUMN_number;
+import static com.example.yg.wifibcscaner.data.model.Prods.COLUMN_Id_d;
+import static com.example.yg.wifibcscaner.data.model.Prods.COLUMN_idOutDocs;
 
 public class OutDocsActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
     private static final String TAG = "sProject -> OutDocsActivity.";
@@ -111,7 +116,7 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
             }
         }
 
-        String[] from = new String[]{OutDocs.COLUMN_number, OutDocs.COLUMN_DT, OutDocs.COLUMN_comment};
+        String[] from = new String[]{COLUMN_number, OutDocs.COLUMN_DT, OutDocs.COLUMN_comment};
         int[] to = new int[]{R.id.tvNumber, R.id.tvNumBox, R.id.tvText};
 
         // создаем адаптер и настраиваем список
@@ -130,9 +135,11 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
                                            int pos, long id) {
                 try {
                     if (scAdapter.getCount() > 0) {
-                        strTitle = "№" +scAdapter.getCursor().getString(1)
-                                + outDocRepo.selectCurrentOutDocDetails(scAdapter.getCursor().getString(0));
-                        OutDocsActivity.this.setTitle(strTitle);
+                        Intent i = new Intent(OutDocsActivity.this, BoxesActivity.class);
+                        i.putExtra(COLUMN_idOutDocs, scAdapter.getCursor().getString(0));
+                        i.putExtra(COLUMN_Id_d,scAdapter.getCursor().getInt(8));
+                        i.putExtra(COLUMN_number,scAdapter.getCursor().getString(1));
+                        startActivity(i);
                     }
                 }catch (Exception e){
                     e.printStackTrace();
@@ -145,7 +152,7 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
     {
         @Override
         public void onItemClick (AdapterView < ? > var1, View var2,final int position, long id){
-        scAdapter.getCursor().getString(0);
+        //scAdapter.getCursor().getString(0);
 
         AlertDialog.Builder adb = new AlertDialog.Builder(OutDocsActivity.this);
         adb.setTitle("Выбор накладной...");

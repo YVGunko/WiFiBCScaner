@@ -209,11 +209,11 @@ public class OutDocRepo {
                     " where p.idOutDocs='"+id+"' and bm._id=p.Id_bm"+
                     " group by p.idOutDocs", null);
             if (cursor != null && cursor.moveToFirst()) {
-                return ", Кор: "+cursor.getString(1)+", Под.: "+cursor.getString(2);
+                return "Кор: "+cursor.getString(1)+", Под.: "+cursor.getString(2);
             }
-            return ", Кор: 0";
+            return "Кор: 0";
         } catch (Exception e){
-            return ". Нет данных.";
+            return "Нет данных.";
         } finally {
             tryCloseCursor(cursor);
             AppController.getInstance().getDbHelper().closeDataBase();

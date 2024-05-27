@@ -11,9 +11,16 @@ import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.service.foundOrder;
 import com.example.yg.wifibcscaner.utils.AppUtils;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import static android.database.Cursor.FIELD_TYPE_NULL;
+import static com.example.yg.wifibcscaner.data.model.Prods.COLUMN_Id_d;
+import static com.example.yg.wifibcscaner.data.model.Prods.COLUMN_idOutDocs;
+import static com.example.yg.wifibcscaner.data.model.Prods.COLUMN_sentToMasterDate;
+import static com.example.yg.wifibcscaner.data.model.Prods.TABLE_prods;
 import static com.example.yg.wifibcscaner.utils.AppUtils.tryCloseCursor;
 import static com.example.yg.wifibcscaner.utils.MyStringUtils.retStringFollowingCRIfNotNull;
 
@@ -61,24 +68,33 @@ public class BoxRepo {
         }
     }
     //list all boxes
-    public ArrayList<HashMap<String, Integer>> listboxes() {
+    public ArrayList<HashMap<String, Integer>> listboxes(String outDocId, int depId, boolean sentToMasterDate) {
         ArrayList<HashMap<String, Integer>> readBoxes = new ArrayList<HashMap<String, Integer>>();
         SQLiteDatabase mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         Cursor cursor = null;
         try {
-            if (!AppUtils.isDepAndSotrOper(AppController.getInstance().getDefs().get_Id_o()))
-                cursor = mDataBase.rawQuery("SELECT MasterData.Ord, MasterData.Cust, MasterData.Nomen, MasterData.Attrib, MasterData.Q_ord, " +
-                        "Boxes.Q_box, Boxes.N_box, Prods.RQ_box, Deps.Name_Deps, s.Sotr, MasterData.Ord_id, Boxes._id, bm._id, Prods._id" +
+            String addWhereOutDoc = "";
+            if (StringUtils.isNotBlank(outDocId))
+                addWhereOutDoc = addWhereOutDoc.concat(" and ").concat(TABLE_prods).concat(".").concat(COLUMN_idOutDocs).concat("='").concat(outDocId).concat("'");
+            String addWhereDepartment = "";
+            if (depId != 0)
+                addWhereDepartment = addWhereDepartment.concat(" and ")
+                        .concat(TABLE_prods).concat(".").concat(COLUMN_Id_d).concat("=")
+                        .concat(String.valueOf(depId));
+            String addWhereSentToMasterDate = "";
+            if (sentToMasterDate)
+                addWhereSentToMasterDate = addWhereSentToMasterDate.concat(" and ")
+                        .concat(COLUMN_sentToMasterDate).concat(" IS NULL ");
+
+            cursor = mDataBase.rawQuery("SELECT MasterData.Ord, MasterData.Cust, MasterData.Nomen, MasterData.Attrib, MasterData.Q_ord, " +
+                        "Boxes.Q_box, Boxes.N_box, Prods.RQ_box, Deps.Name_Deps, s.Sotr, MasterData.Ord_id, Boxes._id, bm._id, Prods._id, Prods.sentToMasterDate" +
                         " FROM Opers, Boxes, BoxMoves bm, Prods, Deps, MasterData, Sotr s Where Opers._id=" + AppController.getInstance().getDefs().get_Id_o() +
                         " and bm.Id_o=Opers._id and Boxes._id=bm.Id_b and Boxes.Id_m=MasterData._id and bm._id=Prods.Id_bm" +
-                        " and Prods.Id_d=Deps._id and Prods.Id_s=s._id and ((Prods.sentToMasterDate IS NULL) OR (Prods.sentToMasterDate=''))" +
-                        " Order by MasterData.Ord_id,  Boxes.N_box", null);
-            else
-                cursor = mDataBase.rawQuery("SELECT MasterData.Ord, MasterData.Cust, MasterData.Nomen, MasterData.Attrib, MasterData.Q_ord, " +
-                        "Boxes.Q_box, Boxes.N_box, Prods.RQ_box, Deps.Name_Deps, s.Sotr, MasterData.Ord_id, Boxes._id, bm._id, Prods._id" +
-                        " FROM Opers, Boxes, BoxMoves bm, Prods, Deps, MasterData, Sotr s Where Opers._id=" + AppController.getInstance().getDefs().get_Id_o() +
-                        " and bm.Id_o=Opers._id and Boxes._id=bm.Id_b and Boxes.Id_m=MasterData._id and bm._id=Prods.Id_bm and Prods.Id_d=" + AppController.getInstance().getDefs().get_Id_d() +
-                        " and Prods.Id_d=Deps._id and Prods.Id_s=s._id and ((Prods.sentToMasterDate IS NULL) OR (Prods.sentToMasterDate=''))" +
+                        " and Prods.Id_d=Deps._id and Prods.Id_s=s._id " +
+                        //" and ((Prods.sentToMasterDate IS NULL) OR (Prods.sentToMasterDate=''))" +
+                        addWhereOutDoc +
+                        addWhereDepartment +
+                        addWhereSentToMasterDate +
                         " Order by MasterData.Ord_id,  Boxes.N_box", null);
 
             while (cursor.moveToNext()) {
@@ -95,6 +111,7 @@ public class BoxRepo {
                 readBox.put("bId", cursor.getString(11) + "/bId");
                 readBox.put("bmId", cursor.getString(12) + "/bmId");
                 readBox.put("pdId", cursor.getString(13) + "/pdId");
+                readBox.put("sent", (cursor.getType(14) == FIELD_TYPE_NULL) ? "Нет" : "Да" + "/sent");
                 //Закидываем в список
                 readBoxes.add(readBox);
             }
