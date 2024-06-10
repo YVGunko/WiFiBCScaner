@@ -213,4 +213,12 @@ public class DateTimeUtils {
         Long ldtMin = DateTimeUtils.getStartOfDayLong(DateTimeUtils.addDays(new Date(), -DateTimeUtils.numberOfDaysInMonth(new Date())));
         return DateTimeUtils.getStartOfDayString(ldtMin);
     }
+    public static String getYesterdayMorning () {
+        Long ldtMin = DateTimeUtils.getStartOfDayLong(DateTimeUtils.addDays(new Date(), -1));
+        return DateTimeUtils.getStartOfDayString(ldtMin);
+    }
+    public static String getTodayMorning () {
+        Long ldtMin = DateTimeUtils.getStartOfDayLong(new Date());
+        return DateTimeUtils.getStartOfDayString(ldtMin);
+    }
 }

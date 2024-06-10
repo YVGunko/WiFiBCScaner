@@ -15,6 +15,7 @@ import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.dto.OrderOutDocBoxMovePart;
 import com.example.yg.wifibcscaner.data.model.BoxMoves;
 import com.example.yg.wifibcscaner.data.model.Boxes;
+import com.example.yg.wifibcscaner.data.model.Division;
 import com.example.yg.wifibcscaner.data.model.Orders;
 import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.data.model.Prods;
@@ -39,6 +40,8 @@ import retrofit2.Response;
 import static com.example.yg.wifibcscaner.utils.AppUtils.tryCloseCursor;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDateLong;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDateTimeLong;
+import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getTodayMorning;
+import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getYesterdayMorning;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.lDateToString;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.sDateTimeToLong;
 
@@ -84,9 +87,15 @@ public class DataLoadRepo {
                     public void onResponse(Call<Long> call, Response<Long> response) {
                         if (response.isSuccessful()) {
                             loadStuff();
+                            if (BuildConfig.DEBUG) {
+                                MessageUtils.showToast("Update date: "
+                                        .concat(StringUtils.isNotBlank(AppController.getInstance().getGlobalUpdateDate())
+                                                ? AppController.getInstance().getGlobalUpdateDate()
+                                                : getOrderUpdateDate(getTodayMorning())), true);
+                            }
                             downloadData(StringUtils.isNotBlank(AppController.getInstance().getGlobalUpdateDate())
                                     ? AppController.getInstance().getGlobalUpdateDate()
-                                    : getOrderUpdateDate(DateTimeUtils.getDtMin()));
+                                    : getOrderUpdateDate(getTodayMorning()));
                         }
                     }
 
@@ -110,7 +119,7 @@ public class DataLoadRepo {
             ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl())
                     .getUser(StringUtils.isNotBlank(AppController.getInstance().getGlobalUpdateDate())
                             ? AppController.getInstance().getGlobalUpdateDate()
-                            : getUserUpdateDate(DateTimeUtils.getDtMin()))
+                            : getUserUpdateDate(getTodayMorning()))
                     .enqueue(new Callback<List<user>>() {
                         @Override
                         public void onResponse(Call<List<user>> call, Response<List<user>> response) {
@@ -132,7 +141,31 @@ public class DataLoadRepo {
         }
         return;
     }
+    private void downloadDivision() {
+        try {
+            ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl())
+                    .getDivision()
+                    .enqueue(new Callback<List<Division>>() {
+                        @Override
+                        public void onResponse(Call<List<Division>> call, Response<List<Division>> response) {
+                            if (response.isSuccessful() && !response.body().isEmpty()) {
+                                for (Division division : response.body())
+                                    insertDivisionInBulk(division);
+                                MessageUtils.showToast("Синхронизация еще продолжается... ", true);
+                            }
+                        }
 
+                        @Override
+                        public void onFailure(Call<List<Division>> call, Throwable t) {
+                            Log.d(TAG, "Ответ сервера на запрос новых users: " + t.getMessage());
+                        }
+                    });
+        } catch (Exception e) {
+            Log.e(TAG, "downloadUser -> ", e);
+            MessageUtils.showToast("Ошибка. Загрузка данных. ", true);
+        }
+        return;
+    }
     private void downloadData(String updateDate) {
         try {
             nextPage.set(0);
@@ -165,7 +198,7 @@ public class DataLoadRepo {
                     if (response.code() == 204) {
                         //no content, so prepare environment to stop current request and prepare for next one
                         nextPage.set(0);
-                        AppController.getInstance().setGlobalUpdateDate("");
+                        AppController.getInstance().setGlobalUpdateDate(getTodayMorning());
                         MessageUtils.showToast("Синхронизация завершена успешно.", true);
                         return;
                     }

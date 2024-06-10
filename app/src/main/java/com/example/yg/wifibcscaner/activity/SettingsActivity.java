@@ -43,6 +43,7 @@ import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.service.OrderService;
 import com.example.yg.wifibcscaner.service.SharedPrefs;
 import com.example.yg.wifibcscaner.utils.AppUtils;
+import com.example.yg.wifibcscaner.utils.DataSyncTimerUtil;
 import com.example.yg.wifibcscaner.utils.DateTimeUtils;
 
 import org.apache.commons.lang3.StringUtils;
@@ -550,6 +551,10 @@ matcher.matches();*/
             } else {
                 AppController.getInstance().getDefs().set_Id_s(0);
             }
+        }
+
+        if ( !isDepAndSotrOper(AppController.getInstance().getDefs().get_Id_o()) ) {
+            DataSyncTimerUtil.stopDataSyncTimer();
         }
 
         String ip = host_v.getText().toString();

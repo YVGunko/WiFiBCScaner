@@ -84,7 +84,7 @@ public class BoxRepo {
             String addWhereSentToMasterDate = "";
             if (sentToMasterDate)
                 addWhereSentToMasterDate = addWhereSentToMasterDate.concat(" and ")
-                        .concat(COLUMN_sentToMasterDate).concat(" IS NULL ");
+                        .concat(TABLE_prods).concat(".").concat(COLUMN_sentToMasterDate).concat(" IS NULL ");
 
             cursor = mDataBase.rawQuery("SELECT MasterData.Ord, MasterData.Cust, MasterData.Nomen, MasterData.Attrib, MasterData.Q_ord, " +
                         "Boxes.Q_box, Boxes.N_box, Prods.RQ_box, Deps.Name_Deps, s.Sotr, MasterData.Ord_id, Boxes._id, bm._id, Prods._id, Prods.sentToMasterDate" +
@@ -111,7 +111,7 @@ public class BoxRepo {
                 readBox.put("bId", cursor.getString(11) + "/bId");
                 readBox.put("bmId", cursor.getString(12) + "/bmId");
                 readBox.put("pdId", cursor.getString(13) + "/pdId");
-                readBox.put("sent", (cursor.getType(14) == FIELD_TYPE_NULL) ? "Нет" : "Да" + "/sent");
+                readBox.put("sent", (cursor.getType(14) == FIELD_TYPE_NULL) ? "N" : "Y" + "/sent");
                 //Закидываем в список
                 readBoxes.add(readBox);
             }

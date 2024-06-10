@@ -120,13 +120,8 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
         int[] to = new int[]{R.id.tvNumber, R.id.tvNumBox, R.id.tvText};
 
         // создаем адаптер и настраиваем список
-        scAdapter =new
-
-        SimpleCursorAdapter(this,R.layout.content_out_doc, null,from, to, 0);
-
-        lvData =(ListView)
-
-        findViewById(R.id.lvData);
+        scAdapter =new SimpleCursorAdapter(this,R.layout.content_out_doc, null,from, to, 0);
+        lvData =(ListView) findViewById(R.id.lvData);
         lvData.setAdapter(scAdapter);
 
         lvData.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
