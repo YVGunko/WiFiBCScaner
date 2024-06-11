@@ -11,18 +11,21 @@ import android.support.annotation.RequiresApi;
 import android.util.Log;
 
 import com.example.yg.wifibcscaner.BuildConfig;
+import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.dto.OrderOutDocBoxMovePart;
 import com.example.yg.wifibcscaner.data.model.BoxMoves;
 import com.example.yg.wifibcscaner.data.model.Boxes;
 import com.example.yg.wifibcscaner.data.model.Division;
+import com.example.yg.wifibcscaner.data.model.Operation;
 import com.example.yg.wifibcscaner.data.model.Orders;
 import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.data.model.Prods;
+import com.example.yg.wifibcscaner.data.model.Sotr;
 import com.example.yg.wifibcscaner.data.model.user;
 import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
-import com.example.yg.wifibcscaner.utils.DateTimeUtils;
+import com.example.yg.wifibcscaner.service.Result;
 import com.example.yg.wifibcscaner.utils.executors.DefaultExecutorSupplier;
 
 import org.apache.commons.lang3.StringUtils;
@@ -41,18 +44,21 @@ import static com.example.yg.wifibcscaner.utils.AppUtils.tryCloseCursor;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDateLong;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDateTimeLong;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getTodayMorning;
-import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getYesterdayMorning;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.lDateToString;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.sDateTimeToLong;
 
 public class DataLoadRepo {
+    public interface RepositoryCallback<T> {
+        void onComplete(Result<T> result);
+    }
+
     private AtomicInteger nextPage = new AtomicInteger(0);
     private static int pageSize = 200;
     private static final String TAG = "sProject -> OutDocBoxMovePartRepository.";
     SQLiteDatabase mDataBase = AppController.getInstance().getDbHelper().openDataBase();
 
     //
-    public void loadStuff() {
+    public void loadStuff(RepositoryCallback<String> repositoryCallback) {
         DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
             try {
                 //check if connection is available
@@ -60,7 +66,10 @@ public class DataLoadRepo {
                     @Override
                     public void onResponse(Call<Long> call, Response<Long> response) {
                         if (response.isSuccessful()) {
+                            downloadDivision();
+                            downloadOperation();
                             downloadUser();
+                            downloadSotr();
                         }
                     }
 
@@ -78,6 +87,10 @@ public class DataLoadRepo {
         });
         return;
     }
+
+    private void downloadDivision() {
+    }
+
     public void loadData() {
         DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
             try {
@@ -86,7 +99,11 @@ public class DataLoadRepo {
                     @Override
                     public void onResponse(Call<Long> call, Response<Long> response) {
                         if (response.isSuccessful()) {
-                            loadStuff();
+                            loadStuff(new RepositoryCallback<String>() {
+                                @Override
+                                public void onComplete(Result<String> result) {
+                                    if (result instanceof Result.Success) {                     // Happy path                 } else {                     // Show error in UI                 }             }         }
+                            );
                             if (BuildConfig.DEBUG) {
                                 MessageUtils.showToast("Update date: "
                                         .concat(StringUtils.isNotBlank(AppController.getInstance().getGlobalUpdateDate())
@@ -126,7 +143,18 @@ public class DataLoadRepo {
                             if (response.isSuccessful() && !response.body().isEmpty()) {
                                 for (user user : response.body())
                                     insertUser(user);
-                                MessageUtils.showToast("Синхронизация еще продолжается... ", true);
+                                MessageUtils.showToast(String.valueOf(R.string.data_load_in_progress), true);
+                                final RepositoryCallback<String> callback = new RepositoryCallback() {
+                                    @Override
+                                    public void onComplete(Result result) {
+                                        if (result instanceof Result.Success) {
+                                            // Happy path
+                                        } else {
+                                            // Show error in UI
+                                        }
+                                    }
+                                };
+                                callback.onComplete(result);
                             }
                         }
 
@@ -149,14 +177,97 @@ public class DataLoadRepo {
                         @Override
                         public void onResponse(Call<List<Division>> call, Response<List<Division>> response) {
                             if (response.isSuccessful() && !response.body().isEmpty()) {
-                                for (Division division : response.body())
-                                    insertDivisionInBulk(division);
-                                MessageUtils.showToast("Синхронизация еще продолжается... ", true);
+                                insertDivisionInBulk(response.body());
+                                MessageUtils.showToast(AppController.getInstance().getContext().getResources().getString(R.string.data_load_in_progress), true);
                             }
                         }
 
                         @Override
                         public void onFailure(Call<List<Division>> call, Throwable t) {
+                            Log.d(TAG, "Ответ сервера на запрос новых users: " + t.getMessage());
+                        }
+                    });
+        } catch (Exception e) {
+            Log.e(TAG, "downloadUser -> ", e);
+            MessageUtils.showToast("Ошибка. Загрузка данных. ", true);
+        }
+        return;
+    }
+    private void downloadOperation() {
+        try {
+            ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl())
+                    .getOperation(StringUtils.isNotBlank(AppController.getInstance().getGlobalUpdateDate())
+                            ? AppController.getInstance().getGlobalUpdateDate()
+                            : getUserUpdateDate(getTodayMorning()))
+                    .enqueue(new Callback<List<Operation>>() {
+                        @Override
+                        public void onResponse(Call<List<Operation>> call, Response<List<Operation>> response) {
+                            if (response.isSuccessful() && response.code() == 200) {
+                                insertOperationInBulk(response.body());
+                                MessageUtils.showToast(String.valueOf(R.string.data_load_in_progress), true);
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Call<List<Operation>> call, Throwable t) {
+                            Log.d(TAG, "Ответ сервера на запрос новых users: " + t.getMessage());
+                        }
+                    });
+        } catch (Exception e) {
+            Log.e(TAG, "downloadUser -> ", e);
+            MessageUtils.showToast("Ошибка. Загрузка данных. ", true);
+        }
+        return;
+    }
+    private void downloadSotr() {
+        try {
+            ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl())
+                    .getSotr(StringUtils.isNotBlank(AppController.getInstance().getGlobalUpdateDate())
+                            ? AppController.getInstance().getGlobalUpdateDate()
+                            : getUserUpdateDate(getTodayMorning()))
+                    .enqueue(new Callback<List<Sotr>>() {
+                        @Override
+                        public void onResponse(Call<List<Sotr>> call, Response<List<Sotr>> response) {
+                            if (response.isSuccessful() && response.code() == 200) {
+                                insertSotrInBulk(response.body());
+                                MessageUtils.showToast(String.valueOf(R.string.data_load_in_progress), true);
+                            }
+                        }
+
+                        private void insertSotrInBulk(List<Sotr> list) {
+                            try {
+                                mDataBase = AppController.getInstance().getDbHelper().openDataBase();
+                                mDataBase.beginTransaction();
+                                String sql = "INSERT OR REPLACE INTO "+Sotr.TABLE+" (_id, tn_Sotr, sotr, dt, Id_d, Id_o, division_code, expired) " +
+                                        " VALUES (?,?,?,?,?,?,?,?) ";
+
+                                SQLiteStatement statement = mDataBase.compileStatement(sql);
+
+                                for (Sotr o : list) {
+                                    statement.clearBindings();
+                                    statement.bindLong(1, o.get_id());
+                                    statement.bindString(2, o.get_tn_Sotr());
+                                    statement.bindString(3, o.get_Sotr());
+                                    statement.bindString(4, o.get_DT());
+                                    statement.bindLong(5, o.get_Id_d());
+                                    statement.bindLong(6, o.get_Id_o());
+                                    statement.bindString(7, o.getDivision_code());
+                                    statement.bindLong(8, o.getExpiredAsLong());
+
+                                    statement.executeInsert();
+                                }
+                                mDataBase.setTransactionSuccessful();
+                            } catch (Exception e) {
+                                Log.w(TAG, e);
+                                throw new RuntimeException("To catch into upper level.");
+                            } finally {
+                                mDataBase.endTransaction();
+                                AppController.getInstance().getDbHelper().closeDataBase();
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Call<List<Sotr>> call, Throwable t) {
                             Log.d(TAG, "Ответ сервера на запрос новых users: " + t.getMessage());
                         }
                     });
@@ -222,7 +333,7 @@ public class DataLoadRepo {
                                         nextPage.getAndIncrement(),
                                         pageSize)
                                         .enqueue(downloadDataCallback(updateDate));
-                                MessageUtils.showToast("Синхронизация еще продолжается...", false);
+                                MessageUtils.showToast(String.valueOf(R.string.data_load_in_progress), false);
                                 if (BuildConfig.DEBUG) MessageUtils.showToast("Page ".concat(nextPage.toString()).concat(" has been requested."), true);
                             }
                         } catch (RuntimeException re) {
@@ -477,6 +588,17 @@ public class DataLoadRepo {
             tryCloseCursor(cursor);
         }
     }
+    /* Insert data */
+    private void insertUserInBulk(List<user> user) {
+        try {
+        } catch (Exception e) {
+            Log.w(TAG, e);
+            throw new RuntimeException("To catch into upper level.");
+        } finally {
+            mDataBase.endTransaction();
+            AppController.getInstance().getDbHelper().closeDataBase();
+        }
+    }
     private long insertUser(user user) {
         try {
             ContentValues values = new ContentValues();
@@ -493,6 +615,58 @@ public class DataLoadRepo {
         } catch (SQLException e) {
             Log.e(TAG, e.getMessage());
             return 0;
+        }
+    }
+    public void insertDivisionInBulk(List<Division> list) {
+        try {
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
+            mDataBase.beginTransaction();
+            String sql = "INSERT OR REPLACE INTO "+Division.TABLE+" (code, name) " +
+                    " VALUES (?,?) ";
+
+            SQLiteStatement statement = mDataBase.compileStatement(sql);
+
+            for (Division o : list) {
+                statement.clearBindings();
+                statement.bindString(1, o.getCode());
+                statement.bindString(2, o.getName());
+
+                statement.executeInsert();
+            }
+            mDataBase.setTransactionSuccessful();
+        } catch (Exception e) {
+            Log.w(TAG, e);
+            throw new RuntimeException("To catch into upper level.");
+        } finally {
+            mDataBase.endTransaction();
+            AppController.getInstance().getDbHelper().closeDataBase();
+        }
+    }
+    public void insertOperationInBulk(List<Operation> list) {
+        try {
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
+            mDataBase.beginTransaction();
+            String sql = "INSERT OR REPLACE INTO "+Operation.TABLE+" (_id, dt, opers, division_code) " +
+                    " VALUES (?,?,?,?) ";
+
+            SQLiteStatement statement = mDataBase.compileStatement(sql);
+
+            for (Operation o : list) {
+                statement.clearBindings();
+                statement.bindLong(1, o.get_id());
+                statement.bindString(2, o.get_dt());
+                statement.bindString(3, o.get_Opers());
+                statement.bindString(4, o.getDivision_code());
+
+                statement.executeInsert();
+            }
+            mDataBase.setTransactionSuccessful();
+        } catch (Exception e) {
+            Log.w(TAG, e);
+            throw new RuntimeException("To catch into upper level.");
+        } finally {
+            mDataBase.endTransaction();
+            AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
 }

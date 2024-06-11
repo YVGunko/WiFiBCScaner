@@ -72,29 +72,4 @@ public class DivisionRepo {
             AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
-    public void insertDivisionInBulk(List<Division> list) {
-        try {
-            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-            mDataBase.beginTransaction();
-            String sql = "INSERT OR REPLACE INTO "+Division.TABLE+" (code, name) " +
-                    " VALUES (?,?) ";
-
-            SQLiteStatement statement = mDataBase.compileStatement(sql);
-
-            for (Division o : list) {
-                statement.clearBindings();
-                statement.bindString(1, o.getCode());
-                statement.bindString(2, o.getName());
-
-                statement.executeInsert();
-            }
-            mDataBase.setTransactionSuccessful();
-        } catch (Exception e) {
-            Log.w(TAG, e);
-            throw new RuntimeException("To catch into upper level.");
-        } finally {
-            mDataBase.endTransaction();
-            AppController.getInstance().getDbHelper().closeDataBase();
-        }
-    }
 }

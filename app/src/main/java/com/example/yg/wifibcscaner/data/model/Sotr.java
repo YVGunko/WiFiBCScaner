@@ -103,6 +103,9 @@ public class Sotr {
         return expired;
     }
 
+    public long getExpiredAsLong() {
+        return (expired) ? 1L : 0L;
+    }
     public void setExpired(boolean expired) {
         this.expired = expired;
     }

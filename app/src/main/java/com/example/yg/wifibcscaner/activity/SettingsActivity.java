@@ -32,6 +32,8 @@ import com.example.yg.wifibcscaner.data.model.Operation;
 import com.example.yg.wifibcscaner.data.model.OutDocs;
 import com.example.yg.wifibcscaner.data.model.Sotr;
 import com.example.yg.wifibcscaner.data.model.user;
+import com.example.yg.wifibcscaner.data.repo.DataLoadRepo;
+import com.example.yg.wifibcscaner.data.repo.DataSendRepo;
 import com.example.yg.wifibcscaner.data.repo.DefsRepo;
 import com.example.yg.wifibcscaner.data.repo.DepartmentRepo;
 import com.example.yg.wifibcscaner.data.repo.DivisionRepo;
@@ -41,6 +43,7 @@ import com.example.yg.wifibcscaner.data.repo.UserRepo;
 import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.service.OrderService;
+import com.example.yg.wifibcscaner.service.Result;
 import com.example.yg.wifibcscaner.service.SharedPrefs;
 import com.example.yg.wifibcscaner.utils.AppUtils;
 import com.example.yg.wifibcscaner.utils.DataSyncTimerUtil;
@@ -165,8 +168,10 @@ public class SettingsActivity extends AppCompatActivity implements
         switch (id) {
             case R.id.action_receive_box:
                 try {
+                    /*
                     SettingsActivity.SyncIncoData task = new SettingsActivity.SyncIncoData();
-                    task.execute(new String[]{null});
+                    task.execute(new String[]{null});*/
+                    makeUserRequest();
 
                 } catch (Exception e) {
 
@@ -568,6 +573,37 @@ matcher.matches();*/
         }
     }
 
+    public void makeUserRequest() {
+        DataLoadRepo dataLoadRepo = new DataLoadRepo();
+        dataLoadRepo.loadStuff( new DataLoadRepo.RepositoryCallback<String>() {
+            @Override
+            public void onComplete(Result<String> result) {
+                if (result instanceof Result.Success) {
+                    // Happy path
+                } else {
+                    // Show error in UI
+                }
+            }
+        });
+    }
+
+    public void makeRequest(String param) {
+        DataLoadRepo dataLoadRepo = new DataLoadRepo();
+        dataLoadRepo.loadStuff( new DataLoadRepo.RepositoryCallback<String>() {
+            @Override
+            public void onComplete(Result<String> result) {
+                if (result instanceof Result.Success) {
+                    if ( ((Result.Success<String>) result).data.equals("Division") ) loadSpinnerDivisionData();
+                    if ( ((Result.Success<String>) result).data.equals("Operation") ) loadOpers_spinnerData();
+                    if ( ((Result.Success<String>) result).data.equals("Department") ) loadSpinnerData();
+                    if ( ((Result.Success<String>) result).data.equals("Sotr") ) loadSpinnerSotrData();
+                } else {
+                    // Show error in UI
+                }
+            }
+        });
+    }
+/*
     private class SyncIncoData extends AsyncTask<String, Integer, String> {
         boolean checkResponce(Response<List<Object>> response) {
             return response.isSuccessful() && response.body() != null && !response.body().isEmpty();
@@ -678,5 +714,5 @@ matcher.matches();*/
                 MessageUtils.showToast(getApplicationContext(), "Обновление продолжается... Подождите...", true);
             }
         }
-    }
+    }*/
 }
