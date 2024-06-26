@@ -8,7 +8,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -26,14 +25,7 @@ import com.example.yg.wifibcscaner.BuildConfig;
 import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.Defs;
-import com.example.yg.wifibcscaner.data.model.Deps;
-import com.example.yg.wifibcscaner.data.model.Division;
-import com.example.yg.wifibcscaner.data.model.Operation;
 import com.example.yg.wifibcscaner.data.model.OutDocs;
-import com.example.yg.wifibcscaner.data.model.Sotr;
-import com.example.yg.wifibcscaner.data.model.user;
-import com.example.yg.wifibcscaner.data.repo.DataLoadRepo;
-import com.example.yg.wifibcscaner.data.repo.DataSendRepo;
 import com.example.yg.wifibcscaner.data.repo.DefsRepo;
 import com.example.yg.wifibcscaner.data.repo.DepartmentRepo;
 import com.example.yg.wifibcscaner.data.repo.DivisionRepo;
@@ -43,7 +35,6 @@ import com.example.yg.wifibcscaner.data.repo.UserRepo;
 import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.service.OrderService;
-import com.example.yg.wifibcscaner.service.Result;
 import com.example.yg.wifibcscaner.service.SharedPrefs;
 import com.example.yg.wifibcscaner.utils.AppUtils;
 import com.example.yg.wifibcscaner.utils.DataSyncTimerUtil;
@@ -154,11 +145,39 @@ public class SettingsActivity extends AppCompatActivity implements
         labelSotr.setText(sotrRepo.getNameById(AppController.getInstance().getDefs().get_Id_s()));
 
 
-        divRepo.setListenner(new DivisionRepo.DivListenner() {
+        divRepo.setListenner(new DivisionRepo.DivDownloadListenner() {
             @Override
-            public void onSuccess(String message) {
-                Log.i(TAG, message);
-                MessageUtils.showToast(message, true);
+            public void onSuccess() {
+                Log.i(TAG, getString(R.string.div_load_completed));
+                loadSpinnerDivisionData();
+                MessageUtils.showToast(getString(R.string.div_load_completed), true);
+            }
+
+            @Override
+            public void onFail(Throwable t) {
+                Log.e(TAG, t.getLocalizedMessage());
+                MessageUtils.showToast(t.getLocalizedMessage(), true);
+            }
+        });
+        userRepo.setListenner(new UserRepo.UserDownLoadListenner() {
+            @Override
+            public void onSuccess() {
+                Log.i(TAG, getString(R.string.user_load_completed));
+                MessageUtils.showToast(getString(R.string.user_load_completed), true);
+            }
+
+            @Override
+            public void onFail(Throwable t) {
+                Log.e(TAG, t.getLocalizedMessage());
+                MessageUtils.showToast(t.getLocalizedMessage(), true);
+            }
+        });
+        operRepo.setListenner(new OperRepo.OperDownloadListenner() {
+            @Override
+            public void onSuccess() {
+                Log.i(TAG, getString(R.string.oper_load_completed));
+                loadOpers_spinnerData();
+                MessageUtils.showToast(getString(R.string.oper_load_completed), true);
             }
 
             @Override
@@ -186,7 +205,7 @@ public class SettingsActivity extends AppCompatActivity implements
                     /*
                     SettingsActivity.SyncIncoData task = new SettingsActivity.SyncIncoData();
                     task.execute(new String[]{null});*/
-                    divRepo.callApi();
+                    divRepo.downloadDivision();
 
                 } catch (Exception e) {
 
@@ -588,36 +607,6 @@ matcher.matches();*/
         }
     }
 
-    public void makeUserRequest() {
-        DataLoadRepo dataLoadRepo = new DataLoadRepo();
-        dataLoadRepo.loadStuff( new DataLoadRepo.RepositoryCallback<String>() {
-            @Override
-            public void onComplete(Result<String> result) {
-                if (result instanceof Result.Success) {
-                    // Happy path
-                } else {
-                    // Show error in UI
-                }
-            }
-        });
-    }
-
-    public void makeRequest(String param) {
-        DataLoadRepo dataLoadRepo = new DataLoadRepo();
-        dataLoadRepo.loadStuff( new DataLoadRepo.RepositoryCallback<String>() {
-            @Override
-            public void onComplete(Result<String> result) {
-                if (result instanceof Result.Success) {
-                    if ( ((Result.Success<String>) result).data.equals("Division") ) loadSpinnerDivisionData();
-                    if ( ((Result.Success<String>) result).data.equals("Operation") ) loadOpers_spinnerData();
-                    if ( ((Result.Success<String>) result).data.equals("Department") ) loadSpinnerData();
-                    if ( ((Result.Success<String>) result).data.equals("Sotr") ) loadSpinnerSotrData();
-                } else {
-                    // Show error in UI
-                }
-            }
-        });
-    }
 /*
     private class SyncIncoData extends AsyncTask<String, Integer, String> {
         boolean checkResponce(Response<List<Object>> response) {

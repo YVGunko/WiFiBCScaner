@@ -6,6 +6,7 @@ import android.database.sqlite.SQLiteStatement;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.Division;
 import com.example.yg.wifibcscaner.service.ApiUtils;
@@ -23,45 +24,69 @@ import retrofit2.Response;
 import static com.example.yg.wifibcscaner.utils.AppUtils.tryCloseCursor;
 
 public class DivisionRepo {
-    public DivListenner listenner;
-    public interface DivListenner {
-        void onSuccess(String message);
+    private static final String TAG = "sProject -> DivisionRepo";
+    private SQLiteDatabase mDataBase ;
+
+    public DivDownloadListenner listenner;
+    public interface DivDownloadListenner {
+        void onSuccess();
 
         void onFail(Throwable t);
     }
-    public void setListenner(DivListenner listenner) {
+    public void setListenner(DivDownloadListenner listenner) {
         this.listenner = listenner;
     }
-    public void callApi() {
-        DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
-            try {
-                //check if connection is available
-                ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).getServerUpdateTime().enqueue(new Callback<Long>() {
-                    @Override
-                    public void onResponse(Call<Long> call, Response<Long> response) {
-                        if (response.isSuccessful()) {
-                            if (listenner != null) listenner.onSuccess("response.body()");
+    public void downloadDivision() {
+        try {
+            ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl())
+                    .getDivision()
+                    .enqueue(new Callback<List<Division>>() {
+                        @Override
+                        public void onResponse(Call<List<Division>> call, Response<List<Division>> response) {
+                            if (response.isSuccessful() && !response.body().isEmpty()) {
+                                insertDivisionInBulk(response.body());
+                            }
                         }
-                    }
 
-                    @Override
-                    public void onFailure(Call<Long> call, Throwable t) {
-                        Log.e(TAG, "onFailure при запросе времени обновления с сервера: " + t.getMessage());
-                        MessageUtils.showToast("Ошибка при синхронизации данных!", true);
-                        if (listenner != null) listenner.onFail(t);
-                    }
-                });
-            } catch (Exception e) {
-                Log.e(TAG, "Exception запроса времени обновления с сервера : " + e.getMessage());
-                MessageUtils.showToast("Исключительная ситуация при запросе времени обновления с сервера.", true);
-                if (listenner != null) listenner.onFail(e.getCause() != null ? e.getCause() : e.fillInStackTrace());
-                return;
-            }
-        });
+                        @Override
+                        public void onFailure(Call<List<Division>> call, Throwable t) {
+                            Log.d(TAG, "Ответ сервера на запрос Division: " + t.getMessage());
+                            if (listenner != null) listenner.onFail(t);
+                        }
+                    });
+        } catch (Exception e) {
+            Log.e(TAG, "downloadUser -> ", e);
+            if (listenner != null) listenner.onFail(e.getCause() != null ? e.getCause() : e.fillInStackTrace());
+        }
         return;
     }
-    private static final String TAG = "sProject -> DivisionRepo";
-    private SQLiteDatabase mDataBase ;
+    public void insertDivisionInBulk(List<Division> list) {
+        try {
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
+            mDataBase.beginTransaction();
+            String sql = "INSERT OR REPLACE INTO "+Division.TABLE+" (code, name) " +
+                    " VALUES (?,?) ";
+
+            SQLiteStatement statement = mDataBase.compileStatement(sql);
+
+            for (Division o : list) {
+                statement.clearBindings();
+                statement.bindString(1, o.getCode());
+                statement.bindString(2, o.getName());
+
+                statement.executeInsert();
+            }
+            mDataBase.setTransactionSuccessful();
+            if (listenner != null) listenner.onSuccess();
+        } catch (Exception e) {
+            Log.w(TAG, e);
+            if (listenner != null) listenner.onFail(e.getCause() != null ? e.getCause() : e.fillInStackTrace());
+            throw new RuntimeException("To catch into upper level.");
+        } finally {
+            mDataBase.endTransaction();
+            AppController.getInstance().getDbHelper().closeDataBase();
+        }
+    }
 
     public List<String> getAllDivisionName() {
         ArrayList<String> list = new ArrayList<String>();

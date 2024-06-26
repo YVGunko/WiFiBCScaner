@@ -47,4 +47,9 @@
     <string name="add_outdocs_for_all_deps">Создать накладные для всех бригад</string>
     <string name="error_something_went_wrong">Что-то пошло не так</string>
     <string name="data_load_in_progress">Данные еще загружаются...</string>
+    <string name="div_load_completed">Подразделения уже загружены</string>
+    <string name="user_load_completed">Пользователи уже загружены</string>
+    <string name="oper_load_completed">Операции уже загружены</string>
+    <string name="sotr_load_completed">Сотрудники уже загружены</string>
+    <string name="dep_load_completed">Бригады уже загружены</string>
 </resources>

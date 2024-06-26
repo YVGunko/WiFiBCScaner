@@ -4,18 +4,29 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteStatement;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.Deps;
 import com.example.yg.wifibcscaner.data.model.Sotr;
+import com.example.yg.wifibcscaner.service.ApiUtils;
+import com.example.yg.wifibcscaner.service.MessageUtils;
+
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
 import static android.text.TextUtils.substring;
 import static com.example.yg.wifibcscaner.utils.AppUtils.tryCloseCursor;
+import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getTodayMorning;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.lDateToString;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.sDateTimeToLong;
 
@@ -23,6 +34,64 @@ public class SotrRepo {
     private static final String TAG = "sProject -> SotrRepo";
     private SQLiteDatabase mDataBase ;
 
+    private void downloadSotr() {
+        try {
+            ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl())
+                    .getSotr(StringUtils.isNotBlank(AppController.getInstance().getGlobalUpdateDate())
+                            ? AppController.getInstance().getGlobalUpdateDate()
+                            : getUpdateDate(getTodayMorning()))
+                    .enqueue(new Callback<List<Sotr>>() {
+                        @Override
+                        public void onResponse(Call<List<Sotr>> call, Response<List<Sotr>> response) {
+                            if (response.isSuccessful() && response.code() == 200) {
+                                insertSotrInBulk(response.body());
+                                MessageUtils.showToast(String.valueOf(R.string.data_load_in_progress), true);
+                            }
+                        }
+
+                        private void insertSotrInBulk(List<Sotr> list) {
+                            try {
+                                mDataBase = AppController.getInstance().getDbHelper().openDataBase();
+                                mDataBase.beginTransaction();
+                                String sql = "INSERT OR REPLACE INTO "+Sotr.TABLE+" (_id, tn_Sotr, sotr, dt, Id_d, Id_o, division_code, expired) " +
+                                        " VALUES (?,?,?,?,?,?,?,?) ";
+
+                                SQLiteStatement statement = mDataBase.compileStatement(sql);
+
+                                for (Sotr o : list) {
+                                    statement.clearBindings();
+                                    statement.bindLong(1, o.get_id());
+                                    statement.bindString(2, o.get_tn_Sotr());
+                                    statement.bindString(3, o.get_Sotr());
+                                    statement.bindString(4, o.get_DT());
+                                    statement.bindLong(5, o.get_Id_d());
+                                    statement.bindLong(6, o.get_Id_o());
+                                    statement.bindString(7, o.getDivision_code());
+                                    statement.bindLong(8, o.getExpiredAsLong());
+
+                                    statement.executeInsert();
+                                }
+                                mDataBase.setTransactionSuccessful();
+                            } catch (Exception e) {
+                                Log.w(TAG, e);
+                                throw new RuntimeException("To catch into upper level.");
+                            } finally {
+                                mDataBase.endTransaction();
+                                AppController.getInstance().getDbHelper().closeDataBase();
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Call<List<Sotr>> call, Throwable t) {
+                            Log.d(TAG, "Ответ сервера на запрос новых users: " + t.getMessage());
+                        }
+                    });
+        } catch (Exception e) {
+            Log.e(TAG, "downloadUser -> ", e);
+            MessageUtils.showToast("Ошибка. Загрузка данных. ", true);
+        }
+        return;
+    }
     public List<Sotr> getSotrIdByDivisionCodeAndOperationIdAndDepartmentId(String division_code, int operation_id, int department_id) {
         ArrayList<Sotr> list = new ArrayList<Sotr>();
         Cursor cursor = null;
@@ -195,6 +264,21 @@ public class SotrRepo {
             return 0;
         } finally {
             AppController.getInstance().getDbHelper().closeDataBase();
+        }
+    }
+    private String getUpdateDate(@NonNull String globalUpdateDate) {
+        Cursor cursor = null;
+        try {
+            cursor = mDataBase.rawQuery("SELECT max(DT) FROM sotr", null);
+            if (cursor != null && cursor.moveToFirst()) {
+                return lDateToString(cursor.getLong(0) > sDateTimeToLong(globalUpdateDate) ? cursor.getLong(0) : sDateTimeToLong(globalUpdateDate));
+            }
+            return globalUpdateDate;
+        } catch (Exception e) {
+            Log.e(TAG, "getMaxDepsDate -> ".concat(e.getMessage()));
+            return globalUpdateDate;
+        } finally {
+            tryCloseCursor(cursor);
         }
     }
 }
