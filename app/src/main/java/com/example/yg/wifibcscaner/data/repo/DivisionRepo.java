@@ -8,13 +8,58 @@ import android.util.Log;
 
 import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.Division;
+import com.example.yg.wifibcscaner.service.ApiUtils;
+import com.example.yg.wifibcscaner.service.MessageUtils;
+import com.example.yg.wifibcscaner.service.Result;
+import com.example.yg.wifibcscaner.utils.executors.DefaultExecutorSupplier;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
 import static com.example.yg.wifibcscaner.utils.AppUtils.tryCloseCursor;
 
 public class DivisionRepo {
+    public DivListenner listenner;
+    public interface DivListenner {
+        void onSuccess(String message);
+
+        void onFail(Throwable t);
+    }
+    public void setListenner(DivListenner listenner) {
+        this.listenner = listenner;
+    }
+    public void callApi() {
+        DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
+            try {
+                //check if connection is available
+                ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).getServerUpdateTime().enqueue(new Callback<Long>() {
+                    @Override
+                    public void onResponse(Call<Long> call, Response<Long> response) {
+                        if (response.isSuccessful()) {
+                            if (listenner != null) listenner.onSuccess("response.body()");
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<Long> call, Throwable t) {
+                        Log.e(TAG, "onFailure при запросе времени обновления с сервера: " + t.getMessage());
+                        MessageUtils.showToast("Ошибка при синхронизации данных!", true);
+                        if (listenner != null) listenner.onFail(t);
+                    }
+                });
+            } catch (Exception e) {
+                Log.e(TAG, "Exception запроса времени обновления с сервера : " + e.getMessage());
+                MessageUtils.showToast("Исключительная ситуация при запросе времени обновления с сервера.", true);
+                if (listenner != null) listenner.onFail(e.getCause() != null ? e.getCause() : e.fillInStackTrace());
+                return;
+            }
+        });
+        return;
+    }
     private static final String TAG = "sProject -> DivisionRepo";
     private SQLiteDatabase mDataBase ;
 

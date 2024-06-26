@@ -152,6 +152,21 @@ public class SettingsActivity extends AppCompatActivity implements
         select_label.setText(depRepo.getDepNameById(AppController.getInstance().getDefs().get_Id_d()));
         labelSotr = (TextView) findViewById(R.id.labelSotr);
         labelSotr.setText(sotrRepo.getNameById(AppController.getInstance().getDefs().get_Id_s()));
+
+
+        divRepo.setListenner(new DivisionRepo.DivListenner() {
+            @Override
+            public void onSuccess(String message) {
+                Log.i(TAG, message);
+                MessageUtils.showToast(message, true);
+            }
+
+            @Override
+            public void onFail(Throwable t) {
+                Log.e(TAG, t.getLocalizedMessage());
+                MessageUtils.showToast(t.getLocalizedMessage(), true);
+            }
+        });
     }
 
     @Override
@@ -171,7 +186,7 @@ public class SettingsActivity extends AppCompatActivity implements
                     /*
                     SettingsActivity.SyncIncoData task = new SettingsActivity.SyncIncoData();
                     task.execute(new String[]{null});*/
-                    makeUserRequest();
+                    divRepo.callApi();
 
                 } catch (Exception e) {
 
