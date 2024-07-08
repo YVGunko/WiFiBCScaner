@@ -8,13 +8,10 @@ import android.database.sqlite.SQLiteStatement;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
-import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.Operation;
 import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
-
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,7 +22,6 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 import static com.example.yg.wifibcscaner.utils.AppUtils.tryCloseCursor;
-import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getTodayMorning;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.lDateToString;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.sDateTimeToLong;
 
@@ -42,12 +38,10 @@ public class OperRepo {
     public void setListenner(OperDownloadListenner listenner) {
         this.listenner = listenner;
     }
-    private void downloadOperation() {
+    public void downloadOperation() {
         try {
             ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl())
-                    .getOperation(StringUtils.isNotBlank(AppController.getInstance().getGlobalUpdateDate())
-                            ? AppController.getInstance().getGlobalUpdateDate()
-                            : getUpdateDate(getTodayMorning()))
+                    .getOperation()
                     .enqueue(new Callback<List<Operation>>() {
                         @Override
                         public void onResponse(Call<List<Operation>> call, Response<List<Operation>> response) {

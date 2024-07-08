@@ -18,6 +18,7 @@ public class SharedPrefs {
     final static String OUTDOCS_DAYS = "outDocsDays";
     final static String OUTDOCS_NUMERATION_START_DATE = "outDocsNumStartDate";
     final static String NEXT_UPDATE_DATE = "nextUpdateDate";
+    final static String INIT_UPDATE_DATE = "initUpdateDate";
     final static int DOESNT_EXIST = -1;
 
     private static SharedPrefs sharedPref;
@@ -78,5 +79,9 @@ public class SharedPrefs {
     @RequiresApi(api = Build.VERSION_CODES.O)
     public long getNextUpdateDate() {
         return AppController.getInstance().getSharedPreferences().getLong(NEXT_UPDATE_DATE, DateTimeUtils.getFirstDayOfMonth());
+    }
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    public String getInitUpdateDate() {
+        return AppController.getInstance().getSharedPreferences().getString(INIT_UPDATE_DATE, "01.01.2018 00:00:00");
     }
 }

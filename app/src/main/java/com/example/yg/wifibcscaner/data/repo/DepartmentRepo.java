@@ -4,23 +4,44 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteStatement;
+import android.os.Build;
 import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
 import android.util.Log;
 
 import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.Deps;
-import com.example.yg.wifibcscaner.data.model.user;
+import com.example.yg.wifibcscaner.service.ApiUtils;
+import com.example.yg.wifibcscaner.service.SharedPrefs;
+
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
 import static com.example.yg.wifibcscaner.utils.AppUtils.tryCloseCursor;
+import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getTodayMorning;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.lDateToString;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.sDateTimeToLong;
 
 public class DepartmentRepo {
     private static final String TAG = "sProject -> DepartmentRepo.";
     private SQLiteDatabase mDataBase ;
+
+    public DepDownloadListenner listenner;
+    public interface DepDownloadListenner {
+        void onSuccess();
+
+        void onFail(Throwable t);
+    }
+    public void setListenner(DepDownloadListenner listenner){
+        this.listenner = listenner;
+    }
 
     public List<String> getAllDepartmentNameByDivisionCodeAndOperationId(String code, int iD) {
         ArrayList<String> nameDeps = new ArrayList<String>();
@@ -159,5 +180,78 @@ public class DepartmentRepo {
         } finally {
             AppController.getInstance().getDbHelper().closeDataBase();
         }
+    }
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    private String getUpdateDate(@NonNull String globalUpdateDate) {
+        Cursor cursor = null;
+        try {
+            cursor = mDataBase.rawQuery("SELECT max(DT) FROM Deps", null);
+            if (cursor != null && cursor.moveToFirst()) {
+                return lDateToString(cursor.getLong(0) > sDateTimeToLong(globalUpdateDate) ? cursor.getLong(0) : sDateTimeToLong(globalUpdateDate));
+            }
+            return SharedPrefs.getInstance().getInitUpdateDate();
+        } catch (Exception e) {
+            Log.e(TAG, "getMaxDepsDate -> ".concat(e.getMessage()));
+            return globalUpdateDate;
+        } finally {
+            tryCloseCursor(cursor);
+        }
+    }
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    public void downloadDepartment() {
+        try {
+            ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl())
+                    .getDeps(StringUtils.isNotBlank(AppController.getInstance().getGlobalUpdateDate())
+                            ? AppController.getInstance().getGlobalUpdateDate()
+                            : getUpdateDate(getTodayMorning()))
+                    .enqueue(new Callback<List<Deps>>() {
+                        @Override
+                        public void onResponse(Call<List<Deps>> call, Response<List<Deps>> response) {
+                            if (response.isSuccessful()  && !response.body().isEmpty())
+                                insertDepInBulk(response.body());
+                        }
+
+                        private void insertDepInBulk(List<Deps> list) {
+                            try {
+                                mDataBase = AppController.getInstance().getDbHelper().openDataBase();
+                                mDataBase.beginTransaction();
+                                String sql = "INSERT OR REPLACE INTO "+Deps.TABLE+" (_id,Id_deps,Name_Deps,DT,division_code,Id_o) " +
+                                        " VALUES (?,?,?,?,?,?) ";
+
+                                SQLiteStatement statement = mDataBase.compileStatement(sql);
+
+                                for (Deps o : list) {
+                                    statement.clearBindings();
+                                    statement.bindLong(1, o.get_id());
+                                    statement.bindString(2, o.get_Id_deps());
+                                    statement.bindString(3, o.get_Name_Deps());
+                                    statement.bindString(4, o.get_DT());
+                                    statement.bindString(5, o.getDivision_code());
+                                    statement.bindLong(6, o.get_Id_o());
+
+                                    statement.executeInsert();
+                                }
+                                mDataBase.setTransactionSuccessful();
+                                if (listenner != null) listenner.onSuccess();
+                            } catch (Exception e) {
+                                Log.w(TAG, e);
+                                throw new RuntimeException("Загрузка данных. Исключительная ситуация при добавлении бригад.");
+                            } finally {
+                                mDataBase.endTransaction();
+                                AppController.getInstance().getDbHelper().closeDataBase();
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Call<List<Deps>> call, Throwable t) {
+                            Log.d(TAG, "Ответ сервера на запрос новых users: " + t.getMessage());
+                            if (listenner != null) listenner.onFail(t);
+                        }
+                    });
+        } catch (Exception e) {
+            Log.e(TAG, "downloadDeps -> ", e);
+            if (listenner != null) listenner.onFail(e.getCause() != null ? e.getCause() : e.fillInStackTrace());
+        }
+        return;
     }
 }

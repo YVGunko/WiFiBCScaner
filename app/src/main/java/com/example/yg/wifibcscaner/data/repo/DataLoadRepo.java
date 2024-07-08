@@ -15,6 +15,7 @@ import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.dto.OrderOutDocBoxMovePart;
 import com.example.yg.wifibcscaner.data.model.BoxMoves;
+import com.example.yg.wifibcscaner.data.model.BoxSizing;
 import com.example.yg.wifibcscaner.data.model.Boxes;
 import com.example.yg.wifibcscaner.data.model.Division;
 import com.example.yg.wifibcscaner.data.model.Operation;
@@ -91,6 +92,7 @@ public class DataLoadRepo {
                     public void onResponse(Call<Long> call, Response<Long> response) {
                         if (response.isSuccessful()) {
 //                            loadStuff() ;
+
                             if (BuildConfig.DEBUG) {
                                 MessageUtils.showToast("Update date: "
                                         .concat(StringUtils.isNotBlank(AppController.getInstance().getGlobalUpdateDate())
@@ -174,7 +176,7 @@ public class DataLoadRepo {
                                         nextPage.getAndIncrement(),
                                         pageSize)
                                         .enqueue(downloadDataCallback(updateDate));
-                                MessageUtils.showToast(String.valueOf(R.string.data_load_in_progress), false);
+                                MessageUtils.showToast(AppController.getInstance().getString(R.string.data_load_in_progress), false);
                                 if (BuildConfig.DEBUG) MessageUtils.showToast("Page ".concat(nextPage.toString()).concat(" has been requested."), true);
                             }
                         } catch (RuntimeException re) {
@@ -204,6 +206,12 @@ public class DataLoadRepo {
                 if (r.outDocReqList != null &&
                         !r.outDocReqList.isEmpty() &&
                         insertOutDocInBulk(r.outDocReqList)) {
+
+                    if (r.boxSizingReqList!= null &&
+                            !r.boxSizingReqList.isEmpty()) {
+                        if (!insertBoxSizingInBulk(r.boxSizingReqList))
+                            MessageUtils.showToast("Сервер не отвечает. Проверьте подключение WiFi.", true);
+                    }
 
                     if (r.boxReqList != null &&
                             !r.boxReqList.isEmpty() &&
@@ -387,6 +395,25 @@ public class DataLoadRepo {
                 else
                     statement.bindLong(7, getDateTimeLong(o.get_sentToMasterDate()));
                 statement.bindString(8, o.get_idOutDocs());
+                statement.executeInsert();
+            }
+            return true;
+        } catch (Exception e) {
+            Log.w(TAG, e);
+            throw new RuntimeException("To catch into upper level.");
+        }
+    }
+
+    public boolean insertBoxSizingInBulk(List<BoxSizing> list) {
+        try {
+            SQLiteStatement statement = mDataBase.compileStatement(BoxSizing.SQL_INSERT_REPLACE);
+
+            for (BoxSizing o : list) {
+                statement.clearBindings();
+                // statement.bindLong(1, o.getId());
+                statement.bindLong(1, o.getMasterDataId());
+                statement.bindLong(2, o.getQuantity());
+                statement.bindString(3, o.getSize());
                 statement.executeInsert();
             }
             return true;

@@ -8,7 +8,9 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.RequiresApi;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -144,21 +146,6 @@ public class SettingsActivity extends AppCompatActivity implements
         labelSotr = (TextView) findViewById(R.id.labelSotr);
         labelSotr.setText(sotrRepo.getNameById(AppController.getInstance().getDefs().get_Id_s()));
 
-
-        divRepo.setListenner(new DivisionRepo.DivDownloadListenner() {
-            @Override
-            public void onSuccess() {
-                Log.i(TAG, getString(R.string.div_load_completed));
-                loadSpinnerDivisionData();
-                MessageUtils.showToast(getString(R.string.div_load_completed), true);
-            }
-
-            @Override
-            public void onFail(Throwable t) {
-                Log.e(TAG, t.getLocalizedMessage());
-                MessageUtils.showToast(t.getLocalizedMessage(), true);
-            }
-        });
         userRepo.setListenner(new UserRepo.UserDownLoadListenner() {
             @Override
             public void onSuccess() {
@@ -172,6 +159,20 @@ public class SettingsActivity extends AppCompatActivity implements
                 MessageUtils.showToast(t.getLocalizedMessage(), true);
             }
         });
+        divRepo.setListenner(new DivisionRepo.DivDownloadListenner() {
+            @Override
+            public void onSuccess() {
+                Log.i(TAG, getString(R.string.div_load_completed));
+                loadSpinnerDivisionData();
+                MessageUtils.showToast(getString(R.string.div_load_completed), true);
+            }
+
+            @Override
+            public void onFail(Throwable t) {
+                Log.e(TAG, t.getMessage());
+                MessageUtils.showToast(t.getLocalizedMessage(), true);
+            }
+        });
         operRepo.setListenner(new OperRepo.OperDownloadListenner() {
             @Override
             public void onSuccess() {
@@ -182,8 +183,36 @@ public class SettingsActivity extends AppCompatActivity implements
 
             @Override
             public void onFail(Throwable t) {
-                Log.e(TAG, t.getLocalizedMessage());
-                MessageUtils.showToast(t.getLocalizedMessage(), true);
+                Log.e(TAG, t.getMessage());
+                MessageUtils.showToast(t.getMessage(), true);
+            }
+        });
+        depRepo.setListenner(new DepartmentRepo.DepDownloadListenner() {
+            @Override
+            public void onSuccess() {
+                Log.i(TAG, getString(R.string.dep_load_completed));
+                loadSpinnerData();
+                MessageUtils.showToast(getString(R.string.dep_load_completed), true);
+            }
+
+            @Override
+            public void onFail(Throwable t) {
+                Log.e(TAG, t.getMessage());
+                MessageUtils.showToast(t.getMessage(), true);
+            }
+        });
+        sotrRepo.setListenner(new SotrRepo.SotrDownloadListenner() {
+            @Override
+            public void onSuccess() {
+                Log.i(TAG, getString(R.string.sotr_load_completed));
+                loadSpinnerSotrData();
+                MessageUtils.showToast(getString(R.string.sotr_load_completed), true);
+            }
+
+            @Override
+            public void onFail(Throwable t) {
+                Log.e(TAG, t.getMessage());
+                MessageUtils.showToast(t.getMessage(), true);
             }
         });
     }
@@ -194,6 +223,7 @@ public class SettingsActivity extends AppCompatActivity implements
         return true;
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // получим идентификатор выбранного пункта меню
@@ -202,11 +232,11 @@ public class SettingsActivity extends AppCompatActivity implements
         switch (id) {
             case R.id.action_receive_box:
                 try {
-                    /*
-                    SettingsActivity.SyncIncoData task = new SettingsActivity.SyncIncoData();
-                    task.execute(new String[]{null});*/
+                    userRepo.downloadUser();
                     divRepo.downloadDivision();
-
+                    operRepo.downloadOperation();
+                    depRepo.downloadDepartment();
+                    sotrRepo.downloadSotr();
                 } catch (Exception e) {
 
                     Log.e(TAG, "Ответ сервера на запрос новых заказов: " + e.getMessage());

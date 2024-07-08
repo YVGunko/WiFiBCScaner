@@ -2,9 +2,12 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/DataCollection/DataCollection.iml" filepath="$PROJECT_DIR$/.idea/modules/DataCollection/DataCollection.iml" group="WiFiBCScaner/DataCollection" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/Dev.WiFiBCScaner.iml" filepath="$PROJECT_DIR$/.idea/modules/Dev.WiFiBCScaner.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/WiFiBCScaner.iml" filepath="$PROJECT_DIR$/.idea/modules/WiFiBCScaner.iml" group="WiFiBCScaner" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/DataCollection/WiFiBCScaner.DataCollection.iml" filepath="$PROJECT_DIR$/.idea/modules/DataCollection/WiFiBCScaner.DataCollection.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/WiFiBCScaner.app.iml" filepath="$PROJECT_DIR$/.idea/modules/app/WiFiBCScaner.app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/app.iml" filepath="$PROJECT_DIR$/.idea/modules/app/app.iml" group="WiFiBCScaner/app" />
     </modules>
   </component>
 </project>

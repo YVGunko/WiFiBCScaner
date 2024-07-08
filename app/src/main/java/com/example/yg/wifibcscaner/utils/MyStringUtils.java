@@ -207,4 +207,12 @@ public class MyStringUtils {
             result = result.concat(fb.getOutDocs()).concat("\n");
         return result;
     }
+    /* boxSizing */
+    public static String getOrder_id(String storedbarcode, String prefix) {
+        String[] atmpBarcode = storedbarcode.split("[.]");  // по dot
+        if (atmpBarcode.length != 5) {
+            return "";
+        }
+        return  (atmpBarcode[0] + "." + atmpBarcode[1] + "." + atmpBarcode[2] + "." + atmpBarcode[3]);
+    }
 }

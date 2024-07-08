@@ -1,6 +1,7 @@
 package com.example.yg.wifibcscaner.data.dto;
 
 import com.example.yg.wifibcscaner.data.model.BoxMoves;
+import com.example.yg.wifibcscaner.data.model.BoxSizing;
 import com.example.yg.wifibcscaner.data.model.Boxes;
 import com.example.yg.wifibcscaner.data.model.Orders;
 import com.example.yg.wifibcscaner.data.model.OutDocs;
@@ -22,4 +23,6 @@ public class OrderOutDocBoxMovePart {
     public List<Prods> partBoxReqList = new ArrayList<>();
     @NotNull
     public List<BoxMoves> movesReqList = new ArrayList<>();
+    @NotNull
+    public List<BoxSizing> boxSizingReqList = new ArrayList<>();
 }

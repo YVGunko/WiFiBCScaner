@@ -41,13 +41,13 @@ public interface OrderService {
     Call<List<Sotr>> getSotr(@Query("date") String date);
 
     @GET("/user/v2")
-    Call<List<user>> getUser(@Query("date") String date);
+    Call<List<user>> getUser();
 
     @GET("/department")
     Call<List<Deps>> getDeps(@Query("date") String date);
 
     @GET("/operation")
-    Call<List<Operation>> getOperation(@Query("date") String date);
+    Call<List<Operation>> getOperation();
 
     @POST("/outDocSaveOrUpdate/v3")
     Call<List<OutDocs>> addOutDoc(@Body ArrayList<OutDocs> outDocs, @Query("deviceId") String deviceId);

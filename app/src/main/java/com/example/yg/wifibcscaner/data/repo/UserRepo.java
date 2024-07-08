@@ -44,14 +44,12 @@ public class UserRepo {
     public void downloadUser() {
         try {
             ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl())
-                    .getUser(StringUtils.isNotBlank(AppController.getInstance().getGlobalUpdateDate())
-                            ? AppController.getInstance().getGlobalUpdateDate()
-                            : getUserUpdateDate(getTodayMorning()))
+                    .getUser()
                     .enqueue(new Callback<List<user>>() {
                         @Override
                         public void onResponse(Call<List<user>> call, Response<List<user>> response) {
                             if (response.isSuccessful() && !response.body().isEmpty())
-                                insertUserInBulk(response.body());
+                                insertUser(response.body());
                         }
 
                         @Override
@@ -242,9 +240,11 @@ public class UserRepo {
 
                 counter += mDataBase.insertWithOnConflict(com.example.yg.wifibcscaner.data.model.user.TABLE, null, values, 5);
             }
+            if (listenner != null) listenner.onSuccess();
             return counter;
         } catch (SQLException e) {
             Log.e(TAG, e.getMessage());
+            if (listenner != null) listenner.onFail(e.getCause() != null ? e.getCause() : e.fillInStackTrace());
             return 0;
         } finally {
             AppController.getInstance().getDbHelper().closeDataBase();

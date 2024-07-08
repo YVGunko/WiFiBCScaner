@@ -5,15 +5,15 @@ import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
+import android.os.Build;
 import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
 import android.util.Log;
 
-import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.controller.AppController;
-import com.example.yg.wifibcscaner.data.model.Deps;
 import com.example.yg.wifibcscaner.data.model.Sotr;
 import com.example.yg.wifibcscaner.service.ApiUtils;
-import com.example.yg.wifibcscaner.service.MessageUtils;
+import com.example.yg.wifibcscaner.service.SharedPrefs;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -34,7 +34,18 @@ public class SotrRepo {
     private static final String TAG = "sProject -> SotrRepo";
     private SQLiteDatabase mDataBase ;
 
-    private void downloadSotr() {
+    public SotrDownloadListenner listenner;
+    public interface SotrDownloadListenner {
+        void onSuccess();
+
+        void onFail(Throwable t);
+    }
+    public void setListenner(SotrDownloadListenner listenner) {
+        this.listenner = listenner;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    public void downloadSotr() {
         try {
             ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl())
                     .getSotr(StringUtils.isNotBlank(AppController.getInstance().getGlobalUpdateDate())
@@ -43,10 +54,8 @@ public class SotrRepo {
                     .enqueue(new Callback<List<Sotr>>() {
                         @Override
                         public void onResponse(Call<List<Sotr>> call, Response<List<Sotr>> response) {
-                            if (response.isSuccessful() && response.code() == 200) {
+                            if (response.isSuccessful()  && !response.body().isEmpty())
                                 insertSotrInBulk(response.body());
-                                MessageUtils.showToast(String.valueOf(R.string.data_load_in_progress), true);
-                            }
                         }
 
                         private void insertSotrInBulk(List<Sotr> list) {
@@ -72,9 +81,10 @@ public class SotrRepo {
                                     statement.executeInsert();
                                 }
                                 mDataBase.setTransactionSuccessful();
+                                if (listenner != null) listenner.onSuccess();
                             } catch (Exception e) {
                                 Log.w(TAG, e);
-                                throw new RuntimeException("To catch into upper level.");
+                                throw new RuntimeException("Загрузка данных. Исключительная ситуация при добавлении сотрудников.");
                             } finally {
                                 mDataBase.endTransaction();
                                 AppController.getInstance().getDbHelper().closeDataBase();
@@ -84,11 +94,12 @@ public class SotrRepo {
                         @Override
                         public void onFailure(Call<List<Sotr>> call, Throwable t) {
                             Log.d(TAG, "Ответ сервера на запрос новых users: " + t.getMessage());
+                            if (listenner != null) listenner.onFail(t);
                         }
                     });
         } catch (Exception e) {
             Log.e(TAG, "downloadUser -> ", e);
-            MessageUtils.showToast("Ошибка. Загрузка данных. ", true);
+            if (listenner != null) listenner.onFail(e.getCause() != null ? e.getCause() : e.fillInStackTrace());
         }
         return;
     }
@@ -266,6 +277,7 @@ public class SotrRepo {
             AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
+    @RequiresApi(api = Build.VERSION_CODES.O)
     private String getUpdateDate(@NonNull String globalUpdateDate) {
         Cursor cursor = null;
         try {
@@ -273,7 +285,7 @@ public class SotrRepo {
             if (cursor != null && cursor.moveToFirst()) {
                 return lDateToString(cursor.getLong(0) > sDateTimeToLong(globalUpdateDate) ? cursor.getLong(0) : sDateTimeToLong(globalUpdateDate));
             }
-            return globalUpdateDate;
+            return SharedPrefs.getInstance().getInitUpdateDate();
         } catch (Exception e) {
             Log.e(TAG, "getMaxDepsDate -> ".concat(e.getMessage()));
             return globalUpdateDate;

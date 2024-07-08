@@ -81,6 +81,8 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
     private final OrderRepo orderRepo = new OrderRepo();
     private final BoxRepo boxRepo = new BoxRepo();
 
+    private final String boxSizingPrefix = "S";
+
     private static BarcodeReader barcodeReader;
     private AidcManager manager;
 
@@ -397,77 +399,81 @@ private static String filter (String str){
             Нужно его обработать, выбрать данные новой коробки для вывода tVDBInfo и в editTextRQ
             * Если данные новой коробки не нашли в заказах - сообщить и ничего не выводить*/
             //поискать символ с кодом 194
-        currentbarcode = filter(currentbarcode);
-        if ((currentbarcode.length()<20)&&(StringUtils.countMatches(currentbarcode,'.')!=5)) {
-            Log.d(TAG, "scanResultHandler -> barcode mismatch -> return");
-            MessageUtils.showToast(MainActivity.this, getString(R.string.QR_invalid),true);
-            return;
-        }
-        fo = orderRepo.searchOrder(currentbarcode);
-        if (StringUtils.isNotBlank(fo.getDivision_code()) && !fo.getDivision_code().equals(AppController.getInstance().getDefs().getDivision_code())) {
-            Log.d(TAG, "scanResultHandler -> currentbarcode.division ->"+fo.getDivision_code());
-            Log.d(TAG, "scanResultHandler -> Defs ->"+AppController.getInstance().getDefs().getDivision_code());
-            Log.d(TAG, "scanResultHandler -> division mismatch -> return");
-            MessageUtils.showToast(MainActivity.this, getString(R.string.wrong_division_order),true);
-            return;
-        }
-        if (!fo.isArchive()) { // архив
-            if (fo.get_id() != 0) {                                      //Заказ найден, ищем коробку
-                fb = mDBHelper.searchBox(fo.get_id(), currentbarcode);
-                //---Получаем строку данных о коробке для вывода в tVDBInfo и количество для редактирования
-                tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
-                if (StringUtils.isNotEmpty(fb.getBoxdef()))
-                    completeOrderDef(fb);
-                tVDBInfo.setText(fo.getOrderdef());
-                if (!fb.is_archive()){
-                    if (StringUtils.isNotEmpty(fb.get_id())) {                                  //Коробка есть
-                        //if it isOneScanOnlyOper and there is another outDoc record, set Quantity equal, bcs it can be only one shot
-                        if (isOneScanOnlyOper(AppController.getInstance().getDefs().get_Id_o()) & StringUtils.isNotEmpty(fb.getOutDocs()))
-                            fb.setQB( fb.getRQ() );
-                        //if it is 9999 oper and there is another outDoc record it is not allowed to add items
-                        if (isReleaseOper(AppController.getInstance().getDefs().get_Id_o()) & StringUtils.isNotEmpty(fb.getOutDocs()))
-                            fb.setQB( fb.getRQ() );
-                        if (fb.getQB() == fb.getRQ()) {//Коробка заполнена
+        if (BuildConfig.DEBUG) MessageUtils.showToast(currentbarcode, false);
+        // currentbarcode = filter(currentbarcode);
+        if (StringUtils.countMatches(currentbarcode,'.') == 5) {
+            fo = orderRepo.searchOrder(currentbarcode);
+            if (StringUtils.isNotBlank(fo.getDivision_code()) && !fo.getDivision_code().equals(AppController.getInstance().getDefs().getDivision_code())) {
+                Log.d(TAG, "scanResultHandler -> currentbarcode.division ->"+fo.getDivision_code());
+                Log.d(TAG, "scanResultHandler -> Defs ->"+AppController.getInstance().getDefs().getDivision_code());
+                Log.d(TAG, "scanResultHandler -> division mismatch -> return");
+                MessageUtils.showToast(MainActivity.this, getString(R.string.wrong_division_order),true);
+                return;
+            }
+            if (!fo.isArchive()) { // архив
+                if (fo.get_id() != 0) {  //Заказ найден, ищем коробку. recognize boxSizing ???
+                    fb = mDBHelper.searchBox(fo.get_id(), currentbarcode);
+                    //---Получаем строку данных о коробке для вывода в tVDBInfo и количество для редактирования
+                    tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
+                    if (StringUtils.isNotEmpty(fb.getBoxdef()))
+                        completeOrderDef(fb);
+                    tVDBInfo.setText(fo.getOrderdef());
+                    if (!fb.is_archive()){
+                        if (StringUtils.isNotEmpty(fb.get_id())) {                                  //Коробка есть
+                            //if it isOneScanOnlyOper and there is another outDoc record, set Quantity equal, bcs it can be only one shot
+                            if (isOneScanOnlyOper(AppController.getInstance().getDefs().get_Id_o()) & StringUtils.isNotEmpty(fb.getOutDocs()))
+                                fb.setQB( fb.getRQ() );
+                            //if it is 9999 oper and there is another outDoc record it is not allowed to add items
+                            if (isReleaseOper(AppController.getInstance().getDefs().get_Id_o()) & StringUtils.isNotEmpty(fb.getOutDocs()))
+                                fb.setQB( fb.getRQ() );
+                            if (fb.getQB() == fb.getRQ()) {//Коробка заполнена
 
-                            editTextRQ = (EditText) findViewById(R.id.editTextRQ);
-                            editTextRQ.setText(String.valueOf(fb.getQB() - fb.getRQ()));
-                            editTextRQ.setEnabled(false);
+                                editTextRQ = (EditText) findViewById(R.id.editTextRQ);
+                                editTextRQ.setText(String.valueOf(fb.getQB() - fb.getRQ()));
+                                editTextRQ.setEnabled(false);
 
-                            MessageUtils.showToast(this, "Эта коробка уже принята на "+AppController.getInstance().getDefs().getDescOper(), false);
-                        } else {
-                            Button bScan = (Button) findViewById(R.id.bScan);
-                            bScan.setText("OK!");
-                            editTextRQ = (EditText) findViewById(R.id.editTextRQ);
-                            editTextRQ.setText(String.valueOf(fb.getQB() - fb.getRQ()));
-                            final boolean isSetEnabled = true; //!AppUtils.isOutComeOper(AppController.getInstance().getDefs().get_Id_o());
-                            editTextRQ.setEnabled(isSetEnabled);
-                            editTextRQ.setSelection(editTextRQ.getText().length());
-                            if (fb.getRQ() != 0) {
-                                MessageUtils.showToast(AppController.getInstance().getApplicationContext(),
-                                        "Эта коробка ранее принималась неполной!",
-                                        true);
+                                MessageUtils.showToast(this, "Эта коробка уже принята на "+AppController.getInstance().getDefs().getDescOper(), false);
+                            } else {
+                                Button bScan = (Button) findViewById(R.id.bScan);
+                                bScan.setText("OK!");
+                                editTextRQ = (EditText) findViewById(R.id.editTextRQ);
+                                editTextRQ.setText(String.valueOf(fb.getQB() - fb.getRQ()));
+                                final boolean isSetEnabled = true; //!AppUtils.isOutComeOper(AppController.getInstance().getDefs().get_Id_o());
+                                editTextRQ.setEnabled(isSetEnabled);
+                                editTextRQ.setSelection(editTextRQ.getText().length());
+                                if (fb.getRQ() != 0) {
+                                    MessageUtils.showToast(AppController.getInstance().getApplicationContext(),
+                                            "Эта коробка ранее принималась неполной!",
+                                            true);
+                                }
+                            }
+                        } else { //Коробки нет , подставить колво в поле редактирования колва и дожаться ОК.
+                            if (isOneOfFirstOper(AppController.getInstance().getDefs().get_Id_o())){ //Добавить коробку если это операция приемки baseOper = 1
+                                Button bScan = (Button) findViewById(R.id.bScan);
+                                bScan.setText("OK!");
+                                editTextRQ = (EditText) findViewById(R.id.editTextRQ);
+                                editTextRQ.setText(String.valueOf(fb.getQB() - fb.getRQ())); //устанавливаетяся количество как разница
+                                editTextRQ.setEnabled(true);
+                                editTextRQ.setSelection(editTextRQ.getText().length());
+                            }else{
+                                showLongMessage("Эта коробка не принималась на "+AppController.getInstance().getDefs().getDescFirstOperForCurrent());
                             }
                         }
-                    } else {                                                //Коробки нет , подставить колво в поле редактирования колва и дожаться ОК.
-                        if (isOneOfFirstOper(AppController.getInstance().getDefs().get_Id_o())){ //Добавить коробку если это операция приемки baseOper = 1
-                            Button bScan = (Button) findViewById(R.id.bScan);
-                            bScan.setText("OK!");
-                            editTextRQ = (EditText) findViewById(R.id.editTextRQ);
-                            editTextRQ.setText(String.valueOf(fb.getQB() - fb.getRQ())); //устанавливаетяся количество как разница
-                            editTextRQ.setEnabled(true);
-                            editTextRQ.setSelection(editTextRQ.getText().length());
-                        }else{
-                            showLongMessage("Эта коробка не принималась на "+AppController.getInstance().getDefs().getDescFirstOperForCurrent());
-                        }
+                    }else {
+                        showLongMessage("Эта коробка уже в архиве! Никакие операции невозможны!");
                     }
-                }else {
-                    showLongMessage("Эта коробка уже в архиве! Никакие операции невозможны!");
+                } else {
+                    showLongMessage("Заказ для этой коробки не загружен! Нужно синхронизировать данные.");
                 }
             } else {
-                showLongMessage("Заказ для этой коробки не загружен! Нужно синхронизировать данные.");
+                showLongMessage("Этот заказ уже в архиве! Никакие операции невозможны!");
             }
+        } else if (StringUtils.countMatches(currentbarcode,'.') == 4 && StringUtils.contains(currentbarcode,boxSizingPrefix)) {
+            fo = orderRepo.searchOrder(currentbarcode, boxSizingPrefix);
         } else {
-            showLongMessage("Этот заказ уже в архиве! Никакие операции невозможны!");
+            Log.i(TAG, "scanResultHandler -> barcode mismatch -> return");
+            MessageUtils.showToast(MainActivity.this, getString(R.string.QR_invalid),true);
+            return;
         }
     }
 

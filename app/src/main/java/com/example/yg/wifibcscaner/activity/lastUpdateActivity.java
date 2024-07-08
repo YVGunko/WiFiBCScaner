@@ -58,9 +58,6 @@ public class lastUpdateActivity extends AppCompatActivity {
                 };
                 tvw.setText("Выбрана дата: "+ spDay+"."+ spMonth+"."+picker.getYear());
 
-                /*Intent returnIntent = new Intent();
-                returnIntent.putExtra("presetDate", getDateTimeLong(spDay+"."+ spMonth+"."+picker.getYear()+" 00:00:00"));
-                setResult(Activity.RESULT_OK, returnIntent);*/
                 AppController.getInstance().setGlobalUpdateDate(spDay+"."+ spMonth+"."+picker.getYear()+" 00:00:00");
                 MessageUtils.showToast("Начата синхронизация данных с даты "+spDay+"."+ spMonth+"."+picker.getYear(), true);
                 DataLoadRepo dataLoadRepo = new DataLoadRepo();

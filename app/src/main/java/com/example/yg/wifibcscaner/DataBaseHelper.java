@@ -20,6 +20,7 @@ import com.example.yg.wifibcscaner.data.model.BoxMoves;
 import com.example.yg.wifibcscaner.data.model.Boxes;
 import com.example.yg.wifibcscaner.data.model.Prods;
 import com.example.yg.wifibcscaner.data.model.lastUpdate;
+import com.example.yg.wifibcscaner.data.model.BoxSizing;
 import com.example.yg.wifibcscaner.service.SharedPrefs;
 import com.example.yg.wifibcscaner.service.foundBox;
 import com.example.yg.wifibcscaner.service.foundOrder;
@@ -310,7 +311,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 db.endTransaction();
                 db.execSQL("PRAGMA foreign_keys = 1;");
             }
-        if ((newVersion>oldVersion)&(newVersion == 25))
+        if ((newVersion>oldVersion)&(newVersion < 26))
             try {
                 Log.d(TAG, "Версия бд 25. Начало реструктуризации.");
                 db.execSQL("PRAGMA foreign_keys = 0;");
@@ -333,6 +334,23 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
                 db.setTransactionSuccessful();
                 Log.d(TAG, "Версия бд 25. Окончание реструктуризации.");
+            } catch (Exception e) {
+                Log.e (TAG, e.getMessage());
+            } finally {
+                db.endTransaction();
+                db.execSQL("PRAGMA foreign_keys = 1;");
+            }
+        if ((newVersion>oldVersion)&(newVersion == 26))
+            try {
+                Log.i(TAG, "Версия бд 26. Начало реструктуризации.");
+                db.execSQL("PRAGMA foreign_keys = 0;");
+                db.beginTransaction();
+
+                db.execSQL("DROP TABLE IF EXISTS " + BoxSizing.TABLE_NAME);
+                db.execSQL(BoxSizing.CREATE_TABLE);
+
+                db.setTransactionSuccessful();
+                Log.d(TAG, "Версия бд 26. Окончание реструктуризации.");
             } catch (Exception e) {
                 Log.e (TAG, e.getMessage());
             } finally {

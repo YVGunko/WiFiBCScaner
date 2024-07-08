@@ -26,6 +26,37 @@ public class OrderRepo {
     private static final String TAG = "sProject -> OrderRepo.";
     private SQLiteDatabase mDataBase ;
 
+    public foundOrder searchOrder(String storedbarcode, String prefix) {
+
+        String Order_Id = getOrder_id(storedbarcode);  // по dot
+        Cursor c;
+        foundOrder fo = new foundOrder();
+        if (StringUtils.isNotBlank(Order_Id)) {
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
+            String query = "SELECT _id,Ord_id,Ord,Cust,Nomen,Attrib,Q_ord,Q_box,N_box,DT,archive, division_code FROM " + TABLE_MD + " WHERE Ord_id = '" + Order_Id + "'";
+            c = mDataBase.rawQuery(query, null);
+            try {
+                if (c != null && c.moveToFirst()) {
+                    fo.set_id( c.getInt(0) );
+                    fo.setQO( c.getInt(6) );
+                    fo.setQB( c.getInt(7) );
+                    fo.setNB( c.getInt(8) );
+                    fo.setDT( lDateToString(c.getLong(9)) );
+                    fo.setOrderdef( makeOrderdef(c) );
+                    fo.setBarcode( storedbarcode );
+                    fo.setArchive( (c.getInt(c.getColumnIndex("archive")) != 0) );
+                    fo.setDivision_code( c.getString(c.getColumnIndex("division_code")) );
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "searchOrder -> ".concat(e.getMessage()) );
+                return fo;
+            } finally {
+                tryCloseCursor(c);
+                AppController.getInstance().getDbHelper().closeDataBase();
+            }
+        }
+        return fo;
+    }
     public foundOrder searchOrder(String storedbarcode) {
 
         String Order_Id = getOrder_id(storedbarcode);  // по dot
