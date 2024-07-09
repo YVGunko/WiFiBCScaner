@@ -460,21 +460,33 @@ private static String filter (String str){
                             }
                         }
                     }else {
-                        showLongMessage("Эта коробка уже в архиве! Никакие операции невозможны!");
+                        MessageUtils.showToast(MainActivity.this, getString(R.string.box_already_released),true);
                     }
                 } else {
-                    showLongMessage("Заказ для этой коробки не загружен! Нужно синхронизировать данные.");
+                    MessageUtils.showToast(MainActivity.this, getString(R.string.order_hasnt_loaded_yet),true);
                 }
             } else {
-                showLongMessage("Этот заказ уже в архиве! Никакие операции невозможны!");
+                MessageUtils.showToast(MainActivity.this, getString(R.string.order_already_archived),true);
             }
         } else if (StringUtils.countMatches(currentbarcode,'.') == 4 && StringUtils.contains(currentbarcode,boxSizingPrefix)) {
-            fo = orderRepo.searchOrder(currentbarcode, boxSizingPrefix);
-        } else {
-            Log.i(TAG, "scanResultHandler -> barcode mismatch -> return");
-            MessageUtils.showToast(MainActivity.this, getString(R.string.QR_invalid),true);
-            return;
-        }
+                if (isReleaseOper(AppController.getInstance().getDefs().get_Id_o()))
+                    fo = orderRepo.searchOrder(currentbarcode, boxSizingPrefix);
+                    if (fo.get_id() == 0) {
+                        MessageUtils.showToast(MainActivity.this, getString(R.string.order_hasnt_loaded_yet),true);
+                        return;
+                    }
+                    if (fo.isArchive()) {
+                        MessageUtils.showToast(MainActivity.this, getString(R.string.order_already_archived),true);
+                        return;
+                    }
+
+                else
+                    MessageUtils.showToast(MainActivity.this, getString(R.string.oper_invalid),true);
+            } else {
+                Log.i(TAG, "scanResultHandler -> barcode mismatch -> return");
+                MessageUtils.showToast(MainActivity.this, getString(R.string.QR_invalid),true);
+            }
+        return;
     }
 
     public void ocl_bOk(View v) { //Вызов активности Сканирования

@@ -28,12 +28,13 @@ public class OrderRepo {
 
     public foundOrder searchOrder(String storedbarcode, String prefix) {
 
-        String Order_Id = getOrder_id(storedbarcode);  // по dot
+        final String Order_Id = getOrder_id(storedbarcode, prefix);  // по dot
         Cursor c;
         foundOrder fo = new foundOrder();
         if (StringUtils.isNotBlank(Order_Id)) {
             mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-            String query = "SELECT _id,Ord_id,Ord,Cust,Nomen,Attrib,Q_ord,Q_box,N_box,DT,archive, division_code FROM " + TABLE_MD + " WHERE Ord_id = '" + Order_Id + "'";
+            final String query = "SELECT _id,Ord_id,Ord,Cust,Nomen,Attrib,Q_ord,Q_box,N_box,DT,archive, division_code FROM " +
+                    TABLE_MD + " WHERE Ord_id = '" + Order_Id + "'";
             c = mDataBase.rawQuery(query, null);
             try {
                 if (c != null && c.moveToFirst()) {

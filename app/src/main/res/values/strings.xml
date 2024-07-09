@@ -39,6 +39,10 @@
     <string name="action_db_need_replace">Очистить БД</string>
     <string name="dialog_db_need_replace">Очистить базу данных? Восстановление невозможно!</string>
     <string name="QR_invalid">QR код не распознан!</string>
+    <string name="oper_invalid">Эта операция не может быть выполнена!</string>
+    <string name="order_already_archived">Этот заказ уже в архиве! Никакие операции невозможны!</string>
+    <string name="order_hasnt_loaded_yet">Заказ для этой коробки не загружен! Нужно синхронизировать данные.</string>
+    <string name="box_already_released">Эта коробка уже отгружена.</string>
     <string name="wrong_division_order">Это коробка другого подразделения</string>
     <string name="set_outdocs_number_start_date">Установить дату начала нумерации</string>
     <string name="set_update_global_date">Синхрон. данные с даты</string>
