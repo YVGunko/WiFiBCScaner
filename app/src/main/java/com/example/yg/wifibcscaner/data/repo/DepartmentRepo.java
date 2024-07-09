@@ -28,6 +28,7 @@ import static com.example.yg.wifibcscaner.utils.AppUtils.tryCloseCursor;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getTodayMorning;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.lDateToString;
 import static com.example.yg.wifibcscaner.utils.DateTimeUtils.sDateTimeToLong;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 public class DepartmentRepo {
     private static final String TAG = "sProject -> DepartmentRepo.";
@@ -182,17 +183,20 @@ public class DepartmentRepo {
         }
     }
     @RequiresApi(api = Build.VERSION_CODES.O)
-    private String getUpdateDate(@NonNull String globalUpdateDate) {
+    private String getUpdateDate() {
+        final String updateDate = StringUtils.isNotBlank(AppController.getInstance().getGlobalUpdateDate())
+            ? AppController.getInstance().getGlobalUpdateDate() : getTodayMorning();
         Cursor cursor = null;
         try {
             cursor = mDataBase.rawQuery("SELECT max(DT) FROM Deps", null);
             if (cursor != null && cursor.moveToFirst()) {
-                return lDateToString(cursor.getLong(0) > sDateTimeToLong(globalUpdateDate) ? cursor.getLong(0) : sDateTimeToLong(globalUpdateDate));
+                return lDateToString(cursor.getLong(0) < sDateTimeToLong(updateDate)
+                        ? cursor.getLong(0) : sDateTimeToLong(updateDate));
             }
             return SharedPrefs.getInstance().getInitUpdateDate();
         } catch (Exception e) {
             Log.e(TAG, "getMaxDepsDate -> ".concat(e.getMessage()));
-            return globalUpdateDate;
+            return updateDate;
         } finally {
             tryCloseCursor(cursor);
         }
@@ -201,9 +205,7 @@ public class DepartmentRepo {
     public void downloadDepartment() {
         try {
             ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl())
-                    .getDeps(StringUtils.isNotBlank(AppController.getInstance().getGlobalUpdateDate())
-                            ? AppController.getInstance().getGlobalUpdateDate()
-                            : getUpdateDate(getTodayMorning()))
+                    .getDeps(getUpdateDate())
                     .enqueue(new Callback<List<Deps>>() {
                         @Override
                         public void onResponse(Call<List<Deps>> call, Response<List<Deps>> response) {

@@ -48,9 +48,7 @@ public class SotrRepo {
     public void downloadSotr() {
         try {
             ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl())
-                    .getSotr(StringUtils.isNotBlank(AppController.getInstance().getGlobalUpdateDate())
-                            ? AppController.getInstance().getGlobalUpdateDate()
-                            : getUpdateDate(getTodayMorning()))
+                    .getSotr(getUpdateDate())
                     .enqueue(new Callback<List<Sotr>>() {
                         @Override
                         public void onResponse(Call<List<Sotr>> call, Response<List<Sotr>> response) {
@@ -278,17 +276,20 @@ public class SotrRepo {
         }
     }
     @RequiresApi(api = Build.VERSION_CODES.O)
-    private String getUpdateDate(@NonNull String globalUpdateDate) {
+    private String getUpdateDate() {
+        final String updateDate = StringUtils.isNotBlank(AppController.getInstance().getGlobalUpdateDate())
+                    ? AppController.getInstance().getGlobalUpdateDate() : getTodayMorning();
         Cursor cursor = null;
         try {
             cursor = mDataBase.rawQuery("SELECT max(DT) FROM sotr", null);
             if (cursor != null && cursor.moveToFirst()) {
-                return lDateToString(cursor.getLong(0) > sDateTimeToLong(globalUpdateDate) ? cursor.getLong(0) : sDateTimeToLong(globalUpdateDate));
+                return lDateToString(cursor.getLong(0) < sDateTimeToLong(updateDate)
+                        ? cursor.getLong(0) : sDateTimeToLong(updateDate));
             }
             return SharedPrefs.getInstance().getInitUpdateDate();
         } catch (Exception e) {
             Log.e(TAG, "getMaxDepsDate -> ".concat(e.getMessage()));
-            return globalUpdateDate;
+            return updateDate;
         } finally {
             tryCloseCursor(cursor);
         }

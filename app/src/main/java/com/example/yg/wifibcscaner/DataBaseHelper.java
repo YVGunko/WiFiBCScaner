@@ -311,7 +311,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 db.endTransaction();
                 db.execSQL("PRAGMA foreign_keys = 1;");
             }
-        if ((newVersion>oldVersion)&(newVersion < 26))
+        if ((newVersion>oldVersion)&(oldVersion < 26))
             try {
                 Log.d(TAG, "Версия бд 25. Начало реструктуризации.");
                 db.execSQL("PRAGMA foreign_keys = 0;");
@@ -653,7 +653,6 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         }
     }
 
- //
      private String insertBoxMoves(@NonNull BoxMoves bm) {
          Cursor cursor = null;
          try {
