@@ -44,6 +44,7 @@
     <string name="order_hasnt_loaded_yet">Заказ для этой коробки не загружен! Нужно синхронизировать данные.</string>
     <string name="box_already_released">Эта коробка уже отгружена.</string>
     <string name="wrong_division_order">Это коробка другого подразделения</string>
+    <string name="box_add_exception">Ошибка! Коробка не может быть принята.</string>
     <string name="set_outdocs_number_start_date">Установить дату начала нумерации</string>
     <string name="set_update_global_date">Синхрон. данные с даты</string>
     <string name="start_update_with_global_date">Начать синхронизацию</string>

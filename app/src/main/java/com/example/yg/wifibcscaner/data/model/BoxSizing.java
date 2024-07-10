@@ -23,7 +23,9 @@ public class BoxSizing {
     public  static final String SQL_INSERT_REPLACE = "INSERT OR REPLACE INTO " + TABLE_NAME + "("
             + ORDER +", " + QUANTITY + ", " + SIZE + ") "
             + " VALUES (?,?,?);";
-
+    public  static final String SQL_SELECT_BOX_SIZING_FOR_MD_ID_IN = "SELECT "+ ORDER + ", " + QUANTITY
+            + " FROM " + TABLE_NAME
+            + " WHERE " + ORDER + " IN ( ? ) ; ";
     public BoxSizing(int id, int masterDataId, int quantity, String size) {
         this.id = id;
         this.masterDataId = masterDataId;

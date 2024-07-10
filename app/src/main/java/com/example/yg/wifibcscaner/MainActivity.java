@@ -533,7 +533,8 @@ private static String filter (String str){
                     if (StringUtils.isNotBlank(fb.get_id())) { //setArchive
 
                     } else {
-                        mDBHelper.addBox(fo, fb);
+                        if (!mDBHelper.addBox(fo, fb))
+                            MessageUtils.showToast(this, getString(R.string.box_add_exception), false);
                     }
                     Button bScan = findViewById(R.id.bScan);
                     bScan.setText("Scan!");

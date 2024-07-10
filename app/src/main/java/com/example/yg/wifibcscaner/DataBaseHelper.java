@@ -817,10 +817,12 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                     fb.getNB(),
                     DateTimeUtils.getDayTimeString(new Date()),
                     null, true);
+            // here I should prepare data for find/create boxMove
+            ArrayList<HashMap<Integer, Integer>> result = orderRepo.getBoxSizingArray(fo.getOrd());
             if (doAsTransaction)
                 mDataBase.beginTransaction();
             if (insertOneBox(boxes)) {
-
+//
                 if (doAsTransaction)
                     mDataBase.setTransactionSuccessful();
                 return true;

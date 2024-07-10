@@ -6,6 +6,7 @@ import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.example.yg.wifibcscaner.controller.AppController;
+import com.example.yg.wifibcscaner.data.model.BoxSizing;
 import com.example.yg.wifibcscaner.data.model.Orders;
 import com.example.yg.wifibcscaner.service.foundOrder;
 
@@ -120,13 +121,23 @@ public class OrderRepo {
     }
 
 
-    public void getOrderUpdateDate(@NonNull String orderText){
+    public ArrayList<HashMap<Integer, Integer>> getBoxSizingArray(@NonNull String orderText){
+        ArrayList<HashMap<Integer, Integer>> result = new ArrayList<HashMap<Integer, Integer>>();
         Cursor cursor = null;
         try {
             cursor = mDataBase.rawQuery(Orders.SQL_MD_ID_SELECT_BOX_SIZING, new String[]{orderText, orderText});
-            if ((cursor != null) && (cursor.moveToFirst())) {
-
+            String inClause = "";
+            while (cursor.moveToNext()) {
+                inClause = inClause.concat(cursor.getString(0)).concat(",");
             }
+            inClause = StringUtils.substringBeforeLast(inClause, ",");
+            cursor = mDataBase.rawQuery(BoxSizing.SQL_SELECT_BOX_SIZING_FOR_MD_ID_IN, new String[]{inClause});
+            while (cursor.moveToNext()) {
+                HashMap row = new HashMap<Integer, Integer>();
+                row.put(cursor.getString(0), cursor.getString(1));
+                result.add(row);
+            }
+            return result;
         } catch (Exception e) {
             Log.e(TAG, "getMaxDepsDate -> ".concat(e.getMessage()));
             throw new RuntimeException("To catch into upper level.");
