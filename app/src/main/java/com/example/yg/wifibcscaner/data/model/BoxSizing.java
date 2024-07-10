@@ -1,13 +1,5 @@
 package com.example.yg.wifibcscaner.data.model;
 
-import android.database.sqlite.SQLiteStatement;
-import android.util.Log;
-
-import java.util.List;
-
-import static com.example.yg.wifibcscaner.data.model.Orders.TABLE_orders;
-import static com.example.yg.wifibcscaner.utils.DateTimeUtils.getDateTimeLong;
-
 public class BoxSizing {
     // Table Name
     public static final String TABLE_NAME = "BOX_SIZING";
@@ -25,7 +17,7 @@ public class BoxSizing {
     // Creating table query
     public static final String CREATE_TABLE = "create table " + TABLE_NAME + "(" + _ID
             + " INTEGER PRIMARY KEY AUTOINCREMENT, "
-            + ORDER + " INTEGER NOT NULL REFERENCES "+TABLE_orders+", "
+            + ORDER + " INTEGER NOT NULL REFERENCES "+Orders.TABLE_NAME+", "
             + QUANTITY + " INTEGER NOT NULL, "
             + SIZE + " VARCHAR (50) NOT NULL );";
     public  static final String SQL_INSERT_REPLACE = "INSERT OR REPLACE INTO " + TABLE_NAME + "("

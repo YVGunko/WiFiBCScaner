@@ -7,13 +7,18 @@ import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.example.yg.wifibcscaner.controller.AppController;
+import com.example.yg.wifibcscaner.data.model.Boxes;
 import com.example.yg.wifibcscaner.service.MessageUtils;
+import com.example.yg.wifibcscaner.service.foundBox;
 import com.example.yg.wifibcscaner.service.foundOrder;
+import com.example.yg.wifibcscaner.service.spBarcode;
 import com.example.yg.wifibcscaner.utils.AppUtils;
+import com.example.yg.wifibcscaner.utils.DateTimeUtils;
 
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 
 import static android.database.Cursor.FIELD_TYPE_NULL;
@@ -22,6 +27,9 @@ import static com.example.yg.wifibcscaner.data.model.Prods.COLUMN_idOutDocs;
 import static com.example.yg.wifibcscaner.data.model.Prods.COLUMN_sentToMasterDate;
 import static com.example.yg.wifibcscaner.data.model.Prods.TABLE_prods;
 import static com.example.yg.wifibcscaner.utils.AppUtils.tryCloseCursor;
+import static com.example.yg.wifibcscaner.utils.MyStringUtils.getBarcodeN_box;
+import static com.example.yg.wifibcscaner.utils.MyStringUtils.getBarcodeQ_box;
+import static com.example.yg.wifibcscaner.utils.MyStringUtils.getUUID;
 import static com.example.yg.wifibcscaner.utils.MyStringUtils.retStringFollowingCRIfNotNull;
 
 public class BoxRepo {
@@ -123,6 +131,33 @@ public class BoxRepo {
             tryCloseCursor(cursor);
             AppController.getInstance().getDbHelper().closeDataBase();
         }
+    }
+    public foundBox searchBox(final int Order_id, final String storedbarcode) {
+        Cursor cursor = null;
+        foundBox fb = new foundBox();
+        try {
+            fb.setNB(Integer.valueOf( StringUtils.substringAfterLast(storedbarcode, ".") ));
+            fb.setBarcode(storedbarcode);
+            fb.setBoxdef("№ кор: ".concat(String.valueOf(fb.getNB()))+". ");
+            fb.setQB(1);
+
+            SQLiteDatabase mDataBase = AppController.getInstance().getDbHelper().openDataBase();
+
+            String query = "SELECT Boxes._id, archive FROM Boxes Where Boxes.Id_m=? and Boxes.N_box=?" ;
+            cursor = mDataBase.rawQuery(query, new String [] {String.valueOf(Order_id), String.valueOf(fb.getNB())});
+
+            if (cursor != null && cursor.moveToFirst()) {
+                fb.set_id(cursor.getString(cursor.getColumnIndex("_id")));
+                fb.set_archive (cursor.getInt(cursor.getColumnIndex("archive")) != 0);
+            }
+        }catch (Exception e) {
+            Log.e(TAG, "getOutDocNotSent -> ".concat(e.getMessage()) );
+            return fb;
+        } finally {
+            tryCloseCursor(cursor);
+            AppController.getInstance().getDbHelper().closeDataBase();
+        }
+        return fb;
     }
 
 }

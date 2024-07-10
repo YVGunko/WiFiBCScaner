@@ -807,6 +807,33 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
+    public boolean addBox(foundOrder fo, foundBox fb) {
+        mDataBase = AppController.getInstance().getDbHelper().openDataBase();
+        boolean doAsTransaction = !mDataBase.inTransaction();
+        try {
+            Boxes boxes = new Boxes(getUUID(),
+                    fo.get_id(),
+                    fb.getQB(),
+                    fb.getNB(),
+                    DateTimeUtils.getDayTimeString(new Date()),
+                    null, true);
+            if (doAsTransaction)
+                mDataBase.beginTransaction();
+            if (insertOneBox(boxes)) {
 
+                if (doAsTransaction)
+                    mDataBase.setTransactionSuccessful();
+                return true;
+            }
+            return false;
+        } catch (Exception ex) {
+            Log.e(TAG, ex.getMessage());
+            return false;
+        }finally {
+            if (doAsTransaction)
+                mDataBase.endTransaction();
+            AppController.getInstance().getDbHelper().closeDataBase();
+        }
+    }
 }
 

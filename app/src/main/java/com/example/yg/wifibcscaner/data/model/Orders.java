@@ -20,10 +20,10 @@ public class Orders {
     private Boolean archive;
     private String division_code;
 
-    public static final String TABLE_orders = "MasterData";
+    public static final String TABLE_NAME = "MasterData";
     public static final String COLUMN_ID = "_id";
-    public static final String COLUMN_Ord_Id = "Ord_Id";
-    public static final String COLUMN_Ord = "Ord";
+    public static final String COLUMN_ORD_ID = "Ord_Id";
+    public static final String COLUMN_ORD = "Ord";
     public static final String COLUMN_Cust = "Cust";
     public static final String COLUMN_Nomen = "Nomen";
     public static final String COLUMN_Attrib = "Attrib";
@@ -33,6 +33,9 @@ public class Orders {
     public static final String COLUMN_DT = "DT";
     public static final String COLUMN_Division_code = "division_code";
     public static final String COLUMN_Archive = "archive";
+
+    public  static final String SQL_MD_ID_SELECT_BOX_SIZING = "SELECT "+ COLUMN_ID +" FROM " + TABLE_NAME
+            + " WHERE " + COLUMN_ORD + "= ? AND " + COLUMN_ORD_ID + " NOT LIKE '?" + "%' ;";
 
     public Orders() {
         super();

@@ -22,7 +22,6 @@ import static com.example.yg.wifibcscaner.utils.MyStringUtils.makeOrderdef;
 import static com.example.yg.wifibcscaner.utils.MyStringUtils.retStringFollowingCRIfNotNull;
 
 public class OrderRepo {
-    private static final String TABLE_MD = "MasterData";
     private static final String TAG = "sProject -> OrderRepo.";
     private SQLiteDatabase mDataBase ;
 
@@ -34,7 +33,7 @@ public class OrderRepo {
         if (StringUtils.isNotBlank(Order_Id)) {
             mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             final String query = "SELECT _id,Ord_id,Ord,Cust,Nomen,Attrib,Q_ord,Q_box,N_box,DT,archive, division_code FROM " +
-                    TABLE_MD + " WHERE Ord_id = '" + Order_Id + "'";
+                    Orders.TABLE_NAME + " WHERE Ord_id = '" + Order_Id + "'";
             c = mDataBase.rawQuery(query, null);
             try {
                 if (c != null && c.moveToFirst()) {
@@ -65,7 +64,7 @@ public class OrderRepo {
         foundOrder fo = new foundOrder();
         if (StringUtils.isNotBlank(Order_Id)) {
             mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-            String query = "SELECT _id,Ord_id,Ord,Cust,Nomen,Attrib,Q_ord,Q_box,N_box,DT,archive, division_code FROM " + TABLE_MD + " WHERE Ord_id = '" + Order_Id + "'";
+            String query = "SELECT _id,Ord_id,Ord,Cust,Nomen,Attrib,Q_ord,Q_box,N_box,DT,archive, division_code FROM " + Orders.TABLE_NAME + " WHERE Ord_id = '" + Order_Id + "'";
             c = mDataBase.rawQuery(query, null);
             try {
                 if (c != null && c.moveToFirst()) {
@@ -120,19 +119,21 @@ public class OrderRepo {
         return readOrders;
     }
 
-    /*@RequiresApi(api = Build.VERSION_CODES.O)
-    public String getOrderUpdateDate(@NonNull String globalUpdateDate){
-        try {
-            if (SharedPrefs.getInstance() != null) {
-                long saved = SharedPrefs.getInstance().getNextUpdateDate();
-                return lDateToString(saved > sDateTimeToLong(globalUpdateDate) ? saved : sDateTimeToLong(globalUpdateDate));
-            }
 
-            return globalUpdateDate;
-        }catch (Exception e) {
+    public void getOrderUpdateDate(@NonNull String orderText){
+        Cursor cursor = null;
+        try {
+            cursor = mDataBase.rawQuery(Orders.SQL_MD_ID_SELECT_BOX_SIZING, new String[]{orderText, orderText});
+            if ((cursor != null) && (cursor.moveToFirst())) {
+
+            }
+        } catch (Exception e) {
             Log.e(TAG, "getMaxDepsDate -> ".concat(e.getMessage()));
-            return globalUpdateDate;
+            throw new RuntimeException("To catch into upper level.");
+        } finally {
+            tryCloseCursor(cursor);
+            AppController.getInstance().getDbHelper().closeDataBase();
         }
-    }*/
+    }
 
 }

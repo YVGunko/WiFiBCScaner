@@ -469,18 +469,36 @@ private static String filter (String str){
                 MessageUtils.showToast(MainActivity.this, getString(R.string.order_already_archived),true);
             }
         } else if (StringUtils.countMatches(currentbarcode,'.') == 4 && StringUtils.contains(currentbarcode,boxSizingPrefix)) {
-                if (isReleaseOper(AppController.getInstance().getDefs().get_Id_o()))
+                if (isReleaseOper(AppController.getInstance().getDefs().get_Id_o())) {
                     fo = orderRepo.searchOrder(currentbarcode, boxSizingPrefix);
                     if (fo.get_id() == 0) {
-                        MessageUtils.showToast(MainActivity.this, getString(R.string.order_hasnt_loaded_yet),true);
+                        MessageUtils.showToast(MainActivity.this, getString(R.string.order_hasnt_loaded_yet), true);
                         return;
                     }
                     if (fo.isArchive()) {
-                        MessageUtils.showToast(MainActivity.this, getString(R.string.order_already_archived),true);
+                        MessageUtils.showToast(MainActivity.this, getString(R.string.order_already_archived), true);
                         return;
                     }
-
-                else
+                    if (StringUtils.isNotBlank(fo.getDivision_code()) && !fo.getDivision_code().equals(AppController.getInstance().getDefs().getDivision_code())) {
+                        Log.d(TAG, "scanResultHandler -> division mismatch -> return");
+                        MessageUtils.showToast(MainActivity.this, getString(R.string.wrong_division_order), true);
+                        return;
+                    }
+                    fb = boxRepo.searchBox(fo.get_id(), currentbarcode);
+                    //---Получаем строку данных о коробке для вывода в tVDBInfo и количество для редактирования
+                    tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
+                    if (StringUtils.isNotEmpty(fb.getBoxdef()))
+                        completeOrderDef(fb);
+                    tVDBInfo.setText(fo.getOrderdef());
+                    if (fb.is_archive()){
+                        MessageUtils.showToast(MainActivity.this, getString(R.string.box_already_released),true);
+                    } else {
+                        Button bScan = findViewById(R.id.bScan);
+                        bScan.setText("OK!");
+                        editTextRQ = findViewById(R.id.editTextRQ);
+                        editTextRQ.setText(String.valueOf(fb.getQB())); //one box, no number of items
+                    }
+                } else
                     MessageUtils.showToast(MainActivity.this, getString(R.string.oper_invalid),true);
             } else {
                 Log.i(TAG, "scanResultHandler -> barcode mismatch -> return");
@@ -506,15 +524,34 @@ private static String filter (String str){
         }
 
         if (!AppUtils.isIncomeOper(AppController.getInstance().getDefs().get_Id_o())) { //entered number should be checked
-            if (AppUtils.isOutComeOper(AppController.getInstance().getDefs().get_Id_o())) {//entered number should be equal
+            if (AppUtils.isReleaseOper(AppController.getInstance().getDefs().get_Id_o())) {
                 if (enteredNumber != fb.getQB()) {
-                    MessageUtils.showToast(this,"Ошибка! Количество должно быть равно оприходованному!", false);
+                    MessageUtils.showToast(this, "Ошибка! Количество должно быть равно оприходованному!", false);
+                    return;
+                } else {
+                    // new box or archive status change
+                    if (StringUtils.isNotBlank(fb.get_id())) { //setArchive
+
+                    } else {
+                        mDBHelper.addBox(fo, fb);
+                    }
+                    Button bScan = findViewById(R.id.bScan);
+                    bScan.setText("Scan!");
+                    tVDBInfo = findViewById(R.id.tVDBInfo);
+                    editTextRQ = findViewById(R.id.editTextRQ);
                     return;
                 }
-            }else{
-                if (enteredNumber > (fb.getQB() - fb.getRQ())){
-                    MessageUtils.showToast(this,"Ошибка! Введите количество верно!", false);
-                    return;
+            } else {
+                if (AppUtils.isOutComeOper(AppController.getInstance().getDefs().get_Id_o())) {//entered number should be equal
+                    if (enteredNumber != fb.getQB()) {
+                        MessageUtils.showToast(this, "Ошибка! Количество должно быть равно оприходованному!", false);
+                        return;
+                    }
+                } else {
+                    if (enteredNumber > (fb.getQB() - fb.getRQ())) {
+                        MessageUtils.showToast(this, "Ошибка! Введите количество верно!", false);
+                        return;
+                    }
                 }
             }
         }
@@ -525,7 +562,7 @@ private static String filter (String str){
             tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
             editTextRQ = (EditText) findViewById(R.id.editTextRQ);
             editTextRQ.setEnabled(false);
-            if (StringUtils.isNotEmpty(fb.get_id())) {                                            //коробка есть и не полная, добавить в prods
+            if (StringUtils.isNotBlank(fb.get_id())) {                                            //коробка есть и не полная, добавить в prods
                 //новая операция по существующей коробке
                 boolean newBM = (fb.getRQ() != 0);
                 fb.setRQ( enteredNumber );

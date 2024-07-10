@@ -5,20 +5,17 @@ package com.example.yg.wifibcscaner.service;
  */
 
 public class spBarcode {
-    private String spbarcode;
-    private String Ord_id;
-    private String Attrib;
-    private String Obraz;
-    private String Q_ord;
-    private String Q_box;
-    private String N_box;
+    private String spbarcode = "";
+    private String Ord_id = "";
+    private String Attrib = "";
+    private String Obraz = "";
+    private String Q_ord = "";
+    private String Q_box = "";
+    private String N_box = "";
 
     public spBarcode(String barcode){
-        String atmpBarcode[] = barcode.split("[.]");  // по dot
-        boolean b = (atmpBarcode.length == 6);
-        if (!b) {
-            atmpBarcode[0]="";
-        }else{
+        final String atmpBarcode[] = barcode.split("[.]");  // по dot
+        if (atmpBarcode.length == 6) {
             this.N_box = atmpBarcode[5];
             this.spbarcode=barcode;
             this.Ord_id =atmpBarcode[0];
@@ -28,7 +25,16 @@ public class spBarcode {
             this.Q_box=atmpBarcode[4];
         }
     }
-
+    public spBarcode(String barcode, String prefix){
+        final String atmpBarcode[] = barcode.split("[.]");  // по dot
+        if (atmpBarcode.length == 5) {
+            this.N_box = atmpBarcode[4];
+            this.spbarcode=barcode;
+            this.Ord_id =atmpBarcode[0];
+            this.Q_ord=atmpBarcode[3];
+            this.Q_box=atmpBarcode[1];
+        }
+    }
     public String getSpbarcode() {
         return spbarcode;
     }
