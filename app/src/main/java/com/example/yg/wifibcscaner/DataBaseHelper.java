@@ -810,7 +810,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
-    public boolean addBox(foundOrder fo, foundBox fb) {
+    public boolean addBox(foundOrder fo, foundBox fb, String outDocId) {
         mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         boolean doAsTransaction = !mDataBase.inTransaction();
         try {
@@ -840,14 +840,14 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
-    public String checkAvailability(@NonNull String orderText){
+    public ArrayList<HashMap<String, Integer>> checkAvailability(@NonNull String orderText){
         final String SQL_CHECK_AVAILABILITY = "SELECT b._id, sum(Prods.RQ_box) as quantity " +
                 " FROM Boxes b, BoxMoves bm, Prods " +
                 " Where b.id_m = ? and bm.Id_b=b._id and bm.Id_o=? and bm._id=Prods.Id_bm " +
                 " Group by b._id, Prods.Id_bm";
         final String SQL_CHECK_BOX_MOVE = "SELECT _id FROM BoxMoves " +
                 " Where Id_b = ? and bm.Id_o = ? ";
-        //ArrayList<HashMap<Integer, Integer>> result = new ArrayList<HashMap<Integer, Integer>>();
+        ArrayList<HashMap<String, Integer>> result = new ArrayList<HashMap<String, Integer>>();
         Cursor cursor = null;
         try {
             cursor = mDataBase.rawQuery(Orders.SQL_MD_ID_SELECT_BOX_SIZING, new String[]{orderText});
@@ -871,7 +871,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                         totalProducedNumber = totalProducedNumber + checkProduceCursor.getInt(1);
                     }
                     if (totalProducedNumber < boxSizingCursor.getInt(1)) { //produced less than needed
-                        return "";
+                        return emptyResult();
                     }
                     Cursor checkReleaseCursor = mDataBase.rawQuery(SQL_CHECK_AVAILABILITY,
                             new String[]{boxSizingCursor.getString(0), "9999"});
@@ -881,7 +881,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                             totalReleasedNumber = totalReleasedNumber + checkReleaseCursor.getInt(1);
                         }
                         if (totalProducedNumber - totalReleasedNumber < boxSizingCursor.getInt(1)) { //left less than needed
-                            return "";
+                            return emptyResult();
                         }
                         // have to find exact box
                         if (checkProduceCursor.moveToFirst() && checkReleaseCursor.moveToFirst()) {
@@ -892,7 +892,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                             }
                         }
                     } else {
-                        // first box suits
+                        return
                     }
                     // find exact number of box to release from
                     // check if in total left enough and then check if there is boxMove having 9999 operation for
@@ -903,16 +903,13 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                     }
                 } else {
                     tryCloseCursor(checkProduceCursor);
-                    return "";
+                    emptyResult();
                 }
                 tryCloseCursor(checkProduceCursor);
                 tryCloseCursor(boxSizingCursor);
-                /*HashMap row = new HashMap<Integer, Integer>();
-                row.put(cursor.getString(0), cursor.getString(1));
-                result.add(row);*/
             }
             tryCloseCursor(boxSizingCursor);
-            return ""; // No
+            return emptyResult();
         } catch (Exception e) {
             Log.e(TAG, "getMaxDepsDate -> ".concat(e.getMessage()));
             throw new RuntimeException("To catch into upper level.");
@@ -921,6 +918,15 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
+
+    private ArrayList<HashMap<String, Integer>> emptyResult() {
+        ArrayList<HashMap<String, Integer>> result = new ArrayList<HashMap<String, Integer>>();
+        HashMap row = new HashMap<String, Integer>();
+        row.put("", 0);
+        result.add(row);
+        return result;
+    }
+
     public findOrCreateBoxMoveAndProd (String boxId) {
 
     }
