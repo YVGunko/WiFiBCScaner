@@ -35,7 +35,7 @@ public class Orders {
     public static final String COLUMN_Archive = "archive";
 
     public  static final String SQL_MD_ID_SELECT_BOX_SIZING = "SELECT "+ COLUMN_ID +" FROM " + TABLE_NAME
-            + " WHERE " + COLUMN_ORD + "= ? AND " + COLUMN_ORD_ID + " NOT LIKE '?" + "%' ;";
+            + " WHERE " + COLUMN_ORD + "= ? ;";
 
     public Orders() {
         super();

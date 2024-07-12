@@ -7,6 +7,7 @@ package com.example.yg.wifibcscaner;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.CursorIndexOutOfBoundsException;
+import android.database.DatabaseUtils;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteConstraintException;
 import android.database.sqlite.SQLiteDatabase;
@@ -18,6 +19,7 @@ import android.util.Log;
 import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.BoxMoves;
 import com.example.yg.wifibcscaner.data.model.Boxes;
+import com.example.yg.wifibcscaner.data.model.Orders;
 import com.example.yg.wifibcscaner.data.model.Prods;
 import com.example.yg.wifibcscaner.data.model.lastUpdate;
 import com.example.yg.wifibcscaner.data.model.BoxSizing;
@@ -40,6 +42,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static android.database.DatabaseUtils.dumpCursorToString;
 import static com.example.yg.wifibcscaner.utils.AppUtils.getFirstOperFor;
 import static com.example.yg.wifibcscaner.utils.AppUtils.isNotEmpty;
 import static com.example.yg.wifibcscaner.utils.AppUtils.isOneOfFirstOper;
@@ -817,12 +820,12 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                     fb.getNB(),
                     DateTimeUtils.getDayTimeString(new Date()),
                     null, true);
-            // here I should prepare data for find/create boxMove
-            ArrayList<HashMap<Integer, Integer>> result = orderRepo.getBoxSizingArray(fo.getOrd());
+            // here I should prepare data for find/create new box -> boxMove -> partBox
+            if ( checkAvailability(fo.getOrd()).equals("")) return false;
             if (doAsTransaction)
                 mDataBase.beginTransaction();
             if (insertOneBox(boxes)) {
-//
+//              make release transaction here
                 if (doAsTransaction)
                     mDataBase.setTransactionSuccessful();
                 return true;
@@ -836,6 +839,90 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 mDataBase.endTransaction();
             AppController.getInstance().getDbHelper().closeDataBase();
         }
+    }
+    public String checkAvailability(@NonNull String orderText){
+        final String SQL_CHECK_AVAILABILITY = "SELECT b._id, sum(Prods.RQ_box) as quantity " +
+                " FROM Boxes b, BoxMoves bm, Prods " +
+                " Where b.id_m = ? and bm.Id_b=b._id and bm.Id_o=? and bm._id=Prods.Id_bm " +
+                " Group by b._id, Prods.Id_bm";
+        final String SQL_CHECK_BOX_MOVE = "SELECT _id FROM BoxMoves " +
+                " Where Id_b = ? and bm.Id_o = ? ";
+        //ArrayList<HashMap<Integer, Integer>> result = new ArrayList<HashMap<Integer, Integer>>();
+        Cursor cursor = null;
+        try {
+            cursor = mDataBase.rawQuery(Orders.SQL_MD_ID_SELECT_BOX_SIZING, new String[]{orderText});
+            String inClause = "";
+            while (cursor.moveToNext()) {
+                inClause = inClause.concat(cursor.getString(0)).concat(",");
+            }
+            tryCloseCursor(cursor);
+            inClause = StringUtils.substringBeforeLast(inClause, ",");
+            String sql = BoxSizing.TEST_SQL_SELECT_BOX_SIZING_FOR_MD_ID_IN+" ( "+inClause+" );";
+            Cursor boxSizingCursor = mDataBase.rawQuery(sql, null);
+//            Cursor boxSizingCursor = mDataBase.rawQuery(BoxSizing.SQL_SELECT_BOX_SIZING_FOR_MD_ID_IN, new String[]{inClause});
+            Log.i(TAG, dumpCursorToString(boxSizingCursor));
+            while (boxSizingCursor.moveToNext()) {
+                Cursor checkProduceCursor = mDataBase.rawQuery(SQL_CHECK_AVAILABILITY,
+                        new String[]{boxSizingCursor.getString(0), "1"});
+                if (checkProduceCursor != null && checkProduceCursor.moveToFirst()) {
+                    int totalProducedNumber = checkProduceCursor.getInt(1);
+                    int totalReleasedNumber = 0 ;
+                    while (checkProduceCursor.moveToNext()) {
+                        totalProducedNumber = totalProducedNumber + checkProduceCursor.getInt(1);
+                    }
+                    if (totalProducedNumber < boxSizingCursor.getInt(1)) { //produced less than needed
+                        return "";
+                    }
+                    Cursor checkReleaseCursor = mDataBase.rawQuery(SQL_CHECK_AVAILABILITY,
+                            new String[]{boxSizingCursor.getString(0), "9999"});
+                    if (checkReleaseCursor != null && checkReleaseCursor.moveToFirst()) {
+                        totalReleasedNumber = checkReleaseCursor.getInt(1);
+                        while (checkReleaseCursor.moveToNext()) {
+                            totalReleasedNumber = totalReleasedNumber + checkReleaseCursor.getInt(1);
+                        }
+                        if (totalProducedNumber - totalReleasedNumber < boxSizingCursor.getInt(1)) { //left less than needed
+                            return "";
+                        }
+                        // have to find exact box
+                        if (checkProduceCursor.moveToFirst() && checkReleaseCursor.moveToFirst()) {
+                            while (checkProduceCursor.getString(0) != checkReleaseCursor.getString(0)
+                                && checkProduceCursor.getInt(1) + boxSizingCursor.getInt(1) >= checkReleaseCursor.getInt(1)
+                                && ){
+
+                            }
+                        }
+                    } else {
+                        // first box suits
+                    }
+                    // find exact number of box to release from
+                    // check if in total left enough and then check if there is boxMove having 9999 operation for
+                    if (totalProducedNumber - totalReleasedNumber >= boxSizingCursor.getInt(1)) { //left enough in total
+                        checkProduceCursor.moveToFirst();
+
+                        cursor = mDataBase.rawQuery(SQL_CHECK_BOX_MOVE, new String[]{orderText});
+                    }
+                } else {
+                    tryCloseCursor(checkProduceCursor);
+                    return "";
+                }
+                tryCloseCursor(checkProduceCursor);
+                tryCloseCursor(boxSizingCursor);
+                /*HashMap row = new HashMap<Integer, Integer>();
+                row.put(cursor.getString(0), cursor.getString(1));
+                result.add(row);*/
+            }
+            tryCloseCursor(boxSizingCursor);
+            return ""; // No
+        } catch (Exception e) {
+            Log.e(TAG, "getMaxDepsDate -> ".concat(e.getMessage()));
+            throw new RuntimeException("To catch into upper level.");
+        } finally {
+            tryCloseCursor(cursor);
+            AppController.getInstance().getDbHelper().closeDataBase();
+        }
+    }
+    public findOrCreateBoxMoveAndProd (String boxId) {
+
     }
 }
 

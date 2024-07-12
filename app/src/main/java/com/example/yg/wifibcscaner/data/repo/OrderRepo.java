@@ -27,14 +27,14 @@ public class OrderRepo {
     private SQLiteDatabase mDataBase ;
 
     public foundOrder searchOrder(String storedbarcode, String prefix) {
-
-        final String Order_Id = getOrder_id(storedbarcode, prefix);  // по dot
         Cursor c;
         foundOrder fo = new foundOrder();
-        if (StringUtils.isNotBlank(Order_Id)) {
+        fo.setOrd_Id(getOrder_id(storedbarcode, prefix));  // по dot
+        if (StringUtils.isNotBlank(fo.getOrd_Id())) {
+            fo.setOrd(StringUtils.substringBefore(storedbarcode, "."));
             mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             final String query = "SELECT _id,Ord_id,Ord,Cust,Nomen,Attrib,Q_ord,Q_box,N_box,DT,archive, division_code FROM " +
-                    Orders.TABLE_NAME + " WHERE Ord_id = '" + Order_Id + "'";
+                    Orders.TABLE_NAME + " WHERE Ord_id = '" + fo.getOrd_Id() + "'";
             c = mDataBase.rawQuery(query, null);
             try {
                 if (c != null && c.moveToFirst()) {
@@ -118,33 +118,6 @@ public class OrderRepo {
             AppController.getInstance().getDbHelper().closeDataBase();
         }
         return readOrders;
-    }
-
-
-    public ArrayList<HashMap<Integer, Integer>> getBoxSizingArray(@NonNull String orderText){
-        ArrayList<HashMap<Integer, Integer>> result = new ArrayList<HashMap<Integer, Integer>>();
-        Cursor cursor = null;
-        try {
-            cursor = mDataBase.rawQuery(Orders.SQL_MD_ID_SELECT_BOX_SIZING, new String[]{orderText, orderText});
-            String inClause = "";
-            while (cursor.moveToNext()) {
-                inClause = inClause.concat(cursor.getString(0)).concat(",");
-            }
-            inClause = StringUtils.substringBeforeLast(inClause, ",");
-            cursor = mDataBase.rawQuery(BoxSizing.SQL_SELECT_BOX_SIZING_FOR_MD_ID_IN, new String[]{inClause});
-            while (cursor.moveToNext()) {
-                HashMap row = new HashMap<Integer, Integer>();
-                row.put(cursor.getString(0), cursor.getString(1));
-                result.add(row);
-            }
-            return result;
-        } catch (Exception e) {
-            Log.e(TAG, "getMaxDepsDate -> ".concat(e.getMessage()));
-            throw new RuntimeException("To catch into upper level.");
-        } finally {
-            tryCloseCursor(cursor);
-            AppController.getInstance().getDbHelper().closeDataBase();
-        }
     }
 
 }

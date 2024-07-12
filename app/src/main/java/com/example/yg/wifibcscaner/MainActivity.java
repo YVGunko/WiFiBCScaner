@@ -495,6 +495,7 @@ private static String filter (String str){
                     } else {
                         Button bScan = findViewById(R.id.bScan);
                         bScan.setText("OK!");
+                        editTextRQ.setEnabled(true);
                         editTextRQ = findViewById(R.id.editTextRQ);
                         editTextRQ.setText(String.valueOf(fb.getQB())); //one box, no number of items
                     }
@@ -540,6 +541,7 @@ private static String filter (String str){
                     bScan.setText("Scan!");
                     tVDBInfo = findViewById(R.id.tVDBInfo);
                     editTextRQ = findViewById(R.id.editTextRQ);
+                    setTextViews();
                     return;
                 }
             } else {
@@ -558,10 +560,10 @@ private static String filter (String str){
         }
 
         try {
-            Button bScan = (Button) findViewById(R.id.bScan);
+            Button bScan = findViewById(R.id.bScan);
             bScan.setText("Scan!");
-            tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
-            editTextRQ = (EditText) findViewById(R.id.editTextRQ);
+            tVDBInfo = findViewById(R.id.tVDBInfo);
+            editTextRQ = findViewById(R.id.editTextRQ);
             editTextRQ.setEnabled(false);
             if (StringUtils.isNotBlank(fb.get_id())) {                                            //коробка есть и не полная, добавить в prods
                 //новая операция по существующей коробке

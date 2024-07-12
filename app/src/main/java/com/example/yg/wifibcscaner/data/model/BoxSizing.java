@@ -17,7 +17,7 @@ public class BoxSizing {
     // Creating table query
     public static final String CREATE_TABLE = "create table " + TABLE_NAME + "(" + _ID
             + " INTEGER PRIMARY KEY AUTOINCREMENT, "
-            + ORDER + " INTEGER NOT NULL REFERENCES "+Orders.TABLE_NAME+", "
+            + ORDER + " INTEGER NOT NULL REFERENCES "+Orders.TABLE_NAME+" (_id) CONSTRAINT order_id_uniq UNIQUE ON CONFLICT ROLLBACK, "
             + QUANTITY + " INTEGER NOT NULL, "
             + SIZE + " VARCHAR (50) NOT NULL );";
     public  static final String SQL_INSERT_REPLACE = "INSERT OR REPLACE INTO " + TABLE_NAME + "("
@@ -26,6 +26,9 @@ public class BoxSizing {
     public  static final String SQL_SELECT_BOX_SIZING_FOR_MD_ID_IN = "SELECT "+ ORDER + ", " + QUANTITY
             + " FROM " + TABLE_NAME
             + " WHERE " + ORDER + " IN ( ? ) ; ";
+    public  static final String TEST_SQL_SELECT_BOX_SIZING_FOR_MD_ID_IN = "SELECT "+ ORDER + ", " + QUANTITY
+            + " FROM " + TABLE_NAME
+            + " WHERE " + ORDER + " IN ";
     public BoxSizing(int id, int masterDataId, int quantity, String size) {
         this.id = id;
         this.masterDataId = masterDataId;
