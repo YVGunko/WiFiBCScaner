@@ -855,7 +855,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             while (cursor.moveToNext()) {
                 inClause = inClause.concat(cursor.getString(0)).concat(",");
             }
-            tryCloseCursor(cursor);
+            //tryCloseCursor(cursor);
             inClause = StringUtils.substringBeforeLast(inClause, ",");
             String sql = BoxSizing.TEST_SQL_SELECT_BOX_SIZING_FOR_MD_ID_IN+" ( "+inClause+" );";
             Cursor boxSizingCursor = mDataBase.rawQuery(sql, null);
@@ -885,31 +885,34 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                         }
                         // have to find exact box
                         if (checkProduceCursor.moveToFirst() && checkReleaseCursor.moveToFirst()) {
-                            while (checkProduceCursor.getString(0) != checkReleaseCursor.getString(0)
-                                && checkProduceCursor.getInt(1) + boxSizingCursor.getInt(1) >= checkReleaseCursor.getInt(1)
-                                && ){
-
-                            }
+                            do {
+                                if (checkProduceCursor.getString(0) == checkReleaseCursor.getString(0)){
+                                    if (checkProduceCursor.getInt(1) + boxSizingCursor.getInt(1) >= checkReleaseCursor.getInt(1)) {
+                                        result.add(addRow(checkProduceCursor.getString(0), boxSizingCursor.getInt(1)));
+                                        break;
+                                    } else {
+                                        if (!checkReleaseCursor.isLast()) {
+                                            checkReleaseCursor.moveToNext();
+                                            checkProduceCursor.moveToFirst();
+                                        } else {
+                                            tryCloseCursor(checkReleaseCursor);
+                                            tryCloseCursor(checkProduceCursor);
+                                            return emptyResult();
+                                        }
+                                    }
+                                }
+                            } while (checkProduceCursor.moveToNext());
                         }
-                    } else {
-                        return
-                    }
-                    // find exact number of box to release from
-                    // check if in total left enough and then check if there is boxMove having 9999 operation for
-                    if (totalProducedNumber - totalReleasedNumber >= boxSizingCursor.getInt(1)) { //left enough in total
-                        checkProduceCursor.moveToFirst();
-
-                        cursor = mDataBase.rawQuery(SQL_CHECK_BOX_MOVE, new String[]{orderText});
+                    } else { //no releases yet. first box suits
+                        result.add(addRow(checkProduceCursor.getString(0), boxSizingCursor.getInt(1)));
                     }
                 } else {
                     tryCloseCursor(checkProduceCursor);
-                    emptyResult();
+                    return emptyResult();
                 }
-                tryCloseCursor(checkProduceCursor);
-                tryCloseCursor(boxSizingCursor);
             }
             tryCloseCursor(boxSizingCursor);
-            return emptyResult();
+            return result;
         } catch (Exception e) {
             Log.e(TAG, "getMaxDepsDate -> ".concat(e.getMessage()));
             throw new RuntimeException("To catch into upper level.");
@@ -926,9 +929,14 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         result.add(row);
         return result;
     }
+    private HashMap<String, Integer> addRow (String boxId, int q){
+        HashMap row = new HashMap<String, Integer>();
+        row.put(boxId, q);
+        return row;
+    }
 
-    public findOrCreateBoxMoveAndProd (String boxId) {
-
+    public String findOrNewBoxMoveAndProd (String boxId) {
+        return "";
     }
 }
 
