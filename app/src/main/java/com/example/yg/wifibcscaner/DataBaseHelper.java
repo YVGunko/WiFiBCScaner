@@ -40,6 +40,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static android.database.DatabaseUtils.dumpCursorToString;
@@ -810,6 +811,38 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
+    private String insertBoxMoveAndProd(@NonNull BoxMoves bm) {
+        Cursor cursor = null;
+        try {
+            cursor = mDataBase.rawQuery("SELECT bm._id FROM BoxMoves bm Where bm.Id_o=" + bm.get_Id_o() + " and bm.Id_b='" + bm.get_Id_b()+"'", null);
+            if (cursor != null && cursor.moveToFirst()) {
+                try {
+                    if (StringUtils.isNotBlank(cursor.getString(0)))
+                        return cursor.getString(0);
+                    return "";
+                }catch (Exception e){
+                    return "";
+                }
+            } else {
+                ContentValues values = new ContentValues();
+                values.clear();
+                values.put(BoxMoves.COLUMN_ID, bm.get_id());
+                values.put(BoxMoves.COLUMN_Id_b, bm.get_Id_b());
+                values.put(BoxMoves.COLUMN_Id_o, bm.get_Id_o());
+                values.put(BoxMoves.COLUMN_DT, sDateTimeToLong(bm.get_DT()));
+                if (bm.get_sentToMasterDate() != null) values.put(BoxMoves.COLUMN_sentToMasterDate, sDateTimeToLong(bm.get_sentToMasterDate()));
+
+                long res = mDataBase.insertWithOnConflict(BoxMoves.TABLE_bm, null, values, 5);
+                Log.d(TAG, "insertBoxMoves insertWithOnConflict result"+String.valueOf(res));
+                return String.valueOf(res);
+            }
+        } catch (SQLException e) {
+            Log.e(TAG, e.getMessage());
+            return "";
+        } finally {
+            tryCloseCursor(cursor);
+        }
+    }
     public boolean addBox(foundOrder fo, foundBox fb, String outDocId) {
         mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         boolean doAsTransaction = !mDataBase.inTransaction();
@@ -821,11 +854,27 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                     DateTimeUtils.getDayTimeString(new Date()),
                     null, true);
             // here I should prepare data for find/create new box -> boxMove -> partBox
-            if ( checkAvailability(fo.getOrd()).equals("")) return false;
+            HashMap<String, Integer> boxToDoMap = checkAvailability(fo.getOrd());
+            HashMap<String, HashMap<String, Integer>> bmBoxToDoMap = new HashMap<>();
+            if ( boxToDoMap.isEmpty() ) return false;
+
+            for ( Map.Entry<String, Integer> entry : boxToDoMap.entrySet() ) {
+                String bmId = findOrNewBoxMove(entry.getKey());
+                bmBoxToDoMap.put(bmId, new HashMap<String, Integer>(){{put(entry.getKey(), entry.getValue());}});
+            }
             if (doAsTransaction)
                 mDataBase.beginTransaction();
             if (insertOneBox(boxes)) {
 //              make release transaction here
+                for ( Map.Entry<String, HashMap<String, Integer>> entry : bmBoxToDoMap.entrySet() ) {
+                    if (StringUtils.isBlank(entry.getKey())) { //new release boxMove
+                        Log.i(TAG, "empty bmId - "+entry.getValue().toString());
+                        /*boxToDoMap.put(entry.getValue().g);
+                        (Map.Entry<String, Integer>) entry.getValue().entrySet().g
+                        insertBoxMoveAndProd(new BoxMoves("", (), 9999))*/
+                    } else
+                        Log.i(TAG, "next step here - "+entry.getKey().toString());
+                }
                 if (doAsTransaction)
                     mDataBase.setTransactionSuccessful();
                 return true;
@@ -840,14 +889,13 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
-    public ArrayList<HashMap<String, Integer>> checkAvailability(@NonNull String orderText){
+    public HashMap<String, Integer> checkAvailability(@NonNull String orderText){
         final String SQL_CHECK_AVAILABILITY = "SELECT b._id, sum(Prods.RQ_box) as quantity " +
                 " FROM Boxes b, BoxMoves bm, Prods " +
                 " Where b.id_m = ? and bm.Id_b=b._id and bm.Id_o=? and bm._id=Prods.Id_bm " +
                 " Group by b._id, Prods.Id_bm";
-        final String SQL_CHECK_BOX_MOVE = "SELECT _id FROM BoxMoves " +
-                " Where Id_b = ? and bm.Id_o = ? ";
-        ArrayList<HashMap<String, Integer>> result = new ArrayList<HashMap<String, Integer>>();
+
+        HashMap<String, Integer> result = new HashMap<String, Integer>();
         Cursor cursor = null;
         try {
             cursor = mDataBase.rawQuery(Orders.SQL_MD_ID_SELECT_BOX_SIZING, new String[]{orderText});
@@ -888,7 +936,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                             do {
                                 if (checkProduceCursor.getString(0) == checkReleaseCursor.getString(0)){
                                     if (checkProduceCursor.getInt(1) + boxSizingCursor.getInt(1) >= checkReleaseCursor.getInt(1)) {
-                                        result.add(addRow(checkProduceCursor.getString(0), boxSizingCursor.getInt(1)));
+                                        result.put(checkProduceCursor.getString(0), boxSizingCursor.getInt(1));
                                         break;
                                     } else {
                                         if (!checkReleaseCursor.isLast()) {
@@ -904,7 +952,14 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                             } while (checkProduceCursor.moveToNext());
                         }
                     } else { //no releases yet. first box suits
-                        result.add(addRow(checkProduceCursor.getString(0), boxSizingCursor.getInt(1)));
+                        if (checkProduceCursor.moveToFirst()) {
+                            Log.i(TAG, checkProduceCursor.getString(0));
+                            Log.i(TAG, String.valueOf(boxSizingCursor.getInt(1)));
+                            result.put(checkProduceCursor.getString(0), boxSizingCursor.getInt(1));
+                        } else {
+                            tryCloseCursor(checkProduceCursor);
+                            return emptyResult();
+                        }
                     }
                 } else {
                     tryCloseCursor(checkProduceCursor);
@@ -922,21 +977,27 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         }
     }
 
-    private ArrayList<HashMap<String, Integer>> emptyResult() {
-        ArrayList<HashMap<String, Integer>> result = new ArrayList<HashMap<String, Integer>>();
-        HashMap row = new HashMap<String, Integer>();
-        row.put("", 0);
-        result.add(row);
-        return result;
-    }
-    private HashMap<String, Integer> addRow (String boxId, int q){
-        HashMap row = new HashMap<String, Integer>();
-        row.put(boxId, q);
-        return row;
+    private HashMap<String, Integer> emptyResult() {
+        return new HashMap<String, Integer>();
     }
 
-    public String findOrNewBoxMoveAndProd (String boxId) {
-        return "";
+    public String findOrNewBoxMove (String boxId) {
+        final String SQL_CHECK_BOX_MOVE = "SELECT _id FROM BoxMoves " +
+                " Where Id_b = ? and bm.Id_o = 9999 ";
+        Cursor cursor = null;
+        try {
+            cursor = mDataBase.rawQuery(SQL_CHECK_BOX_MOVE, new String[]{boxId});
+            while (cursor.moveToNext()) {
+                return cursor.getString(0);
+            }
+            return "";
+
+        } catch (Exception e) {
+            Log.e(TAG, "getMaxDepsDate -> ".concat(e.getMessage()));
+            return "";
+        } finally {
+            tryCloseCursor(cursor);
+        }
     }
 }
 

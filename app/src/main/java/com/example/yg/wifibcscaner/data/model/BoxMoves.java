@@ -1,5 +1,7 @@
 package com.example.yg.wifibcscaner.data.model;
 
+import com.example.yg.wifibcscaner.utils.DateTimeUtils;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -36,6 +38,14 @@ public class BoxMoves {
         this._Id_o = _Id_o;
         this._DT = _DT;
         this._sentToMasterDate = _sentToMasterDate;
+    }
+
+    public BoxMoves(String _id, String _Id_b, int _Id_o)  {
+        this._id = _id;
+        this._Id_b = _Id_b;
+        this._Id_o = _Id_o;
+        this._DT = DateTimeUtils.getDayTimeString( new Date() );
+        this._sentToMasterDate = null;
     }
 
     public String get_DT() {return _DT;}
