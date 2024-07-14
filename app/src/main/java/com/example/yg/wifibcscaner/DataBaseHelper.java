@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static android.database.DatabaseUtils.dumpCursorToString;
@@ -811,36 +812,40 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
-    private String insertBoxMoveAndProd(@NonNull BoxMoves bm) {
-        Cursor cursor = null;
-        try {
-            cursor = mDataBase.rawQuery("SELECT bm._id FROM BoxMoves bm Where bm.Id_o=" + bm.get_Id_o() + " and bm.Id_b='" + bm.get_Id_b()+"'", null);
-            if (cursor != null && cursor.moveToFirst()) {
-                try {
-                    if (StringUtils.isNotBlank(cursor.getString(0)))
-                        return cursor.getString(0);
-                    return "";
-                }catch (Exception e){
-                    return "";
-                }
-            } else {
+    private boolean insertBoxMoveAndProd(@NonNull BoxMoves bm, int prodQuantity) {
+        if (StringUtils.isBlank(bm.get_id())) { //new release boxMove
+            bm.set_id(UUID.randomUUID().toString());
+            try {
                 ContentValues values = new ContentValues();
                 values.clear();
                 values.put(BoxMoves.COLUMN_ID, bm.get_id());
                 values.put(BoxMoves.COLUMN_Id_b, bm.get_Id_b());
                 values.put(BoxMoves.COLUMN_Id_o, bm.get_Id_o());
                 values.put(BoxMoves.COLUMN_DT, sDateTimeToLong(bm.get_DT()));
-                if (bm.get_sentToMasterDate() != null) values.put(BoxMoves.COLUMN_sentToMasterDate, sDateTimeToLong(bm.get_sentToMasterDate()));
+                if (bm.get_sentToMasterDate() != null)
+                    values.put(BoxMoves.COLUMN_sentToMasterDate, sDateTimeToLong(bm.get_sentToMasterDate()));
 
                 long res = mDataBase.insertWithOnConflict(BoxMoves.TABLE_bm, null, values, 5);
-                Log.d(TAG, "insertBoxMoves insertWithOnConflict result"+String.valueOf(res));
-                return String.valueOf(res);
+                Log.d(TAG, "insertBoxMoveAndProd insertWithOnConflict result" + String.valueOf(res));
+            } catch (SQLException e) {
+                Log.e(TAG, e.getMessage());
+                return false;
             }
+        }
+        try {
+            Prods prod = new Prods(getUUID(),
+                    bm.get_id(),
+                    0,
+                    0,
+                    prodQuantity,
+                    DateTimeUtils.getStartOfDayString(new Date()),
+                    null,
+                    AppController.getInstance().getCurrentOutDoc().get_id());
+            return insertOneProd(prod);
+
         } catch (SQLException e) {
             Log.e(TAG, e.getMessage());
-            return "";
-        } finally {
-            tryCloseCursor(cursor);
+            return false;
         }
     }
     public boolean addBox(foundOrder fo, foundBox fb, String outDocId) {
@@ -855,25 +860,24 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                     null, true);
             // here I should prepare data for find/create new box -> boxMove -> partBox
             HashMap<String, Integer> boxToDoMap = checkAvailability(fo.getOrd());
-            HashMap<String, HashMap<String, Integer>> bmBoxToDoMap = new HashMap<>();
+            HashMap<HashMap<String, Integer>, String> bmBoxToDoMap = new HashMap<>();
             if ( boxToDoMap.isEmpty() ) return false;
 
             for ( Map.Entry<String, Integer> entry : boxToDoMap.entrySet() ) {
                 String bmId = findOrNewBoxMove(entry.getKey());
-                bmBoxToDoMap.put(bmId, new HashMap<String, Integer>(){{put(entry.getKey(), entry.getValue());}});
+                bmBoxToDoMap.put(new HashMap<String, Integer>(){{put(entry.getKey(), entry.getValue());}}, bmId);
             }
             if (doAsTransaction)
                 mDataBase.beginTransaction();
             if (insertOneBox(boxes)) {
 //              make release transaction here
-                for ( Map.Entry<String, HashMap<String, Integer>> entry : bmBoxToDoMap.entrySet() ) {
-                    if (StringUtils.isBlank(entry.getKey())) { //new release boxMove
-                        Log.i(TAG, "empty bmId - "+entry.getValue().toString());
-                        /*boxToDoMap.put(entry.getValue().g);
-                        (Map.Entry<String, Integer>) entry.getValue().entrySet().g
-                        insertBoxMoveAndProd(new BoxMoves("", (), 9999))*/
-                    } else
-                        Log.i(TAG, "next step here - "+entry.getKey().toString());
+                for ( Map.Entry<HashMap<String, Integer>, String> entry : bmBoxToDoMap.entrySet() ) {
+                    for ( Map.Entry<String, Integer> entryBm : entry.getKey().entrySet() ) {
+                        if (insertBoxMoveAndProd(new BoxMoves(entry.getValue(), entryBm.getKey(), 9999), entryBm.getValue()))
+                            break; //have to be one entry only
+                        else
+                            return false;
+                    }
                 }
                 if (doAsTransaction)
                     mDataBase.setTransactionSuccessful();
@@ -983,7 +987,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
     public String findOrNewBoxMove (String boxId) {
         final String SQL_CHECK_BOX_MOVE = "SELECT _id FROM BoxMoves " +
-                " Where Id_b = ? and bm.Id_o = 9999 ";
+                " Where Id_b = ? and Id_o = 9999 ";
         Cursor cursor = null;
         try {
             cursor = mDataBase.rawQuery(SQL_CHECK_BOX_MOVE, new String[]{boxId});
