@@ -34,6 +34,32 @@ public class OutDocRepo {
     private final SotrRepo sotrRepo = new SotrRepo();
     private final DepartmentRepo depRepo = new DepartmentRepo();
 
+    public OutDocs getOutDocById (String id){
+        final String SQL_SELECT_BY_ID = "SELECT Id_o, number, comment, dt, division_code, idUser, idSotr, idDeps FROM OutDocs where _id = ? ";
+        Cursor cursor = null;
+        try {
+            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
+            cursor = mDataBase.rawQuery(SQL_SELECT_BY_ID,
+                        new String[]{id});
+            if (cursor != null && cursor.moveToFirst()) {
+                return new OutDocs( id,
+                        cursor.getInt(0) ,
+                        cursor.getInt(1),
+                        cursor.getString(2),
+                        cursor.getString(3),
+                        cursor.getString(4),
+                        cursor.getInt(5),
+                        cursor.getInt(6),
+                        cursor.getInt(7));
+            }
+            return new OutDocs ();
+        } catch (Exception e) {
+            Log.w(TAG, "getNextOutDocNumber -> ".concat(e.getMessage()));
+            return new OutDocs ();
+        } finally {
+            tryCloseCursor(cursor);
+        }
+    }
     /*
      * OutDoc add, add in bulk, next number
      * */

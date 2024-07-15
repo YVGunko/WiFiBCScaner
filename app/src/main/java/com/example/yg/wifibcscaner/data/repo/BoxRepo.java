@@ -159,5 +159,24 @@ public class BoxRepo {
         }
         return fb;
     }
-
+    public boolean setBoxArchiveById (String boxId){
+        final String SQL_SET = "Update Boxes set archive=true where _id = ? ;";
+        SQLiteDatabase mDataBase = AppController.getInstance().getDbHelper().openDataBase();
+        boolean doAsTransaction = !mDataBase.inTransaction();
+        try {
+            if (doAsTransaction)
+                mDataBase.beginTransaction();
+            mDataBase.execSQL(SQL_SET, new String[]{boxId});
+            if (doAsTransaction)
+                mDataBase.setTransactionSuccessful();
+            return true;
+        }catch (Exception e) {
+            Log.e(TAG, "setBoxArchiveById -> ".concat(e.getMessage()) );
+            return false;
+        }finally {
+            if (doAsTransaction)
+                mDataBase.endTransaction();
+            AppController.getInstance().getDbHelper().closeDataBase();
+        }
+    }
 }

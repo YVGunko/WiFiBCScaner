@@ -767,6 +767,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
              values.put(Boxes.COLUMN_Q_box, boxes.get_Q_box());
              values.put(Boxes.COLUMN_N_box, boxes.get_N_box());
              values.put(Boxes.COLUMN_DT, sDateTimeToLong(boxes.get_DT()));
+             values.put(Boxes.COLUMN_archive, boxes.isArchive());
              if (boxes.get_sentToMasterDate() != null) values.put(Boxes.COLUMN_sentToMasterDate, sDateTimeToLong(boxes.get_sentToMasterDate()));
 
              return mDataBase.insertWithOnConflict(Boxes.TABLE_boxes, null, values, 5) > 0;
@@ -848,7 +849,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             return false;
         }
     }
-    public boolean addBox(foundOrder fo, foundBox fb, String outDocId) {
+    public boolean addBox(foundOrder fo, foundBox fb) {
         mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         boolean doAsTransaction = !mDataBase.inTransaction();
         try {
@@ -888,7 +889,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             Log.e(TAG, ex.getMessage());
             return false;
         }finally {
-            if (doAsTransaction)
+            if (mDataBase.inTransaction() && doAsTransaction)
                 mDataBase.endTransaction();
             AppController.getInstance().getDbHelper().closeDataBase();
         }
@@ -912,7 +913,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             String sql = BoxSizing.TEST_SQL_SELECT_BOX_SIZING_FOR_MD_ID_IN+" ( "+inClause+" );";
             Cursor boxSizingCursor = mDataBase.rawQuery(sql, null);
 //            Cursor boxSizingCursor = mDataBase.rawQuery(BoxSizing.SQL_SELECT_BOX_SIZING_FOR_MD_ID_IN, new String[]{inClause});
-            Log.i(TAG, dumpCursorToString(boxSizingCursor));
+            Log.d(TAG, dumpCursorToString(boxSizingCursor));
             while (boxSizingCursor.moveToNext()) {
                 Cursor checkProduceCursor = mDataBase.rawQuery(SQL_CHECK_AVAILABILITY,
                         new String[]{boxSizingCursor.getString(0), "1"});
@@ -938,18 +939,22 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                         // have to find exact box
                         if (checkProduceCursor.moveToFirst() && checkReleaseCursor.moveToFirst()) {
                             do {
-                                if (checkProduceCursor.getString(0) == checkReleaseCursor.getString(0)){
-                                    if (checkProduceCursor.getInt(1) + boxSizingCursor.getInt(1) >= checkReleaseCursor.getInt(1)) {
+                                if (checkProduceCursor.getString(0).equals(checkReleaseCursor.getString(0))){
+                                    if (checkProduceCursor.getInt(1) - boxSizingCursor.getInt(1) >= checkReleaseCursor.getInt(1)) {
                                         result.put(checkProduceCursor.getString(0), boxSizingCursor.getInt(1));
                                         break;
                                     } else {
-                                        if (!checkReleaseCursor.isLast()) {
+                                        if (!checkReleaseCursor.isLast()) { //assumes having more than one box in release. what if one only.
                                             checkReleaseCursor.moveToNext();
                                             checkProduceCursor.moveToFirst();
                                         } else {
-                                            tryCloseCursor(checkReleaseCursor);
-                                            tryCloseCursor(checkProduceCursor);
-                                            return emptyResult();
+                                            if (checkProduceCursor.getCount() > checkReleaseCursor.getCount()) {//should go for the next one box to release
+                                                // here we go
+                                            } else {
+                                                tryCloseCursor(checkReleaseCursor);
+                                                tryCloseCursor(checkProduceCursor);
+                                                return emptyResult();
+                                            }
                                         }
                                     }
                                 }
@@ -957,8 +962,8 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                         }
                     } else { //no releases yet. first box suits
                         if (checkProduceCursor.moveToFirst()) {
-                            Log.i(TAG, checkProduceCursor.getString(0));
-                            Log.i(TAG, String.valueOf(boxSizingCursor.getInt(1)));
+                            Log.d(TAG, checkProduceCursor.getString(0));
+                            Log.d(TAG, String.valueOf(boxSizingCursor.getInt(1)));
                             result.put(checkProduceCursor.getString(0), boxSizingCursor.getInt(1));
                         } else {
                             tryCloseCursor(checkProduceCursor);
@@ -977,7 +982,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             throw new RuntimeException("To catch into upper level.");
         } finally {
             tryCloseCursor(cursor);
-            AppController.getInstance().getDbHelper().closeDataBase();
+//            AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
 

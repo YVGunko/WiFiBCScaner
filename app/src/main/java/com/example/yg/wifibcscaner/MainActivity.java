@@ -487,9 +487,7 @@ private static String filter (String str){
                     fb = boxRepo.searchBox(fo.get_id(), currentbarcode);
                     //---Получаем строку данных о коробке для вывода в tVDBInfo и количество для редактирования
                     tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
-                    if (StringUtils.isNotEmpty(fb.getBoxdef()))
-                        completeOrderDef(fb);
-                    tVDBInfo.setText(fo.getOrderdef());
+                    tVDBInfo.setText(fo.getOrderdef().concat(fb.getBoxdef()));
                     if (fb.is_archive()){
                         MessageUtils.showToast(MainActivity.this, getString(R.string.box_already_released),true);
                     } else {
@@ -532,15 +530,16 @@ private static String filter (String str){
                 } else {
                     // new box or archive status change
                     if (StringUtils.isNotBlank(fb.get_id())) { //setArchive
-
+                        boxRepo.setBoxArchiveById(fb.get_id());
                     } else {
-                        if (!mDBHelper.addBox(fo, fb, AppController.getInstance().getCurrentOutDoc().get_id()))
+                        if (!mDBHelper.addBox(fo, fb))
                             MessageUtils.showToast(this, getString(R.string.box_add_exception), false);
                     }
                     Button bScan = findViewById(R.id.bScan);
                     bScan.setText("Scan!");
                     tVDBInfo = findViewById(R.id.tVDBInfo);
                     editTextRQ = findViewById(R.id.editTextRQ);
+                    editTextRQ.setEnabled(false);
                     setTextViews();
                     return;
                 }
