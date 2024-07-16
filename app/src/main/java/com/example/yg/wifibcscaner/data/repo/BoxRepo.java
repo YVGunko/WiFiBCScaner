@@ -89,7 +89,7 @@ public class BoxRepo {
                         .concat(TABLE_prods).concat(".").concat(COLUMN_sentToMasterDate).concat(" IS NULL ");
 
             cursor = mDataBase.rawQuery("SELECT MasterData.Ord, MasterData.Cust, MasterData.Nomen, MasterData.Attrib, MasterData.Q_ord, " +
-                        "Boxes.Q_box, Boxes.N_box, Prods.RQ_box, Deps.Name_Deps, s.Sotr, MasterData.Ord_id, Boxes._id, bm._id, Prods._id, Prods.sentToMasterDate" +
+                        "Boxes.Q_box, Boxes.N_box, Prods.RQ_box, Deps.Name_Deps, s.Sotr, MasterData.Ord_id, Boxes._id, bm._id, Prods._id, Prods.sentToMasterDate, Boxes.archive" +
                         " FROM Opers, Boxes, BoxMoves bm, Prods, Deps, MasterData, Sotr s Where Opers._id=" + AppController.getInstance().getDefs().get_Id_o() +
                         " and bm.Id_o=Opers._id and Boxes._id=bm.Id_b and Boxes.Id_m=MasterData._id and bm._id=Prods.Id_bm" +
                         " and Prods.Id_d=Deps._id and Prods.Id_s=s._id " +
@@ -114,6 +114,7 @@ public class BoxRepo {
                 readBox.put("bmId", cursor.getString(12) + "/bmId");
                 readBox.put("pdId", cursor.getString(13) + "/pdId");
                 readBox.put("sent", (cursor.getType(14) == FIELD_TYPE_NULL) ? "N" : "Y" + "/sent");
+                readBox.put("arch", cursor.getInt(cursor.getColumnIndex("archive")) != 0 ? "N" : "Y" + "/arch");
                 //Закидываем в список
                 readBoxes.add(readBox);
             }

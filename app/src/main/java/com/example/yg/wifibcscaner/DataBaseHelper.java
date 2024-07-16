@@ -856,12 +856,10 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         boolean doAsTransaction = !mDataBase.inTransaction();
         try {
-            Boxes boxes = new Boxes(getUUID(),
+            Boxes boxes = new Boxes(getUUID(), // dt, sentToMasterDate, archive are set in constructor
                     fo.get_id(),
                     fb.getQB(),
-                    fb.getNB(),
-                    DateTimeUtils.getDayTimeString(new Date()),
-                    null, true);
+                    fb.getNB());
             // here I should prepare data for find/create new box -> boxMove -> partBox
             HashMap<String, Integer> boxToDoMap = checkAvailability(fo.getOrd());
             if ( boxToDoMap.isEmpty() ) return false;
@@ -902,7 +900,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         final String PRODUCED_LESS = "Недостаточно произведенной подошвы чтобы отгрузить эту коробку!";
         final String SQL_CHECK_AVAILABILITY = "SELECT b._id, sum(Prods.RQ_box) as quantity " +
                 " FROM Boxes b, BoxMoves bm, Prods " +
-                " Where b.id_m = ? and bm.Id_b=b._id and bm.Id_o=? and bm._id=Prods.Id_bm " +
+                " Where b.archive=0 and b.id_m = ? and bm.Id_b=b._id and bm.Id_o=? and bm._id=Prods.Id_bm " +
                 " Group by b._id, Prods.Id_bm";
 
         HashMap<String, Integer> result = new HashMap<String, Integer>();
@@ -919,8 +917,6 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             Cursor boxSizingCursor = mDataBase.rawQuery(sql, null);
 
             while (boxSizingCursor.moveToNext()) {
-                Log.d(TAG, "Looking for boxes for masterData Id= "+boxSizingCursor.getString(0)
-                        +" and quantity= "+boxSizingCursor.getInt(1));
                 Cursor checkProduceCursor = mDataBase.rawQuery(SQL_CHECK_AVAILABILITY,
                         new String[]{boxSizingCursor.getString(0), "1"});
                 if (checkProduceCursor != null && checkProduceCursor.moveToFirst()) {

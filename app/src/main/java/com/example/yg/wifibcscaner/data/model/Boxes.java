@@ -1,5 +1,9 @@
 package com.example.yg.wifibcscaner.data.model;
 
+import com.example.yg.wifibcscaner.utils.DateTimeUtils;
+
+import java.util.Date;
+
 /**
  CREATE TABLE Boxes (
  _id   INTEGER  PRIMARY KEY AUTOINCREMENT,
@@ -51,7 +55,16 @@ public class Boxes {
         this._sentToMasterDate = _sentToMasterDate;
         this._archive = _archive;
     }
-
+    //for BoxSizing
+    public Boxes(String _id, int _Id_m, int _Q_box, int _N_box)  {
+        this._id = _id;
+        this._Id_m = _Id_m;
+        this._Q_box = _Q_box;
+        this._N_box = _N_box;
+        this._DT = DateTimeUtils.getDayTimeString(new Date());
+        this._sentToMasterDate = this.get_DT();
+        this._archive = true;
+    }
     public int get_Id_m() {
         return _Id_m;
     }

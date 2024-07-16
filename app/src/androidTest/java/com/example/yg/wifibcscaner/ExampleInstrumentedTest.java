@@ -55,7 +55,7 @@ public class ExampleInstrumentedTest {
         assertEquals(true, fo.getOrd().equals("S40155-0016"));
 
         foundBox fb = boxRepo.searchBox(fo.get_id(), barcode);
-        if (!fb.is_archive()) boxRepo.setBoxArchiveById(fb.get_id());
+        if (!fb.is_archive()) mDBHelper.setBoxArchiveById(fb.get_id());
         assertTrue(fb.is_archive());
         AppController.getInstance().getDbHelper().openDataBase();
 

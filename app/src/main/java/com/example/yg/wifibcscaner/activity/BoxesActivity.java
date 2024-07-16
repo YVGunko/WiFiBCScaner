@@ -91,9 +91,10 @@ public class BoxesActivity extends AppCompatActivity {
                 String sTmp = adapter.getItem(position).toString();
                 // if @sent, omit delete dialog and get user informed that deletion is impossible
                 try {
-                    if (sTmp.substring(sTmp.indexOf("sent=")+5,sTmp.indexOf("sent=")+6).equals("Y") ){
-                        Log.d(TAG,"The Box is already sent. Impossible to delete." );
-                        MessageUtils.showToast(getApplicationContext(),  "Нет возможности удалить! Коробка уже отправлена.", false);
+                    if (sTmp.substring(sTmp.indexOf("sent=")+5,sTmp.indexOf("sent=")+6).equals("Y")
+                            && sTmp.substring(sTmp.indexOf("arch=")+5,sTmp.indexOf("arch=")+6).equals("Y")){
+                        Log.d(TAG,"The Box is already sent or archived. Impossible to delete." );
+                        MessageUtils.showToast(getApplicationContext(),  "Нет возможности удалить! Коробка либо уже в архиве либо отправлена на сервер.", false);
                     } else {
                         sTmp = sTmp.substring(sTmp.indexOf("Cust=")+5,sTmp.indexOf("Cust=")+5+40).concat("...") ;
                         AlertDialog.Builder adb=new AlertDialog.Builder(BoxesActivity.this);

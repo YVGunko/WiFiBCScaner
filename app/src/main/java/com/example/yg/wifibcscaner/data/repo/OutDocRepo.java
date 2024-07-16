@@ -230,7 +230,7 @@ public class OutDocRepo {
         mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         Cursor cursor = null;
         try {
-            cursor = mDataBase.rawQuery("select p.idOutDocs, count(bm.Id_b) as boxNumber, sum(p.RQ_box) as RQ_box" +
+            cursor = mDataBase.rawQuery("select p.idOutDocs, count(distinct bm.Id_b) as boxNumber, sum(p.RQ_box) as RQ_box" +
                     " FROM Prods p, BoxMoves bm" +
                     " where p.idOutDocs='"+id+"' and bm._id=p.Id_bm"+
                     " group by p.idOutDocs", null);
