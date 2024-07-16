@@ -7,18 +7,15 @@ import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.example.yg.wifibcscaner.controller.AppController;
-import com.example.yg.wifibcscaner.data.model.Boxes;
 import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.service.foundBox;
 import com.example.yg.wifibcscaner.service.foundOrder;
-import com.example.yg.wifibcscaner.service.spBarcode;
 import com.example.yg.wifibcscaner.utils.AppUtils;
-import com.example.yg.wifibcscaner.utils.DateTimeUtils;
+import com.example.yg.wifibcscaner.utils.executors.DefaultExecutorSupplier;
 
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 
 import static android.database.Cursor.FIELD_TYPE_NULL;
@@ -27,9 +24,6 @@ import static com.example.yg.wifibcscaner.data.model.Prods.COLUMN_idOutDocs;
 import static com.example.yg.wifibcscaner.data.model.Prods.COLUMN_sentToMasterDate;
 import static com.example.yg.wifibcscaner.data.model.Prods.TABLE_prods;
 import static com.example.yg.wifibcscaner.utils.AppUtils.tryCloseCursor;
-import static com.example.yg.wifibcscaner.utils.MyStringUtils.getBarcodeN_box;
-import static com.example.yg.wifibcscaner.utils.MyStringUtils.getBarcodeQ_box;
-import static com.example.yg.wifibcscaner.utils.MyStringUtils.getUUID;
 import static com.example.yg.wifibcscaner.utils.MyStringUtils.retStringFollowingCRIfNotNull;
 
 public class BoxRepo {
@@ -159,24 +153,5 @@ public class BoxRepo {
         }
         return fb;
     }
-    public boolean setBoxArchiveById (String boxId){
-        final String SQL_SET = "Update Boxes set archive=true where _id = ? ;";
-        SQLiteDatabase mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-        boolean doAsTransaction = !mDataBase.inTransaction();
-        try {
-            if (doAsTransaction)
-                mDataBase.beginTransaction();
-            mDataBase.execSQL(SQL_SET, new String[]{boxId});
-            if (doAsTransaction)
-                mDataBase.setTransactionSuccessful();
-            return true;
-        }catch (Exception e) {
-            Log.e(TAG, "setBoxArchiveById -> ".concat(e.getMessage()) );
-            return false;
-        }finally {
-            if (doAsTransaction)
-                mDataBase.endTransaction();
-            AppController.getInstance().getDbHelper().closeDataBase();
-        }
-    }
+
 }

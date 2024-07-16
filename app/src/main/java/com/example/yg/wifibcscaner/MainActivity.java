@@ -530,7 +530,7 @@ private static String filter (String str){
                 } else {
                     // new box or archive status change
                     if (StringUtils.isNotBlank(fb.get_id())) { //setArchive
-                        boxRepo.setBoxArchiveById(fb.get_id());
+                        mDBHelper.setBoxArchiveById(fb.get_id());
                     } else {
                         if (!mDBHelper.addBox(fo, fb))
                             MessageUtils.showToast(this, getString(R.string.box_add_exception), false);

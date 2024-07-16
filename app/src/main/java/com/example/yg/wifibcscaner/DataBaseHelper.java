@@ -23,12 +23,14 @@ import com.example.yg.wifibcscaner.data.model.Orders;
 import com.example.yg.wifibcscaner.data.model.Prods;
 import com.example.yg.wifibcscaner.data.model.lastUpdate;
 import com.example.yg.wifibcscaner.data.model.BoxSizing;
+import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.service.SharedPrefs;
 import com.example.yg.wifibcscaner.service.foundBox;
 import com.example.yg.wifibcscaner.service.foundOrder;
 import com.example.yg.wifibcscaner.service.spBarcode;
 import com.example.yg.wifibcscaner.utils.AppUtils;
 import com.example.yg.wifibcscaner.utils.DateTimeUtils;
+import com.example.yg.wifibcscaner.utils.executors.DefaultExecutorSupplier;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -42,6 +44,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static android.database.DatabaseUtils.dumpCursorToString;
@@ -861,8 +864,9 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                     null, true);
             // here I should prepare data for find/create new box -> boxMove -> partBox
             HashMap<String, Integer> boxToDoMap = checkAvailability(fo.getOrd());
-            HashMap<HashMap<String, Integer>, String> bmBoxToDoMap = new HashMap<>();
             if ( boxToDoMap.isEmpty() ) return false;
+
+            HashMap<HashMap<String, Integer>, String> bmBoxToDoMap = new HashMap<>();
 
             for ( Map.Entry<String, Integer> entry : boxToDoMap.entrySet() ) {
                 String bmId = findOrNewBoxMove(entry.getKey());
@@ -895,6 +899,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         }
     }
     public HashMap<String, Integer> checkAvailability(@NonNull String orderText){
+        final String PRODUCED_LESS = "Недостаточно произведенной подошвы чтобы отгрузить эту коробку!";
         final String SQL_CHECK_AVAILABILITY = "SELECT b._id, sum(Prods.RQ_box) as quantity " +
                 " FROM Boxes b, BoxMoves bm, Prods " +
                 " Where b.id_m = ? and bm.Id_b=b._id and bm.Id_o=? and bm._id=Prods.Id_bm " +
@@ -910,11 +915,12 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             }
             //tryCloseCursor(cursor);
             inClause = StringUtils.substringBeforeLast(inClause, ",");
-            String sql = BoxSizing.TEST_SQL_SELECT_BOX_SIZING_FOR_MD_ID_IN+" ( "+inClause+" );";
+            String sql = BoxSizing.SQL_SELECT_BOX_SIZING_FOR_MD_ID_IN+" ( "+inClause+" );";
             Cursor boxSizingCursor = mDataBase.rawQuery(sql, null);
-//            Cursor boxSizingCursor = mDataBase.rawQuery(BoxSizing.SQL_SELECT_BOX_SIZING_FOR_MD_ID_IN, new String[]{inClause});
-            Log.d(TAG, dumpCursorToString(boxSizingCursor));
+
             while (boxSizingCursor.moveToNext()) {
+                Log.d(TAG, "Looking for boxes for masterData Id= "+boxSizingCursor.getString(0)
+                        +" and quantity= "+boxSizingCursor.getInt(1));
                 Cursor checkProduceCursor = mDataBase.rawQuery(SQL_CHECK_AVAILABILITY,
                         new String[]{boxSizingCursor.getString(0), "1"});
                 if (checkProduceCursor != null && checkProduceCursor.moveToFirst()) {
@@ -926,6 +932,9 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                     if (totalProducedNumber < boxSizingCursor.getInt(1)) { //produced less than needed
                         return emptyResult();
                     }
+                    Log.d(TAG, "Looking for boxes for masterData Id= "+boxSizingCursor.getString(0)
+                            +" and quantity= "+boxSizingCursor.getInt(1));
+                    Log.d(TAG, "Boxes have already produced= "+checkProduceCursor.getCount());
                     Cursor checkReleaseCursor = mDataBase.rawQuery(SQL_CHECK_AVAILABILITY,
                             new String[]{boxSizingCursor.getString(0), "9999"});
                     if (checkReleaseCursor != null && checkReleaseCursor.moveToFirst()) {
@@ -936,21 +945,31 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                         if (totalProducedNumber - totalReleasedNumber < boxSizingCursor.getInt(1)) { //left less than needed
                             return emptyResult();
                         }
+                        Log.d(TAG, "Boxes have already been in release phase= "+checkReleaseCursor.getCount());
                         // have to find exact box
                         if (checkProduceCursor.moveToFirst() && checkReleaseCursor.moveToFirst()) {
                             do {
                                 if (checkProduceCursor.getString(0).equals(checkReleaseCursor.getString(0))){
                                     if (checkProduceCursor.getInt(1) - boxSizingCursor.getInt(1) >= checkReleaseCursor.getInt(1)) {
                                         result.put(checkProduceCursor.getString(0), boxSizingCursor.getInt(1));
+                                        if (checkProduceCursor.getInt(1) - boxSizingCursor.getInt(1) == checkReleaseCursor.getInt(1)) {
+                                            //set box archive
+                                            setBoxArchiveById(checkProduceCursor.getString(0)) ;
+                                        }
                                         break;
                                     } else {
                                         if (!checkReleaseCursor.isLast()) { //assumes having more than one box in release. what if one only.
                                             checkReleaseCursor.moveToNext();
                                             checkProduceCursor.moveToFirst();
                                         } else {
-                                            if (checkProduceCursor.getCount() > checkReleaseCursor.getCount()) {//should go for the next one box to release
-                                                // here we go
+                                            if (checkProduceCursor.getCount() > checkReleaseCursor.getCount() && checkProduceCursor.moveToNext()) {
+                                                //should go for the next one box to release from. have enough produced
+                                                Log.d(TAG, "already moved to the next produced box having id= "+checkProduceCursor.getString(0)
+                                                        +" to release quantity= "+(boxSizingCursor.getInt(1)));
+                                                result.put(checkProduceCursor.getString(0), boxSizingCursor.getInt(1));
+                                                break;
                                             } else {
+                                                MessageUtils.showToast(PRODUCED_LESS, true);
                                                 tryCloseCursor(checkReleaseCursor);
                                                 tryCloseCursor(checkProduceCursor);
                                                 return emptyResult();
@@ -1007,6 +1026,29 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         } finally {
             tryCloseCursor(cursor);
         }
+    }
+    public void setBoxArchiveById (String boxId){
+        final String SQL_SET = "Update Boxes set archive=true where _id = ? ;";
+
+        DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
+            SQLiteDatabase mDataBase = AppController.getInstance().getDbHelper().openDataBase();
+            boolean doAsTransaction = !mDataBase.inTransaction();
+            try {
+                if (doAsTransaction)
+                    mDataBase.beginTransaction();
+                mDataBase.execSQL(SQL_SET, new String[]{boxId});
+                if (doAsTransaction)
+                    mDataBase.setTransactionSuccessful();
+                if (BuildConfig.DEBUG) MessageUtils.showToast("setBoxArchiveById completed", false);
+            } catch (Exception e) {
+                Log.e(TAG, "setBoxArchiveById -> ".concat(e.getMessage()));
+            } finally {
+                if (doAsTransaction)
+                    mDataBase.endTransaction();
+                AppController.getInstance().getDbHelper().closeDataBase();
+            }
+        });
+        return ;
     }
 }
 
