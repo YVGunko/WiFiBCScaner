@@ -348,9 +348,9 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 db.endTransaction();
                 db.execSQL("PRAGMA foreign_keys = 1;");
             }
-        if ((newVersion>oldVersion)&(newVersion == 26))
+        if ((newVersion>oldVersion)&(oldVersion < 27))
             try {
-                Log.i(TAG, "Версия бд 26. Начало реструктуризации.");
+                Log.i(TAG, "Версия бд 27. Начало реструктуризации.");
                 db.execSQL("PRAGMA foreign_keys = 0;");
                 db.beginTransaction();
 
@@ -358,7 +358,50 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 db.execSQL(BoxSizing.CREATE_TABLE);
 
                 db.setTransactionSuccessful();
-                Log.d(TAG, "Версия бд 26. Окончание реструктуризации.");
+                Log.d(TAG, "Версия бд 27. Окончание реструктуризации.");
+            } catch (Exception e) {
+                Log.e (TAG, e.getMessage());
+            } finally {
+                db.endTransaction();
+                db.execSQL("PRAGMA foreign_keys = 1;");
+            }
+        if ((newVersion>oldVersion)&(newVersion == 27))
+            try {
+                Log.i(TAG, "Версия бд 27. Начало реструктуризации.");
+                db.execSQL("PRAGMA foreign_keys = 0;");
+                db.beginTransaction();
+
+                db.execSQL("CREATE TABLE sqlitestudio_temp_table AS SELECT * FROM Boxes;");
+
+                db.execSQL("DROP TABLE Boxes;");
+
+                db.execSQL("CREATE TABLE Boxes ("+
+                        " _id              VARCHAR (128) PRIMARY KEY UNIQUE,"+
+                        " Id_m             INTEGER, "+
+                        " Q_box            INTEGER, "+
+                        " N_box            INTEGER, "+
+                        " DT               INTEGER, "+
+                        " sentToMasterDate INTEGER, "+
+                        " archive          BOOLEAN       DEFAULT false, "+
+                        " outDocId         VARCHAR (36), "+
+                        " FOREIGN KEY (Id_m) REFERENCES MasterData (_id) );");
+
+                db.execSQL("INSERT INTO Boxes (_id, Id_m, Q_box, N_box, DT, sentToMasterDate, archive) "+
+                        " SELECT _id, Id_m, Q_box, N_box, DT, sentToMasterDate, archive "+
+                        " FROM sqlitestudio_temp_table; ");
+
+                db.execSQL("DROP TABLE sqlitestudio_temp_table;");
+
+                db.execSQL("CREATE UNIQUE INDEX idx_boxes ON Boxes ( Id_m, N_box );");
+
+                db.execSQL("CREATE INDEX box_dt ON Boxes ( DT ASC );");
+
+                db.execSQL("CREATE INDEX box_sent ON Boxes ( sentToMasterDate ASC );");
+
+                db.execSQL("CREATE INDEX idx_outDocId ON Boxes ( outDocId ASC );");
+
+                db.setTransactionSuccessful();
+                Log.d(TAG, "Версия бд 27. Окончание реструктуризации.");
             } catch (Exception e) {
                 Log.e (TAG, e.getMessage());
             } finally {
@@ -771,6 +814,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
              values.put(Boxes.COLUMN_N_box, boxes.get_N_box());
              values.put(Boxes.COLUMN_DT, sDateTimeToLong(boxes.get_DT()));
              values.put(Boxes.COLUMN_archive, boxes.isArchive());
+             values.put(Boxes.COLUMN_OUTDOC_ID, boxes.getOutDocId());
              if (boxes.get_sentToMasterDate() != null) values.put(Boxes.COLUMN_sentToMasterDate, sDateTimeToLong(boxes.get_sentToMasterDate()));
 
              return mDataBase.insertWithOnConflict(Boxes.TABLE_boxes, null, values, 5) > 0;
@@ -859,7 +903,8 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             Boxes boxes = new Boxes(getUUID(), // dt, sentToMasterDate, archive are set in constructor
                     fo.get_id(),
                     fb.getQB(),
-                    fb.getNB());
+                    fb.getNB(),
+                    AppController.getInstance().getCurrentOutDoc().get_id()); //relation to OutDocs
             // here I should prepare data for find/create new box -> boxMove -> partBox
             HashMap<String, Integer> boxToDoMap = checkAvailability(fo.getOrd());
             if ( boxToDoMap.isEmpty() ) return false;

@@ -102,7 +102,7 @@ public class BoxRepo {
             while (cursor.moveToNext()) {
                 Log.d(TAG, "listboxes -> ".concat(String.valueOf(cursor.getCount())) );
                 HashMap readBox = new HashMap<String, Integer>();
-                String sTmp = null;
+                String sTmp;
                 if (!AppUtils.isDepAndSotrOper(AppController.getInstance().getDefs().get_Id_o())) sTmp = "";
                 else sTmp = cursor.getString(8) + ", " + cursor.getString(9);
                 //Заполняем

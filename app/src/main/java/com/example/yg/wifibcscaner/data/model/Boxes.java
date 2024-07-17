@@ -27,6 +27,7 @@ public class Boxes {
     private String _DT;
     private String _sentToMasterDate;
     private boolean _archive;
+    private String outDocId;
 
     public static final String TABLE_boxes = "Boxes";
     public static final String COLUMN_ID = "_id";
@@ -36,15 +37,7 @@ public class Boxes {
     public static final String COLUMN_DT = "DT";
     public static final String COLUMN_sentToMasterDate = "sentToMasterDate";
     public static final String COLUMN_archive = "archive";
-
-
-    public boolean isArchive() {
-        return _archive;
-    }
-
-    public void setArchive(boolean archive) {
-        this._archive = _archive;
-    }
+    public static final String COLUMN_OUTDOC_ID = "outDocId";
 
     public Boxes(String _id, int _Id_m, int _Q_box, int _N_box, String _DT, String _sentToMasterDate, boolean _archive)  {
         this._id = _id;
@@ -56,14 +49,15 @@ public class Boxes {
         this._archive = _archive;
     }
     //for BoxSizing
-    public Boxes(String _id, int _Id_m, int _Q_box, int _N_box)  {
+    public Boxes(String _id, int _Id_m, int _Q_box, int _N_box, String outDocId)  {
         this._id = _id;
         this._Id_m = _Id_m;
         this._Q_box = _Q_box;
         this._N_box = _N_box;
         this._DT = DateTimeUtils.getDayTimeString(new Date());
-        this._sentToMasterDate = this.get_DT();
+        this._sentToMasterDate = null;
         this._archive = true;
+        this.outDocId = outDocId;
     }
     public int get_Id_m() {
         return _Id_m;
@@ -109,5 +103,20 @@ public class Boxes {
 
     public void set_sentToMasterDate(String _sentToMasterDate) {
         this._sentToMasterDate = _sentToMasterDate;
+    }
+    public boolean isArchive() {
+        return _archive;
+    }
+
+    public void setArchive(boolean archive) {
+        this._archive = _archive;
+    }
+
+    public String getOutDocId() {
+        return outDocId;
+    }
+
+    public void setOutDocId(String outDocId) {
+        this.outDocId = outDocId;
     }
 }

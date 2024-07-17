@@ -590,6 +590,8 @@ matcher.matches();*/
         if (AppUtils.isEmpty(division_code)) {
             MessageUtils.showToast(getApplicationContext(), "Выберите подразделение. Настройки не будут сохранены!", true);
             return;
+        } else {
+            AppController.getInstance().setCurrentOutDoc(new OutDocs());
         }
         if (ido <= 0) {
             MessageUtils.showToast(getApplicationContext(), "Выберите операцию. Настройки не будут сохранены!", true);
@@ -637,116 +639,4 @@ matcher.matches();*/
         }
     }
 
-/*
-    private class SyncIncoData extends AsyncTask<String, Integer, String> {
-        boolean checkResponce(Response<List<Object>> response) {
-            return response.isSuccessful() && response.body() != null && !response.body().isEmpty();
-        }
-
-        @Override
-        protected String doInBackground(String... urls) {
-            try {
-                ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).getDivision().enqueue(new Callback<List<Division>>() {
-                    @Override
-                    public void onResponse(Call<List<Division>> call, Response<List<Division>> response) {
-                        if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
-                            divRepo.insertDivisionInBulk(response.body());
-                        }
-                        publishProgress(1);
-                    }
-
-                    @Override
-                    public void onFailure(Call<List<Division>> call, Throwable t) {
-                        Log.e(TAG, "Ответ сервера на запрос новых сотрудников: " + t.getMessage());
-                    }
-                });
-                ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).getOperation("01.01.2018 00:00:00").enqueue(new Callback<List<Operation>>() {
-                    @Override
-                    public void onResponse(Call<List<Operation>> call, Response<List<Operation>> response) {
-
-                        if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
-                            operRepo.insertOpers(response.body());
-                        }
-                        publishProgress(2);
-                    }
-
-                    @Override
-                    public void onFailure(Call<List<Operation>> call, Throwable t) {
-                        Log.e(TAG, "Ответ сервера на запрос новых операций: " + t.getMessage());
-                    }
-                });
-
-                ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).getDeps("01.01.2018 00:00:00").enqueue(new Callback<List<Deps>>() {
-                    @Override
-                    public void onResponse(Call<List<Deps>> call, Response<List<Deps>> response) {
-                        if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
-                            depRepo.insertDeps(response.body());
-                        }
-                        publishProgress(3);
-                    }
-
-                    @Override
-                    public void onFailure(Call<List<Deps>> call, Throwable t) {
-                        Log.e(TAG, "Ответ сервера на запрос новых бригад: " + t.getMessage());
-                    }
-                });
-
-                ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).getSotr("01.01.2018 00:00:00").enqueue(new Callback<List<Sotr>>() {
-                    @Override
-                    public void onResponse(Call<List<Sotr>> call, Response<List<Sotr>> response) {
-                        if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
-                            sotrRepo.insertSotr(response.body());
-                        }
-                        publishProgress(4);
-                    }
-
-                    @Override
-                    public void onFailure(Call<List<Sotr>> call, Throwable t) {
-                        Log.e(TAG, "Ответ сервера на запрос новых сотрудников: " + t.getMessage());
-                    }
-                });
-
-                ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).getUser("01.01.2018 00:00:00").enqueue(new Callback<List<user>>() {
-                    // TODO Обработать результат. Записать поле sent... если успешно
-                    @Override
-                    public void onResponse(Call<List<user>> call, Response<List<user>> response) {
-                        if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
-                            userRepo.insertUser(response.body());
-                        }
-                        publishProgress(5);
-                    }
-
-                    @Override
-                    public void onFailure(Call<List<user>> call, Throwable t) {
-                        Log.e(TAG, "Ответ сервера на запрос новых users: " + t.getMessage());
-                    }
-                });
-            } catch (Exception e) {
-                Log.e(TAG, "SyncIncoData Exception : " + e.getMessage());
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            super.onPostExecute(result);
-        }
-
-        @Override
-        protected void onProgressUpdate(Integer... values) {
-            super.onProgressUpdate(values);
-            for (Integer v : values) {
-                if (v == 1) loadSpinnerDivisionData();
-                if (v == 2) loadOpers_spinnerData();
-                if (v == 3) loadSpinnerData();
-                if (v == 4) loadSpinnerSotrData();
-                MessageUtils.showToast(getApplicationContext(), "Обновление продолжается... Подождите...", true);
-            }
-        }
-    }*/
 }

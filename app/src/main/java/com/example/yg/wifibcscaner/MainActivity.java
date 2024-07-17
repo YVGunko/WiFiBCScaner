@@ -537,9 +537,9 @@ private static String filter (String str){
                     }
                     Button bScan = findViewById(R.id.bScan);
                     bScan.setText("Scan!");
-                    tVDBInfo = findViewById(R.id.tVDBInfo);
                     editTextRQ = findViewById(R.id.editTextRQ);
                     editTextRQ.setEnabled(false);
+                    setTextViews("S");
                     return;
                 }
             } else {
@@ -605,11 +605,9 @@ private static String filter (String str){
                 .concat(" ").concat(outDocRepo.selectCurrentOutDocDetails(AppController.getInstance().getCurrentOutDoc().get_id())));
     }
     private void setTextViews (String prefix){
-        tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
-        tVDBInfo.setText(mDBHelper.lastBox());
         currentDocDetails  = (TextView) findViewById(R.id.currentDocDetails);
         currentDocDetails.setText("Накл.№".concat(AppController.getInstance().getCurrentOutDoc().getNumberString())
-                .concat(" ").concat(outDocRepo.selectCurrentOutDocDetails(AppController.getInstance().getCurrentOutDoc().get_id())));
+                .concat(" ").concat(outDocRepo.selectCurrentOutDocDetails(AppController.getInstance().getCurrentOutDoc().get_id(), "S")));
     }
     public void ocl_boxes(View v) {
         startActivity(new Intent(this,BoxesActivity.class)); //Вызов активности Коробки
