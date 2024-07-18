@@ -38,8 +38,12 @@ import com.example.yg.wifibcscaner.data.repo.BoxRepo;
 import com.example.yg.wifibcscaner.data.repo.DataSendRepo;
 import com.example.yg.wifibcscaner.data.repo.DefsRepo;
 import com.example.yg.wifibcscaner.data.repo.DataLoadRepo;
+import com.example.yg.wifibcscaner.data.repo.DepartmentRepo;
+import com.example.yg.wifibcscaner.data.repo.DivisionRepo;
+import com.example.yg.wifibcscaner.data.repo.OperRepo;
 import com.example.yg.wifibcscaner.data.repo.OrderRepo;
 import com.example.yg.wifibcscaner.data.repo.OutDocRepo;
+import com.example.yg.wifibcscaner.data.repo.SotrRepo;
 import com.example.yg.wifibcscaner.data.repo.UserRepo;
 import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.service.MyJobService;
@@ -80,6 +84,10 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
     private final OutDocRepo outDocRepo = new OutDocRepo();
     private final OrderRepo orderRepo = new OrderRepo();
     private final BoxRepo boxRepo = new BoxRepo();
+    private final SotrRepo sotrRepo = new SotrRepo();
+    private final OperRepo operRepo = new OperRepo();
+    private final DivisionRepo divRepo = new DivisionRepo();
+    private final DepartmentRepo depRepo = new DepartmentRepo();
 
     private final String boxSizingPrefix = "S";
 
@@ -134,6 +142,72 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
             }
         });
         scheduleJob();
+
+        userRepo.setListenner(new UserRepo.UserDownLoadListenner() {
+            @Override
+            public void onSuccess() {
+                Log.i(TAG, getString(R.string.user_load_completed));
+                MessageUtils.showToast(getString(R.string.user_load_completed), true);
+            }
+
+            @Override
+            public void onFail(Throwable t) {
+                Log.e(TAG, t.getLocalizedMessage());
+                MessageUtils.showToast(t.getLocalizedMessage(), true);
+            }
+        });
+        divRepo.setListenner(new DivisionRepo.DivDownloadListenner() {
+            @Override
+            public void onSuccess() {
+                Log.i(TAG, getString(R.string.div_load_completed));
+                MessageUtils.showToast(getString(R.string.div_load_completed), true);
+            }
+
+            @Override
+            public void onFail(Throwable t) {
+                Log.e(TAG, t.getMessage());
+                MessageUtils.showToast(t.getLocalizedMessage(), true);
+            }
+        });
+        operRepo.setListenner(new OperRepo.OperDownloadListenner() {
+            @Override
+            public void onSuccess() {
+                Log.i(TAG, getString(R.string.oper_load_completed));
+                MessageUtils.showToast(getString(R.string.oper_load_completed), true);
+            }
+
+            @Override
+            public void onFail(Throwable t) {
+                Log.e(TAG, t.getMessage());
+                MessageUtils.showToast(t.getMessage(), true);
+            }
+        });
+        depRepo.setListenner(new DepartmentRepo.DepDownloadListenner() {
+            @Override
+            public void onSuccess() {
+                Log.i(TAG, getString(R.string.dep_load_completed));
+                MessageUtils.showToast(getString(R.string.dep_load_completed), true);
+            }
+
+            @Override
+            public void onFail(Throwable t) {
+                Log.e(TAG, t.getMessage());
+                MessageUtils.showToast(t.getMessage(), true);
+            }
+        });
+        sotrRepo.setListenner(new SotrRepo.SotrDownloadListenner() {
+            @Override
+            public void onSuccess() {
+                Log.i(TAG, getString(R.string.sotr_load_completed));
+                MessageUtils.showToast(getString(R.string.sotr_load_completed), true);
+            }
+
+            @Override
+            public void onFail(Throwable t) {
+                Log.e(TAG, t.getMessage());
+                MessageUtils.showToast(t.getMessage(), true);
+            }
+        });
     }
 
     @Override
@@ -327,6 +401,7 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
             }
         }
     }
+    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
@@ -357,6 +432,11 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
             case R.id.action_get_data:
                 DataLoadRepo dataLoadRepo = new DataLoadRepo();
                 dataLoadRepo.loadData();
+                userRepo.downloadUser();
+                divRepo.downloadDivision();
+                operRepo.downloadOperation();
+                depRepo.downloadDepartment();
+                sotrRepo.downloadSotr();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -539,7 +619,7 @@ private static String filter (String str){
                     bScan.setText("Scan!");
                     editTextRQ = findViewById(R.id.editTextRQ);
                     editTextRQ.setEnabled(false);
-                    setTextViews("S");
+                    setTextViews();
                     return;
                 }
             } else {
@@ -599,15 +679,11 @@ private static String filter (String str){
 
     private void setTextViews (){
         tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
+        //if (tVDBInfo.getText().equals(getString(R.string.main_last_box_empty_message))) tVDBInfo.setText(mDBHelper.lastBox());
         tVDBInfo.setText(mDBHelper.lastBox());
         currentDocDetails  = (TextView) findViewById(R.id.currentDocDetails);
         currentDocDetails.setText("Накл.№".concat(AppController.getInstance().getCurrentOutDoc().getNumberString())
                 .concat(" ").concat(outDocRepo.selectCurrentOutDocDetails(AppController.getInstance().getCurrentOutDoc().get_id())));
-    }
-    private void setTextViews (String prefix){
-        currentDocDetails  = (TextView) findViewById(R.id.currentDocDetails);
-        currentDocDetails.setText("Накл.№".concat(AppController.getInstance().getCurrentOutDoc().getNumberString())
-                .concat(" ").concat(outDocRepo.selectCurrentOutDocDetails(AppController.getInstance().getCurrentOutDoc().get_id(), "S")));
     }
     public void ocl_boxes(View v) {
         startActivity(new Intent(this,BoxesActivity.class)); //Вызов активности Коробки
@@ -736,4 +812,5 @@ private static String filter (String str){
 
         return jobInfo;
     }
+
 }

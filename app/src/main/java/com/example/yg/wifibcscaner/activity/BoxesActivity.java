@@ -104,35 +104,49 @@ public class BoxesActivity extends AppCompatActivity {
                         adb.setNegativeButton("Отменить", null);
                         adb.setPositiveButton("Удалить", new AlertDialog.OnClickListener() {
                             public void onClick(DialogInterface dialog, int which) {
-                                String sTmp = adapter.getItem(position).toString();
-                                //("bId=",cursor.getString(10)+"/bId");
-                                String sBId = sTmp.substring(sTmp.indexOf("bId=")+4,sTmp.indexOf("/bId"));
-                                //readBox.put("bmId",cursor.getString(11));
-                                String sBmId = sTmp.substring(sTmp.indexOf("bmId=")+5,sTmp.indexOf("/bmId"));
-                                String sPdId = sTmp.substring(sTmp.indexOf("pdId=")+5,sTmp.indexOf("/pdId"));
-                                //Проверить нет ли других операций по этой коробке. Если это расходная операция -
-                                //приходная есть по умолчанию. Если это приходная операция - проверить наличие других.
-                                if (AppController.getInstance().getDbHelper().deleteFromTable(Prods.TABLE_prods,Prods.COLUMN_ID,sPdId)){
-                                    //удалили подошву. проверить есть ли еще подошва по этому движению.
-                                    //если нет удалить движение
-                                    if (AppController.getInstance().getDbHelper().deleteFromTable(BoxMoves.TABLE_bm,BoxMoves.COLUMN_ID,sBmId)){
-                                        if (!AppController.getInstance().getDbHelper().deleteFromTable(Boxes.TABLE_boxes,Boxes.COLUMN_ID,sBId)){
-                                            Log.d(TAG,"Коробка не может быть удалена из-за ссылок других операций! Id= "+sBId );
+                                try {
+                                    String sTmp = adapter.getItem(position).toString();
+                                    //("bId=",cursor.getString(10)+"/bId");
+                                    String sBId = sTmp.substring(sTmp.indexOf("bId=")+4,sTmp.indexOf("/bId"));
+                                    //readBox.put("bmId",cursor.getString(11));
+                                    String sBmId = sTmp.substring(sTmp.indexOf("bmId=") + 5, sTmp.indexOf("/bmId"));
+                                    if (StringUtils.isNotBlank(sBmId)) {
+                                        String sPdId = sTmp.substring(sTmp.indexOf("pdId=") + 5, sTmp.indexOf("/pdId"));
+                                        //Проверить нет ли других операций по этой коробке. Если это расходная операция -
+                                        //приходная есть по умолчанию. Если это приходная операция - проверить наличие других.
+                                        if (AppController.getInstance().getDbHelper().deleteFromTable(Prods.TABLE_prods, Prods.COLUMN_ID, sPdId)) {
+                                            //удалили подошву. проверить есть ли еще подошва по этому движению.
+                                            //если нет удалить движение
+                                            if (AppController.getInstance().getDbHelper().deleteFromTable(BoxMoves.TABLE_bm, BoxMoves.COLUMN_ID, sBmId)) {
+                                                if (!AppController.getInstance().getDbHelper().deleteFromTable(Boxes.TABLE_boxes, Boxes.COLUMN_ID, sBId)) {
+                                                    Log.d(TAG, "Коробка не может быть удалена из-за ссылок других операций! Id= " + sBId);
+                                                }
+                                                MessageUtils.showToast(getApplicationContext(), "Ок! Успешно!", false);
+                                            } else {
+                                                Log.d(TAG, "Движения Подошвы не можгут быть удалены из-за ссылок других операций! Id= " + sBmId);
+                                                MessageUtils.showToast(getApplicationContext(), "Нет возможности удалить!", false);
+                                            }
+                                            adapter = new SimpleAdapter(BoxesActivity.this, boxRepo.listboxes(outDocId, depId, StringUtils.isBlank(outDocId)), R.layout.adapter_item, from, to);
+
+                                            listView.setAdapter(adapter);
+                                            adapter.notifyDataSetChanged();
+                                        } else {
+                                            Log.e(TAG, "Ошибка при удалении Подошвы! Id= " + sPdId);
+                                            MessageUtils.showToast(getApplicationContext(), "Нет возможности удалить!", false);
+                                        }
+                                    } else { // should be boxSizing. TODO delete bm and prod which are related to this box
+                                        if (!AppController.getInstance().getDbHelper().deleteFromTable(Boxes.TABLE_boxes, Boxes.COLUMN_ID, sBId)) {
+                                            Log.d(TAG, "Коробка не может быть удалена из-за неразрешенных ссылок! Id= " + sBId);
                                         }
                                         MessageUtils.showToast(getApplicationContext(), "Ок! Успешно!", false);
-                                    }
-                                    else {
-                                        Log.d(TAG,"Движения Подошвы не можгут быть удалены из-за ссылок других операций! Id= "+sBmId );
-                                        MessageUtils.showToast(getApplicationContext(), "Нет возможности удалить!", false);
-                                    }
-                                    adapter = new SimpleAdapter(BoxesActivity.this, boxRepo.listboxes(outDocId, depId, StringUtils.isBlank(outDocId)), R.layout.adapter_item, from, to);
+                                        adapter = new SimpleAdapter(BoxesActivity.this, boxRepo.listboxes(outDocId, depId, StringUtils.isBlank(outDocId)), R.layout.adapter_item, from, to);
 
-                                    listView.setAdapter(adapter);
-                                    adapter.notifyDataSetChanged();
-                                }
-                                else {
-                                    Log.d(TAG,"Ошибка при удалении Подошвы! Id= "+sPdId );
-                                    MessageUtils.showToast(getApplicationContext(),  "Нет возможности удалить!", false);
+                                        listView.setAdapter(adapter);
+                                        adapter.notifyDataSetChanged();
+                                    }
+                                } catch (Exception e) {
+                                    Log.e(TAG, "Исключительная ситуация при удалении Подошвы!");
+                                    MessageUtils.showToast(getApplicationContext(), "Нет возможности удалить!", false);
                                 }
                             }});
                         adb.show();

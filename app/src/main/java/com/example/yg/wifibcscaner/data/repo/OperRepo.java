@@ -12,6 +12,7 @@ import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.Operation;
 import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
+import com.example.yg.wifibcscaner.utils.executors.DefaultExecutorSupplier;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -39,27 +40,30 @@ public class OperRepo {
         this.listenner = listenner;
     }
     public void downloadOperation() {
-        try {
-            ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl())
-                    .getOperation()
-                    .enqueue(new Callback<List<Operation>>() {
-                        @Override
-                        public void onResponse(Call<List<Operation>> call, Response<List<Operation>> response) {
-                            if (response.isSuccessful() && !response.body().isEmpty())
-                                insertOperationInBulk(response.body());
-                        }
+        DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
+            try {
+                ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl())
+                        .getOperation()
+                        .enqueue(new Callback<List<Operation>>() {
+                            @Override
+                            public void onResponse(Call<List<Operation>> call, Response<List<Operation>> response) {
+                                if (response.isSuccessful() && !response.body().isEmpty())
+                                    insertOperationInBulk(response.body());
+                            }
 
-                        @Override
-                        public void onFailure(Call<List<Operation>> call, Throwable t) {
-                            Log.d(TAG, "Ответ сервера на запрос новых users: " + t.getMessage());
-                            if (listenner != null) listenner.onFail(t);
-                        }
-                    });
-        } catch (Exception e) {
-            Log.e(TAG, "downloadUser -> ", e);
-            if (listenner != null) listenner.onFail(e.getCause() != null ? e.getCause() : e.fillInStackTrace());
-            MessageUtils.showToast("Ошибка. Загрузка данных. ", true);
-        }
+                            @Override
+                            public void onFailure(Call<List<Operation>> call, Throwable t) {
+                                Log.d(TAG, "Ответ сервера на запрос новых users: " + t.getMessage());
+                                if (listenner != null) listenner.onFail(t);
+                            }
+                        });
+            } catch (Exception e) {
+                Log.e(TAG, "downloadUser -> ", e);
+                if (listenner != null)
+                    listenner.onFail(e.getCause() != null ? e.getCause() : e.fillInStackTrace());
+                MessageUtils.showToast("Ошибка. Загрузка данных. ", true);
+            }
+        });
         return;
     }
     public void insertOperationInBulk(List<Operation> list) {

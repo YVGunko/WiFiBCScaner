@@ -14,6 +14,7 @@ import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.Sotr;
 import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.SharedPrefs;
+import com.example.yg.wifibcscaner.utils.executors.DefaultExecutorSupplier;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -46,6 +47,7 @@ public class SotrRepo {
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     public void downloadSotr() {
+        DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
         try {
             ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl())
                     .getSotr(getUpdateDate())
@@ -99,6 +101,7 @@ public class SotrRepo {
             Log.e(TAG, "downloadUser -> ", e);
             if (listenner != null) listenner.onFail(e.getCause() != null ? e.getCause() : e.fillInStackTrace());
         }
+        });
         return;
     }
     public List<Sotr> getSotrIdByDivisionCodeAndOperationIdAndDepartmentId(String division_code, int operation_id, int department_id) {

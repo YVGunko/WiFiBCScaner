@@ -30,7 +30,7 @@
         android:scaleType="centerCrop"
         android:textColor="@color/colorPrimaryDark"
         android:textStyle="bold"
-        android:text="Информация о последней принятой коробке"
+        android:text="@string/main_last_box_empty_message"
         android:textAppearance="@style/TextAppearance.AppCompat.Medium"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHeight_default="wrap"

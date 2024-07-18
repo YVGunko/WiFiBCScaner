@@ -13,6 +13,7 @@ import com.example.yg.wifibcscaner.data.model.Prods;
 import com.example.yg.wifibcscaner.data.model.user;
 import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
+import com.example.yg.wifibcscaner.utils.executors.DefaultExecutorSupplier;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -42,26 +43,29 @@ public class UserRepo {
         this.listenner = listenner;
     }
     public void downloadUser() {
-        try {
-            ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl())
-                    .getUser()
-                    .enqueue(new Callback<List<user>>() {
-                        @Override
-                        public void onResponse(Call<List<user>> call, Response<List<user>> response) {
-                            if (response.isSuccessful() && !response.body().isEmpty())
-                                insertUser(response.body());
-                        }
+        DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
+            try {
+                ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl())
+                        .getUser()
+                        .enqueue(new Callback<List<user>>() {
+                            @Override
+                            public void onResponse(Call<List<user>> call, Response<List<user>> response) {
+                                if (response.isSuccessful() && !response.body().isEmpty())
+                                    insertUser(response.body());
+                            }
 
-                        @Override
-                        public void onFailure(Call<List<user>> call, Throwable t) {
-                            Log.d(TAG, "Ответ сервера на запрос новых users: " + t.getMessage());
-                            if (listenner != null) listenner.onFail(t);
-                        }
-                    });
-        } catch (Exception e) {
-            Log.e(TAG, "downloadUser -> ", e);
-            if (listenner != null) listenner.onFail(e.getCause() != null ? e.getCause() : e.fillInStackTrace());
-        }
+                            @Override
+                            public void onFailure(Call<List<user>> call, Throwable t) {
+                                Log.d(TAG, "Ответ сервера на запрос новых users: " + t.getMessage());
+                                if (listenner != null) listenner.onFail(t);
+                            }
+                        });
+            } catch (Exception e) {
+                Log.e(TAG, "downloadUser -> ", e);
+                if (listenner != null)
+                    listenner.onFail(e.getCause() != null ? e.getCause() : e.fillInStackTrace());
+            }
+        });
         return;
     }
 

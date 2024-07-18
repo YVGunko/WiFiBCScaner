@@ -37,27 +37,30 @@ public class DivisionRepo {
         this.listenner = listenner;
     }
     public void downloadDivision() {
-        try {
-            ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl())
-                    .getDivision()
-                    .enqueue(new Callback<List<Division>>() {
-                        @Override
-                        public void onResponse(Call<List<Division>> call, Response<List<Division>> response) {
-                            if (response.isSuccessful() && !response.body().isEmpty()) {
-                                insertDivisionInBulk(response.body());
+        DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
+            try {
+                ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl())
+                        .getDivision()
+                        .enqueue(new Callback<List<Division>>() {
+                            @Override
+                            public void onResponse(Call<List<Division>> call, Response<List<Division>> response) {
+                                if (response.isSuccessful() && !response.body().isEmpty()) {
+                                    insertDivisionInBulk(response.body());
+                                }
                             }
-                        }
 
-                        @Override
-                        public void onFailure(Call<List<Division>> call, Throwable t) {
-                            Log.d(TAG, "Ответ сервера на запрос Division: " + t.getMessage());
-                            if (listenner != null) listenner.onFail(t);
-                        }
-                    });
-        } catch (Exception e) {
-            Log.e(TAG, "downloadUser -> ", e);
-            if (listenner != null) listenner.onFail(e.getCause() != null ? e.getCause() : e.fillInStackTrace());
-        }
+                            @Override
+                            public void onFailure(Call<List<Division>> call, Throwable t) {
+                                Log.d(TAG, "Ответ сервера на запрос Division: " + t.getMessage());
+                                if (listenner != null) listenner.onFail(t);
+                            }
+                        });
+            } catch (Exception e) {
+                Log.e(TAG, "downloadUser -> ", e);
+                if (listenner != null)
+                    listenner.onFail(e.getCause() != null ? e.getCause() : e.fillInStackTrace());
+            }
+        });
         return;
     }
     public void insertDivisionInBulk(List<Division> list) {

@@ -57,4 +57,5 @@
     <string name="oper_load_completed">Операции уже загружены</string>
     <string name="sotr_load_completed">Сотрудники уже загружены</string>
     <string name="dep_load_completed">Бригады уже загружены</string>
+    <string name="main_last_box_empty_message">Информация о последней принятой коробке</string>
 </resources>

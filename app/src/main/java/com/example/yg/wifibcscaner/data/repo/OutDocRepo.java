@@ -4,6 +4,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
 import android.os.Build;
+import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
 
@@ -224,40 +225,47 @@ public class OutDocRepo {
             return result;
         }
     }
-
+    public boolean checkIfSizingOutDoc (@NonNull String id) {
+        final String CHECK_IF_BOX_SIZING = "select outDocId from Boxes where outDocId=?";
+        mDataBase = AppController.getInstance().getDbHelper().openDataBase();
+        Cursor cursor = null;
+        try {
+            cursor = mDataBase.rawQuery(CHECK_IF_BOX_SIZING, new String[]{id});
+            if (cursor != null && cursor.moveToFirst())  //means there is boxSizing outDoc
+                return true;
+        } catch (Exception e){
+            return false;
+        } finally {
+            tryCloseCursor(cursor);
+            AppController.getInstance().getDbHelper().closeDataBase();
+        }
+        return false;
+    }
     public String selectCurrentOutDocDetails (String id){
         if (StringUtils.isEmpty(id)) return "";
         mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         Cursor cursor = null;
         try {
-            cursor = mDataBase.rawQuery("select p.idOutDocs, count(distinct bm.Id_b) as boxNumber, sum(p.RQ_box) as RQ_box" +
-                    " FROM Prods p, BoxMoves bm" +
-                    " where p.idOutDocs='"+id+"' and bm._id=p.Id_bm"+
-                    " group by p.idOutDocs", null);
-            if (cursor != null && cursor.moveToFirst()) {
-                return "Кор: "+cursor.getString(1)+", Под.: "+cursor.getString(2);
+            // for BoxSizing
+            if (checkIfSizingOutDoc(id)) { //means there is boxSizing outDoc
+                cursor = mDataBase.rawQuery("select b.outDocId, count(b._id) as boxNumber, sum(m.Q_box) as RQ_box" +
+                        " FROM Boxes b, MasterData m" +
+                        " where b.outDocId='"+id+"' and b.Id_m=m._id"+
+                        " group by b.outDocId", null);
+                if (cursor != null && cursor.moveToFirst()) {
+                    return "Кор: "+cursor.getString(1)+", Под.: "+cursor.getString(2);
+                }
+                return "Кор: 0";
+            } else {
+                cursor = mDataBase.rawQuery("select p.idOutDocs, count(distinct bm.Id_b) as boxNumber, sum(p.RQ_box) as RQ_box" +
+                        " FROM Prods p, BoxMoves bm" +
+                        " where p.idOutDocs='" + id + "' and bm._id=p.Id_bm" +
+                        " group by p.idOutDocs", null);
+                if (cursor != null && cursor.moveToFirst()) {
+                    return "Кор: " + cursor.getString(1) + ", Под.: " + cursor.getString(2);
+                }
+                return "Кор: 0";
             }
-            return "Кор: 0";
-        } catch (Exception e){
-            return "Нет данных.";
-        } finally {
-            tryCloseCursor(cursor);
-            AppController.getInstance().getDbHelper().closeDataBase();
-        }
-    }
-    public String selectCurrentOutDocDetails (String id, String prefix){
-        if (StringUtils.isEmpty(id)) return "";
-        mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-        Cursor cursor = null;
-        try {
-            cursor = mDataBase.rawQuery("select b.outDocId, count(b._id) as boxNumber, sum(m.Q_box) as RQ_box" +
-                    " FROM Boxes b, MasterData m" +
-                    " where b.idOutDocs='"+id+"' and b.Id_m=m._id"+
-                    " group by b.idOutDocs", null);
-            if (cursor != null && cursor.moveToFirst()) {
-                return "Кор: "+cursor.getString(1)+", Под.: "+cursor.getString(2);
-            }
-            return "Кор: 0";
         } catch (Exception e){
             return "Нет данных.";
         } finally {

@@ -14,6 +14,7 @@ import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.Deps;
 import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.SharedPrefs;
+import com.example.yg.wifibcscaner.utils.executors.DefaultExecutorSupplier;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -203,57 +204,60 @@ public class DepartmentRepo {
     }
     @RequiresApi(api = Build.VERSION_CODES.O)
     public void downloadDepartment() {
-        try {
-            ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl())
-                    .getDeps(getUpdateDate())
-                    .enqueue(new Callback<List<Deps>>() {
-                        @Override
-                        public void onResponse(Call<List<Deps>> call, Response<List<Deps>> response) {
-                            if (response.isSuccessful()  && !response.body().isEmpty())
-                                insertDepInBulk(response.body());
-                        }
-
-                        private void insertDepInBulk(List<Deps> list) {
-                            try {
-                                mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-                                mDataBase.beginTransaction();
-                                String sql = "INSERT OR REPLACE INTO "+Deps.TABLE+" (_id,Id_deps,Name_Deps,DT,division_code,Id_o) " +
-                                        " VALUES (?,?,?,?,?,?) ";
-
-                                SQLiteStatement statement = mDataBase.compileStatement(sql);
-
-                                for (Deps o : list) {
-                                    statement.clearBindings();
-                                    statement.bindLong(1, o.get_id());
-                                    statement.bindString(2, o.get_Id_deps());
-                                    statement.bindString(3, o.get_Name_Deps());
-                                    statement.bindString(4, o.get_DT());
-                                    statement.bindString(5, o.getDivision_code());
-                                    statement.bindLong(6, o.get_Id_o());
-
-                                    statement.executeInsert();
-                                }
-                                mDataBase.setTransactionSuccessful();
-                                if (listenner != null) listenner.onSuccess();
-                            } catch (Exception e) {
-                                Log.w(TAG, e);
-                                throw new RuntimeException("Загрузка данных. Исключительная ситуация при добавлении бригад.");
-                            } finally {
-                                mDataBase.endTransaction();
-                                AppController.getInstance().getDbHelper().closeDataBase();
+        DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
+            try {
+                ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl())
+                        .getDeps(getUpdateDate())
+                        .enqueue(new Callback<List<Deps>>() {
+                            @Override
+                            public void onResponse(Call<List<Deps>> call, Response<List<Deps>> response) {
+                                if (response.isSuccessful() && !response.body().isEmpty())
+                                    insertDepInBulk(response.body());
                             }
-                        }
 
-                        @Override
-                        public void onFailure(Call<List<Deps>> call, Throwable t) {
-                            Log.d(TAG, "Ответ сервера на запрос новых users: " + t.getMessage());
-                            if (listenner != null) listenner.onFail(t);
-                        }
-                    });
-        } catch (Exception e) {
-            Log.e(TAG, "downloadDeps -> ", e);
-            if (listenner != null) listenner.onFail(e.getCause() != null ? e.getCause() : e.fillInStackTrace());
-        }
+                            private void insertDepInBulk(List<Deps> list) {
+                                try {
+                                    mDataBase = AppController.getInstance().getDbHelper().openDataBase();
+                                    mDataBase.beginTransaction();
+                                    String sql = "INSERT OR REPLACE INTO " + Deps.TABLE + " (_id,Id_deps,Name_Deps,DT,division_code,Id_o) " +
+                                            " VALUES (?,?,?,?,?,?) ";
+
+                                    SQLiteStatement statement = mDataBase.compileStatement(sql);
+
+                                    for (Deps o : list) {
+                                        statement.clearBindings();
+                                        statement.bindLong(1, o.get_id());
+                                        statement.bindString(2, o.get_Id_deps());
+                                        statement.bindString(3, o.get_Name_Deps());
+                                        statement.bindString(4, o.get_DT());
+                                        statement.bindString(5, o.getDivision_code());
+                                        statement.bindLong(6, o.get_Id_o());
+
+                                        statement.executeInsert();
+                                    }
+                                    mDataBase.setTransactionSuccessful();
+                                    if (listenner != null) listenner.onSuccess();
+                                } catch (Exception e) {
+                                    Log.w(TAG, e);
+                                    throw new RuntimeException("Загрузка данных. Исключительная ситуация при добавлении бригад.");
+                                } finally {
+                                    mDataBase.endTransaction();
+                                    AppController.getInstance().getDbHelper().closeDataBase();
+                                }
+                            }
+
+                            @Override
+                            public void onFailure(Call<List<Deps>> call, Throwable t) {
+                                Log.d(TAG, "Ответ сервера на запрос новых users: " + t.getMessage());
+                                if (listenner != null) listenner.onFail(t);
+                            }
+                        });
+            } catch (Exception e) {
+                Log.e(TAG, "downloadDeps -> ", e);
+                if (listenner != null)
+                    listenner.onFail(e.getCause() != null ? e.getCause() : e.fillInStackTrace());
+            }
+        });
         return;
     }
 }

@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import static android.database.Cursor.FIELD_TYPE_NULL;
+import static com.example.yg.wifibcscaner.data.model.Boxes.COLUMN_OUTDOC_ID;
+import static com.example.yg.wifibcscaner.data.model.Boxes.TABLE_boxes;
 import static com.example.yg.wifibcscaner.data.model.Prods.COLUMN_Id_d;
 import static com.example.yg.wifibcscaner.data.model.Prods.COLUMN_idOutDocs;
 import static com.example.yg.wifibcscaner.data.model.Prods.COLUMN_sentToMasterDate;
@@ -28,6 +30,7 @@ import static com.example.yg.wifibcscaner.utils.MyStringUtils.retStringFollowing
 
 public class BoxRepo {
     private static final String TAG = "sProject -> BoxRepo";
+    private final OutDocRepo outDocRepo = new OutDocRepo();
 
     public static String makeBoxNumber(@NonNull String num) {
         StringBuilder sb = new StringBuilder();
@@ -76,19 +79,48 @@ public class BoxRepo {
         Cursor cursor = null;
         try {
             String addWhereOutDoc = "";
-            if (StringUtils.isNotBlank(outDocId))
-                addWhereOutDoc = addWhereOutDoc.concat(" and ").concat(TABLE_prods).concat(".").concat(COLUMN_idOutDocs).concat("='").concat(outDocId).concat("'");
-            String addWhereDepartment = "";
-            if (depId != 0)
-                addWhereDepartment = addWhereDepartment.concat(" and ")
-                        .concat(TABLE_prods).concat(".").concat(COLUMN_Id_d).concat("=")
-                        .concat(String.valueOf(depId));
             String addWhereSentToMasterDate = "";
-            if (sentToMasterDate)
-                addWhereSentToMasterDate = addWhereSentToMasterDate.concat(" and ")
-                        .concat(TABLE_prods).concat(".").concat(COLUMN_sentToMasterDate).concat(" IS NULL ");
+            String addWhereDepartment = "";
 
-            cursor = mDataBase.rawQuery("SELECT MasterData.Ord, MasterData.Cust, MasterData.Nomen, MasterData.Attrib, MasterData.Q_ord, " +
+            if (StringUtils.isNotBlank(outDocId) && outDocRepo.checkIfSizingOutDoc(outDocId)) {
+                addWhereOutDoc = addWhereOutDoc.concat(" and ").concat(TABLE_boxes).concat(".").concat(COLUMN_OUTDOC_ID).concat("='").concat(outDocId).concat("'");
+                if (sentToMasterDate)
+                    addWhereSentToMasterDate = addWhereSentToMasterDate.concat(" and ")
+                            .concat(TABLE_boxes).concat(".").concat(COLUMN_sentToMasterDate).concat(" IS NULL ");
+                cursor = mDataBase.rawQuery("SELECT MasterData.Ord, MasterData.Cust, MasterData.Nomen, MasterData.Attrib, MasterData.Q_ord, " +
+                        "MasterData.Q_box, Boxes.N_box, Boxes._id, Boxes.sentToMasterDate, Boxes.archive" +
+                        " FROM Boxes, MasterData Where Boxes.Id_m=MasterData._id " +
+                        addWhereOutDoc +
+                        addWhereSentToMasterDate +
+                        " Order by MasterData.Ord,  Boxes.N_box", null);
+                while (cursor.moveToNext()) {
+                    HashMap readBox = new HashMap<String, Integer>();
+
+                    readBox.put("Ord", cursor.getString(0) + ". " + cursor.getString(1));
+                    readBox.put("Cust", "Подошва: " + cursor.getString(2)
+                            + ", " + retStringFollowingCRIfNotNull(cursor.getString(3))
+                            + "№ кор: " + cursor.getString(6).concat(", ")
+                            .concat("В кор: ").concat(cursor.getString(5)).concat(" пар.") );
+                    readBox.put("bId", cursor.getString(7) + "/bId");
+                    readBox.put("bmId", "/bmId");
+                    readBox.put("pdId", "/pdId");
+                    readBox.put("sent", (cursor.getType(8) == FIELD_TYPE_NULL) ? "N" : "Y" + "/sent");
+                    readBox.put("arch", cursor.getInt(cursor.getColumnIndex("archive")) != 0 ? "N" : "Y" + "/arch");
+
+                    readBoxes.add(readBox);
+                }
+            } else {
+                if (StringUtils.isNotBlank(outDocId))
+                    addWhereOutDoc = addWhereOutDoc.concat(" and ").concat(TABLE_prods).concat(".").concat(COLUMN_idOutDocs).concat("='").concat(outDocId).concat("'");
+                if (depId != 0)
+                    addWhereDepartment = addWhereDepartment.concat(" and ")
+                            .concat(TABLE_prods).concat(".").concat(COLUMN_Id_d).concat("=")
+                            .concat(String.valueOf(depId));
+                if (sentToMasterDate)
+                    addWhereSentToMasterDate = addWhereSentToMasterDate.concat(" and ")
+                            .concat(TABLE_prods).concat(".").concat(COLUMN_sentToMasterDate).concat(" IS NULL ");
+
+                cursor = mDataBase.rawQuery("SELECT MasterData.Ord, MasterData.Cust, MasterData.Nomen, MasterData.Attrib, MasterData.Q_ord, " +
                         "Boxes.Q_box, Boxes.N_box, Prods.RQ_box, Deps.Name_Deps, s.Sotr, MasterData.Ord_id, Boxes._id, bm._id, Prods._id, Prods.sentToMasterDate, Boxes.archive" +
                         " FROM Opers, Boxes, BoxMoves bm, Prods, Deps, MasterData, Sotr s Where Opers._id=" + AppController.getInstance().getDefs().get_Id_o() +
                         " and bm.Id_o=Opers._id and Boxes._id=bm.Id_b and Boxes.Id_m=MasterData._id and bm._id=Prods.Id_bm" +
@@ -98,29 +130,30 @@ public class BoxRepo {
                         addWhereDepartment +
                         addWhereSentToMasterDate +
                         " Order by MasterData.Ord_id,  Boxes.N_box", null);
-
-            while (cursor.moveToNext()) {
-                Log.d(TAG, "listboxes -> ".concat(String.valueOf(cursor.getCount())) );
-                HashMap readBox = new HashMap<String, Integer>();
-                String sTmp;
-                if (!AppUtils.isDepAndSotrOper(AppController.getInstance().getDefs().get_Id_o())) sTmp = "";
-                else sTmp = cursor.getString(8) + ", " + cursor.getString(9);
-                //Заполняем
-                readBox.put("Ord", cursor.getString(0) + ". " + cursor.getString(1));
-                readBox.put("Cust", "Подошва: " + cursor.getString(2) + ", " + retStringFollowingCRIfNotNull(cursor.getString(3))
-                        + "Заказ: " + cursor.getString(4) + ". № кор: " + cursor.getString(6) + ". Регл: " + cursor.getString(5) + " "
-                        + "В кор: " + cursor.getString(7) + ". " + sTmp);
-                readBox.put("bId", cursor.getString(11) + "/bId");
-                readBox.put("bmId", cursor.getString(12) + "/bmId");
-                readBox.put("pdId", cursor.getString(13) + "/pdId");
-                readBox.put("sent", (cursor.getType(14) == FIELD_TYPE_NULL) ? "N" : "Y" + "/sent");
-                readBox.put("arch", cursor.getInt(cursor.getColumnIndex("archive")) != 0 ? "N" : "Y" + "/arch");
-                //Закидываем в список
-                readBoxes.add(readBox);
+                while (cursor.moveToNext()) {
+                    Log.d(TAG, "listboxes -> ".concat(String.valueOf(cursor.getCount())) );
+                    HashMap readBox = new HashMap<String, Integer>();
+                    String sTmp;
+                    if (!AppUtils.isDepAndSotrOper(AppController.getInstance().getDefs().get_Id_o())) sTmp = "";
+                    else sTmp = cursor.getString(8) + ", " + cursor.getString(9);
+                    //Заполняем
+                    readBox.put("Ord", cursor.getString(0) + ". " + cursor.getString(1));
+                    readBox.put("Cust", "Подошва: " + cursor.getString(2) + ", " + retStringFollowingCRIfNotNull(cursor.getString(3))
+                            + "Заказ: " + cursor.getString(4) + ". № кор: " + cursor.getString(6) + ". Регл: " + cursor.getString(5) + " "
+                            + "В кор: " + cursor.getString(7) + ". " + sTmp);
+                    readBox.put("bId", cursor.getString(11) + "/bId");
+                    readBox.put("bmId", cursor.getString(12) + "/bmId");
+                    readBox.put("pdId", cursor.getString(13) + "/pdId");
+                    readBox.put("sent", (cursor.getType(14) == FIELD_TYPE_NULL) ? "N" : "Y" + "/sent");
+                    readBox.put("arch", cursor.getInt(cursor.getColumnIndex("archive")) != 0 ? "N" : "Y" + "/arch");
+                    //Закидываем в список
+                    readBoxes.add(readBox);
+                }
             }
+
             return readBoxes;
         }catch (Exception e) {
-            Log.e(TAG, "getOutDocNotSent -> ".concat(e.getMessage()) );
+            Log.e(TAG, "listboxes -> ".concat(e.getMessage()) );
             return readBoxes;
         } finally {
             tryCloseCursor(cursor);
