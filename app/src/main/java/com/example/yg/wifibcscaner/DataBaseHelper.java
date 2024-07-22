@@ -67,16 +67,21 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     private static String DB_NAME = "SQR.db";
 
     public static final String COLUMN_sentToMasterDate = "sentToMasterDate";
-    public long serverUpdateTime;
+    final String SQL_CHECK_AVAILABILITY = "SELECT b._id, sum(Prods.RQ_box) as quantity " +
+            " FROM Boxes b, BoxMoves bm, Prods " +
+            " Where b.archive=0 and b.id_m = ? and bm.Id_b=b._id and bm.Id_o=? and bm._id=Prods.Id_bm " +
+            " Group by b._id, Prods.Id_bm";
 
     private SQLiteDatabase mDataBase;
     private AtomicInteger mOpenCounter = new AtomicInteger(0);
 
     private static DataBaseHelper instance = null;
+
     /*private constructor to avoid direct instantiation by other classes*/
-    private DataBaseHelper(final int DB_VERSION){
+    private DataBaseHelper(final int DB_VERSION) {
         super(AppController.getInstance().getApplicationContext(), DB_NAME, null, DB_VERSION);
     }
+
     private static boolean checkIfDbNeedReplace() {
         // Get current version code
         int currentVersionCode = BuildConfig.VERSION_CODE;
@@ -84,8 +89,8 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         // Get saved version code and check if Db needs to be replaced
         int savedVersionCode = SharedPrefs.getInstance().getCodeVersion();
         boolean savedDbNeedReplace = SharedPrefs.getInstance().getDbNeedReplace();
-        Log.d(TAG, "checkFirstRun -> savedDbNeedReplace -> "+savedDbNeedReplace);
-        Log.d(TAG, "checkFirstRun -> currentVersionCode == savedVersionCode -> "+(currentVersionCode == savedVersionCode));
+        Log.d(TAG, "checkFirstRun -> savedDbNeedReplace -> " + savedDbNeedReplace);
+        Log.d(TAG, "checkFirstRun -> currentVersionCode == savedVersionCode -> " + (currentVersionCode == savedVersionCode));
         // Check for first run or upgrade
         if (!savedDbNeedReplace & currentVersionCode == savedVersionCode) {
             // This is just a normal run
@@ -99,19 +104,21 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             return true;
         }
     }
+
     /*synchronized method to ensure only 1 instance of LocalDBHelper exists*/
-    public static synchronized DataBaseHelper getInstance(){
-        if(instance == null){
+    public static synchronized DataBaseHelper getInstance() {
+        if (instance == null) {
             if (checkIfDbNeedReplace()) {
                 instance = new DataBaseHelper(SharedPrefs.getInstance().getCodeVersion(), true);
                 Log.d(TAG, "DataBaseHelper getInstance -> it was forced to replace db file");
-            }else {
+            } else {
                 instance = new DataBaseHelper(BuildConfig.VERSION_CODE, false);
                 Log.d(TAG, "DataBaseHelper getInstance -> it was ordinary one");
             }
         }
         return instance;
     }
+
     private DataBaseHelper(final int DB_VERSION, boolean mNeedUpdate) {
         super(AppController.getInstance().getApplicationContext(), DB_NAME, null, DB_VERSION);
         DB_PATH = "/data/data/" +
@@ -132,7 +139,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
     public synchronized SQLiteDatabase openDataBase() {
         // don't know why it initially contains -1;
-        if (mOpenCounter.compareAndSet(-1, 0));
+        if (mOpenCounter.compareAndSet(-1, 0)) ;
         if (mOpenCounter.incrementAndGet() == 1) {
             Log.d(TAG, "DataBaseHelper openDataBase -> incrementAndGet == 1");
             // Opening new database
@@ -145,7 +152,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
     public synchronized void closeDataBase() {
         Log.i(TAG, "DataBaseHelper mOpenCounter = ".concat(mOpenCounter.toString()));
-        if(mOpenCounter.decrementAndGet() == 0) {
+        if (mOpenCounter.decrementAndGet() == 0) {
             Log.d(TAG, "DataBaseHelper closeDataBase -> decrementAndGet == 0");
             // Closing database
             DataBaseHelper.getInstance().close();
@@ -209,7 +216,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        if ((newVersion>oldVersion)&(oldVersion < 20))
+        if ((newVersion > oldVersion) & (oldVersion < 20))
             try {
                 db.execSQL("PRAGMA foreign_keys = 0;");
                 db.beginTransaction();
@@ -223,7 +230,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                         "division_code VARCHAR (255) REFERENCES Division (code) DEFAULT (0)" +
                         ");");
 
-                db.execSQL("INSERT INTO Opers (_id,Opers,DT,division_code)"+
+                db.execSQL("INSERT INTO Opers (_id,Opers,DT,division_code)" +
                         "SELECT _id,Opers,DT,'0' FROM sqlitestudio_Opers_temp_table;");
                 db.execSQL("DROP TABLE sqlitestudio_Opers_temp_table; ");
 
@@ -245,16 +252,15 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                         "Id_o INTEGER NOT NULL DEFAULT (0) REFERENCES Opers (_id)" +
                         ");");
 
-                db.execSQL("INSERT INTO Deps (_id,Id_deps,Name_Deps,DT,division_code,Id_o)"+
+                db.execSQL("INSERT INTO Deps (_id,Id_deps,Name_Deps,DT,division_code,Id_o)" +
                         "SELECT _id,Id_deps,Name_Deps,DT,'0',0 FROM sqlitestudio_temp_table;");
                 db.execSQL("DROP TABLE sqlitestudio_temp_table; ");
                 db.setTransactionSuccessful();
-            }
-            finally {
+            } finally {
                 db.endTransaction();
                 db.execSQL("PRAGMA foreign_keys = 1;");
             }
-        if ((newVersion>oldVersion)&(oldVersion < 23))
+        if ((newVersion > oldVersion) & (oldVersion < 23))
             try {
                 Log.d(TAG, "Версия бд 23. Начало реструктуризации.");
                 db.execSQL("PRAGMA foreign_keys = 0;");
@@ -262,37 +268,36 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
                 db.execSQL("CREATE TABLE sqlitestudio_temp_table AS SELECT * FROM outDocs;");
                 db.execSQL("DROP TABLE IF EXISTS outDocs;");
-                db.execSQL("CREATE TABLE outDocs (_id VARCHAR (128) PRIMARY KEY UNIQUE,"+
-                        "number INTEGER,"+
+                db.execSQL("CREATE TABLE outDocs (_id VARCHAR (128) PRIMARY KEY UNIQUE," +
+                        "number INTEGER," +
                         "comment VARCHAR (50)," +
                         "DT INTEGER," +
-                        "Id_o INTEGER REFERENCES Opers (_id),"+
-                        "sentToMasterDate INTEGER,"+
+                        "Id_o INTEGER REFERENCES Opers (_id)," +
+                        "sentToMasterDate INTEGER," +
                         "division_code VARCHAR (255) REFERENCES Division (code) DEFAULT (0)," +
-                        "idUser INTEGER NOT NULL REFERENCES user (_id) DEFAULT (0),"+
-                        "idSotr INTEGER REFERENCES Sotr (_id),"+
+                        "idUser INTEGER NOT NULL REFERENCES user (_id) DEFAULT (0)," +
+                        "idSotr INTEGER REFERENCES Sotr (_id)," +
                         "idDeps INTEGER REFERENCES Deps (_id));");
-                db.execSQL("INSERT INTO outDocs (_id,number,comment,DT,Id_o,sentToMasterDate,division_code,idUser)"+
+                db.execSQL("INSERT INTO outDocs (_id,number,comment,DT,Id_o,sentToMasterDate,division_code,idUser)" +
                         "SELECT _id,number,comment,DT,Id_o,sentToMasterDate,division_code,0 FROM sqlitestudio_temp_table;");
 
-                db.execSQL(" update outDocs "+
-                " set idSotr = (select Id_s from prods p where p.idOutDocs = outDocs._id) "+
-                " where Id_o < 9999; ");
+                db.execSQL(" update outDocs " +
+                        " set idSotr = (select Id_s from prods p where p.idOutDocs = outDocs._id) " +
+                        " where Id_o < 9999; ");
 
-                db.execSQL(" update outDocs "+
-                        " set idDeps = (select Id_d from prods p where p.idOutDocs = outDocs._id) "+
+                db.execSQL(" update outDocs " +
+                        " set idDeps = (select Id_d from prods p where p.idOutDocs = outDocs._id) " +
                         " where Id_o < 9999; ");
 
                 db.execSQL("DROP TABLE sqlitestudio_temp_table;");
 
                 db.setTransactionSuccessful();
                 Log.d(TAG, "Версия бд 23. Окончание реструктуризации.");
-            }
-            finally {
+            } finally {
                 db.endTransaction();
                 db.execSQL("PRAGMA foreign_keys = 1;");
             }
-        if ((newVersion>oldVersion)&(oldVersion < 25))
+        if ((newVersion > oldVersion) & (oldVersion < 25))
             try {
                 Log.d(TAG, "Версия бд 24. Начало реструктуризации.");
                 db.execSQL("PRAGMA foreign_keys = 0;");
@@ -300,26 +305,25 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
                 db.execSQL("CREATE TABLE sqlitestudio_temp_table AS SELECT * FROM user;");
                 db.execSQL("DROP TABLE IF EXISTS user;");
-                db.execSQL("CREATE TABLE user (_id INTEGER PRIMARY KEY UNIQUE,"+
-                        "name VARCHAR (30) UNIQUE NOT NULL,"+
+                db.execSQL("CREATE TABLE user (_id INTEGER PRIMARY KEY UNIQUE," +
+                        "name VARCHAR (30) UNIQUE NOT NULL," +
                         "pswd VARCHAR (32) NOT NULL DEFAULT (012345)," +
                         "DT INTEGER," +
-                        "superUser BOOLEAN DEFAULT 0,"+
-                        "expired BOOLEAN DEFAULT 0,"+
+                        "superUser BOOLEAN DEFAULT 0," +
+                        "expired BOOLEAN DEFAULT 0," +
                         "Id_s INTEGER REFERENCES Sotr (_id) DEFAULT (0));");
-                db.execSQL("INSERT INTO user (_id,name,pswd,DT,superUser,Id_s,expired)"+
+                db.execSQL("INSERT INTO user (_id,name,pswd,DT,superUser,Id_s,expired)" +
                         "SELECT _id,name,pswd,DT,superUser,Id_s,0 FROM sqlitestudio_temp_table;");
 
                 db.execSQL("DROP TABLE sqlitestudio_temp_table;");
 
                 db.setTransactionSuccessful();
                 Log.d(TAG, "Версия бд 24. Окончание реструктуризации.");
-            }
-            finally {
+            } finally {
                 db.endTransaction();
                 db.execSQL("PRAGMA foreign_keys = 1;");
             }
-        if ((newVersion>oldVersion)&(oldVersion < 26))
+        if ((newVersion > oldVersion) & (oldVersion < 26))
             try {
                 Log.d(TAG, "Версия бд 25. Начало реструктуризации.");
                 db.execSQL("PRAGMA foreign_keys = 0;");
@@ -327,15 +331,15 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
                 db.execSQL("CREATE TABLE sqlitestudio_temp_table AS SELECT * FROM Sotr;");
                 db.execSQL("DROP TABLE IF EXISTS Sotr;");
-                db.execSQL("CREATE TABLE Sotr (_id INTEGER PRIMARY KEY UNIQUE,"+
-                        "tn_Sotr TEXT,"+
+                db.execSQL("CREATE TABLE Sotr (_id INTEGER PRIMARY KEY UNIQUE," +
+                        "tn_Sotr TEXT," +
                         "sotr TEXT," +
                         "DT INTEGER," +
-                        "Id_o INTEGER REFERENCES Opers (_id) DEFAULT (0),"+
-                        "Id_d INTEGER REFERENCES Deps (_id) DEFAULT (0),"+
-                        "division_code VARCHAR (255) REFERENCES Division (code) DEFAULT (0),"+
+                        "Id_o INTEGER REFERENCES Opers (_id) DEFAULT (0)," +
+                        "Id_d INTEGER REFERENCES Deps (_id) DEFAULT (0)," +
+                        "division_code VARCHAR (255) REFERENCES Division (code) DEFAULT (0)," +
                         "expired BOOLEAN DEFAULT 0);");
-                db.execSQL("INSERT INTO Sotr (_id,tn_Sotr,sotr,DT,Id_o,Id_d,division_code,expired)"+
+                db.execSQL("INSERT INTO Sotr (_id,tn_Sotr,sotr,DT,Id_o,Id_d,division_code,expired)" +
                         "SELECT _id,tn_Sotr,sotr,DT,Id_o,Id_d,division_code,0 FROM sqlitestudio_temp_table;");
 
                 db.execSQL("DROP TABLE sqlitestudio_temp_table;");
@@ -343,12 +347,12 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 db.setTransactionSuccessful();
                 Log.d(TAG, "Версия бд 25. Окончание реструктуризации.");
             } catch (Exception e) {
-                Log.e (TAG, e.getMessage());
+                Log.e(TAG, e.getMessage());
             } finally {
                 db.endTransaction();
                 db.execSQL("PRAGMA foreign_keys = 1;");
             }
-        if ((newVersion>oldVersion)&(oldVersion < 27))
+        if ((newVersion > oldVersion) & (oldVersion < 27))
             try {
                 Log.i(TAG, "Версия бд 27. Начало реструктуризации.");
                 db.execSQL("PRAGMA foreign_keys = 0;");
@@ -360,12 +364,12 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 db.setTransactionSuccessful();
                 Log.d(TAG, "Версия бд 27. Окончание реструктуризации.");
             } catch (Exception e) {
-                Log.e (TAG, e.getMessage());
+                Log.e(TAG, e.getMessage());
             } finally {
                 db.endTransaction();
                 db.execSQL("PRAGMA foreign_keys = 1;");
             }
-        if ((newVersion>oldVersion)&(newVersion == 27))
+        if ((newVersion > oldVersion) & (newVersion == 27))
             try {
                 Log.i(TAG, "Версия бд 27. Начало реструктуризации.");
                 db.execSQL("PRAGMA foreign_keys = 0;");
@@ -375,19 +379,19 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
                 db.execSQL("DROP TABLE Boxes;");
 
-                db.execSQL("CREATE TABLE Boxes ("+
-                        " _id              VARCHAR (128) PRIMARY KEY UNIQUE,"+
-                        " Id_m             INTEGER, "+
-                        " Q_box            INTEGER, "+
-                        " N_box            INTEGER, "+
-                        " DT               INTEGER, "+
-                        " sentToMasterDate INTEGER, "+
-                        " archive          BOOLEAN       DEFAULT false, "+
-                        " outDocId         VARCHAR (36), "+
+                db.execSQL("CREATE TABLE Boxes (" +
+                        " _id              VARCHAR (128) PRIMARY KEY UNIQUE," +
+                        " Id_m             INTEGER, " +
+                        " Q_box            INTEGER, " +
+                        " N_box            INTEGER, " +
+                        " DT               INTEGER, " +
+                        " sentToMasterDate INTEGER, " +
+                        " archive          BOOLEAN       DEFAULT false, " +
+                        " outDocId         VARCHAR (36), " +
                         " FOREIGN KEY (Id_m) REFERENCES MasterData (_id) );");
 
-                db.execSQL("INSERT INTO Boxes (_id, Id_m, Q_box, N_box, DT, sentToMasterDate, archive) "+
-                        " SELECT _id, Id_m, Q_box, N_box, DT, sentToMasterDate, archive "+
+                db.execSQL("INSERT INTO Boxes (_id, Id_m, Q_box, N_box, DT, sentToMasterDate, archive) " +
+                        " SELECT _id, Id_m, Q_box, N_box, DT, sentToMasterDate, archive " +
                         " FROM sqlitestudio_temp_table; ");
 
                 db.execSQL("DROP TABLE sqlitestudio_temp_table;");
@@ -403,7 +407,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 db.setTransactionSuccessful();
                 Log.d(TAG, "Версия бд 27. Окончание реструктуризации.");
             } catch (Exception e) {
-                Log.e (TAG, e.getMessage());
+                Log.e(TAG, e.getMessage());
             } finally {
                 db.endTransaction();
                 db.execSQL("PRAGMA foreign_keys = 1;");
@@ -426,13 +430,13 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 readBoxes.add(readBox);
             }
             tryCloseCursor(cursor);
-        }catch (Exception e){
-            Log.e (TAG, e.getMessage());
+        } catch (Exception e) {
+            Log.e(TAG, e.getMessage());
             HashMap readBox = new HashMap<String, String>();
             readBox.put("Ord", "Ошибка!");
             readBox.put("Cust", "Ошибка!");
             readBoxes.add(readBox);
-        }finally {
+        } finally {
             AppController.getInstance().getDbHelper().closeDataBase();
         }
         return readBoxes;
@@ -445,21 +449,22 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         Cursor cursor = null;
         try {
             cursor = mDataBase.rawQuery("SELECT _id,Id_m,Q_box,N_box,DT FROM Boxes where (("
-                        +Boxes.COLUMN_sentToMasterDate+" IS NULL) OR ("+Boxes.COLUMN_sentToMasterDate+" = ''))", null);
+                    + Boxes.COLUMN_sentToMasterDate + " IS NULL) OR (" + Boxes.COLUMN_sentToMasterDate + " = ''))", null);
             while (cursor.moveToNext()) {
                 Boxes readBox = new Boxes(cursor.getString(0), cursor.getInt(1), cursor.getInt(2), cursor.getInt(3), lDateToString((cursor.getLong(4))), null, false);
-                if ((readBox.get_id()!= "")&(readBox.get_Id_m() != 0))
+                if ((readBox.get_id() != "") & (readBox.get_Id_m() != 0))
                     readBoxes.add(readBox);
             }
             return readBoxes;
-        }catch (Exception e) {
-            Log.e(TAG, "getBoxes -> ".concat(e.getMessage()) );
+        } catch (Exception e) {
+            Log.e(TAG, "getBoxes -> ".concat(e.getMessage()));
             return readBoxes;
         } finally {
             tryCloseCursor(cursor);
             AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
+
     //get all Boxes  records filtered by operation
     public ArrayList<BoxMoves> getBoxMoves() {
         ArrayList<BoxMoves> readBoxMoves = new ArrayList<BoxMoves>();
@@ -467,36 +472,38 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         Cursor cursor = null;
         try {
             cursor = mDataBase.rawQuery("SELECT bm._id,bm.Id_b,bm.Id_o,bm.DT FROM BoxMoves bm where ((bm."
-                +BoxMoves.COLUMN_sentToMasterDate+" IS NULL) OR (bm."+BoxMoves.COLUMN_sentToMasterDate+" = ''))", null);
+                    + BoxMoves.COLUMN_sentToMasterDate + " IS NULL) OR (bm." + BoxMoves.COLUMN_sentToMasterDate + " = ''))", null);
 
             while (cursor.moveToNext()) {
                 readBoxMoves.add(new BoxMoves(cursor.getString(0), cursor.getString(1), cursor.getInt(2), lDateToString((cursor.getLong(3))), null));
             }
             return readBoxMoves;
-        }catch (Exception e) {
-            Log.e(TAG, "getBoxMoves -> ".concat(e.getMessage()) );
+        } catch (Exception e) {
+            Log.e(TAG, "getBoxMoves -> ".concat(e.getMessage()));
             return readBoxMoves;
         } finally {
             tryCloseCursor(cursor);
             AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
+
     //get all Boxes  records filtered by operation
     public ArrayList<Prods> getProds() {
         ArrayList<Prods> readProds = new ArrayList<Prods>();
         mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         Cursor cursor = null;
-        try { cursor = mDataBase.rawQuery("SELECT _id, Id_bm,Id_d,Id_s,RQ_box,P_date,sentToMasterDate,idOutDocs FROM Prods where (("
-                +Prods.COLUMN_sentToMasterDate+" IS NULL) OR ("+Prods.COLUMN_sentToMasterDate+" = '')) and "
-                +Prods.COLUMN_Id_bm+" in " +
-                "(SELECT bm._id FROM BoxMoves bm)", null);
+        try {
+            cursor = mDataBase.rawQuery("SELECT _id, Id_bm,Id_d,Id_s,RQ_box,P_date,sentToMasterDate,idOutDocs FROM Prods where (("
+                    + Prods.COLUMN_sentToMasterDate + " IS NULL) OR (" + Prods.COLUMN_sentToMasterDate + " = '')) and "
+                    + Prods.COLUMN_Id_bm + " in " +
+                    "(SELECT bm._id FROM BoxMoves bm)", null);
             while (cursor.moveToNext()) {
                 readProds.add(new Prods(cursor.getString(0), cursor.getString(1), cursor.getInt(2), cursor.getInt(3), cursor.getInt(4),
                         lDateToString(cursor.getLong(5)), cursor.getString(6), cursor.getString(7)));
             }
             return readProds;
-        }catch (Exception e) {
-            Log.e(TAG, "getProds -> ".concat(e.getMessage()) );
+        } catch (Exception e) {
+            Log.e(TAG, "getProds -> ".concat(e.getMessage()));
             return readProds;
         } finally {
             tryCloseCursor(cursor);
@@ -505,19 +512,18 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     }
 
 
-
     public foundBox searchBox(final int Order_id, final String storedbarcode) {
         Cursor c = null;
         spBarcode spb = new spBarcode(storedbarcode);
-        foundBox fb = new foundBox(storedbarcode, "№ кор: " + spb.getN_box()+". ", Integer.valueOf(spb.getQ_box()), Integer.valueOf(spb.getN_box()));
+        foundBox fb = new foundBox(storedbarcode, "№ кор: " + spb.getN_box() + ". ", Integer.valueOf(spb.getQ_box()), Integer.valueOf(spb.getN_box()));
 
         try {
             mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             String query = "SELECT Boxes._id, archive FROM Boxes Where Boxes.Id_m=" + Order_id + " and Boxes.N_box=" + spb.getN_box();
             c = mDataBase.rawQuery(query, null);
             if (c != null && c.moveToFirst()) {
-                fb.set_id (c.getString(0));
-                fb.set_archive (c.getInt(c.getColumnIndex("archive")) != 0);
+                fb.set_id(c.getString(0));
+                fb.set_archive(c.getInt(c.getColumnIndex("archive")) != 0);
 
                 if (!fb.is_archive()) {
                     if (StringUtils.isNotEmpty(fb.get_id())) {
@@ -530,11 +536,11 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                             if ((c != null) & (c.getCount() != 0)) { //есть записи в BoxMoves и Prods для базовой операции
                                 c.moveToFirst(); //есть boxes & prods
                                 Log.d(TAG, "searchBox's baseOper RQ select record count = " + c.getCount() + ", _id =" + c.getString(0));
-                                fb.setQB( c.getInt(0) );
+                                fb.setQB(c.getInt(0));
                             } else {
-                                fb.setQB( 0 );
+                                fb.setQB(0);
                             }                          //коробка есть, по базовой операции принято 0. Ошибочная ситуация.
-                            fb.setBoxdef(fb.getBoxdef().concat(AppController.getInstance().getDefs().getDescOper()+ ": " + fb.getQB() + ". "));
+                            fb.setBoxdef(fb.getBoxdef().concat(AppController.getInstance().getDefs().getDescOper() + ": " + fb.getQB() + ". "));
                         }
                         tryCloseCursor(c);
                         query = "SELECT sum(Prods.RQ_box) as RQ_box FROM Prods, BoxMoves bm " + "" +
@@ -544,7 +550,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                         if ((c != null) & (c.getCount() != 0)) {            //есть записи в BoxMoves и Prods
                             c.moveToFirst(); //есть boxes & prods
                             Log.d(TAG, "searchBox's RQ select record count = " + c.getCount() + ", _id =" + c.getString(0));
-                            fb.setRQ( c.getInt(0) );
+                            fb.setRQ(c.getInt(0));
                         }
                         tryCloseCursor(c);
                         query = "SELECT o.number,  strftime('%d-%m-%Y %H:%M:%S', o.DT/1000, 'unixepoch', 'localtime') as DT, Deps.Name_Deps, s.Sotr " +
@@ -555,15 +561,15 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                         if ((c != null) & (c.getCount() != 0)) {            //есть записи в BoxMoves и Prods
                             c.moveToFirst(); //есть boxes & prods
                             Log.d(TAG, "Looking for outdocs record count = " + c.getCount() + ", _id =" + c.getString(0));
-                            fb.setOutDocs( "Накл " + c.getString(0) + " от " + c.getString(1));
-                            fb.setDepSotr( isNotEmpty(c.getString(2)) ? c.getString(2) + ", " + c.getString(3) : "" );
+                            fb.setOutDocs("Накл " + c.getString(0) + " от " + c.getString(1));
+                            fb.setDepSotr(isNotEmpty(c.getString(2)) ? c.getString(2) + ", " + c.getString(3) : "");
                         }
                     }
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "searchBox -> ".concat(e.getMessage()) );
-        }finally {
+            Log.e(TAG, "searchBox -> ".concat(e.getMessage()));
+        } finally {
             fb.setBoxdef(fb.getBoxdef().concat("Принято: " + fb.getRQ()));
             tryCloseCursor(c);
             AppController.getInstance().getDbHelper().closeDataBase();
@@ -572,7 +578,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     }
 
     public long setLastUpdate(lastUpdate lU) {
-        if (lU.getUpdateStart()==0) return 0;
+        if (lU.getUpdateStart() == 0) return 0;
         try {
             mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             ContentValues values = new ContentValues();
@@ -585,12 +591,10 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         } catch (SQLException e) {
             Log.e(TAG, e.getMessage());
             return 0;
-        }finally {
+        } finally {
             AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
-
-
 
 
     public boolean updateProdsSentDate(Prods prods) {
@@ -599,19 +603,19 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             ContentValues values = new ContentValues();
             values.clear();
             values.put(Prods.COLUMN_sentToMasterDate, sDateTimeToLong(prods.get_sentToMasterDate()));
-            return (mDataBase.update(Prods.TABLE_prods, values,Prods.COLUMN_ID +"='"+prods.get_id()+ "'",null) > 0) ;
+            return (mDataBase.update(Prods.TABLE_prods, values, Prods.COLUMN_ID + "='" + prods.get_id() + "'", null) > 0);
         } catch (SQLiteException e) {
             Log.e(TAG, "updateProdsSentDate exception -> ".concat(e.getMessage()));
             return false;
-        }finally {
+        } finally {
             AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
 
-    public boolean deleteFromTable(final String TABLE, final String COLUMN, String Value){
+    public boolean deleteFromTable(final String TABLE, final String COLUMN, String Value) {
         try {
             mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-            return (mDataBase.delete(TABLE, COLUMN+"='"+Value+"' and sentToMasterDate is null",null) > 0) ;
+            return (mDataBase.delete(TABLE, COLUMN + "='" + Value + "' and sentToMasterDate is null", null) > 0);
         } catch (Exception e) {
             Log.e(TAG, e.getMessage());
             return false;
@@ -669,12 +673,12 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         }
     }
 
-    public String getTableMinDate(String tableName){
+    public String getTableMinDate(String tableName) {
         mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         Cursor cursor = null;
         try {
-            cursor = mDataBase.rawQuery("SELECT min(DT), max(DT) FROM "+tableName, null);
-            if (cursor != null && cursor.moveToFirst()){
+            cursor = mDataBase.rawQuery("SELECT min(DT), max(DT) FROM " + tableName, null);
+            if (cursor != null && cursor.moveToFirst()) {
                 return lDateToString(cursor.getLong(0)).concat(" - ").concat(lDateToString(cursor.getLong(1)));
             }
             return DateTimeUtils.getDayTimeString(new Date());
@@ -686,12 +690,13 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
-    public String getTableRecordsCount(String tableName){
+
+    public String getTableRecordsCount(String tableName) {
         mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         Cursor cursor = null;
         try {
-            cursor = mDataBase.rawQuery("SELECT COUNT(*) FROM "+tableName, null);
-            if (cursor != null && cursor.moveToFirst()){
+            cursor = mDataBase.rawQuery("SELECT COUNT(*) FROM " + tableName, null);
+            if (cursor != null && cursor.moveToFirst()) {
                 return String.valueOf(cursor.getInt(0));
             }
             return "Ошибка!";
@@ -704,135 +709,141 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         }
     }
 
-     private String insertBoxMoves(@NonNull BoxMoves bm) {
-         Cursor cursor = null;
-         try {
-             cursor = mDataBase.rawQuery("SELECT bm._id FROM BoxMoves bm Where bm.Id_o=" + bm.get_Id_o() + " and bm.Id_b='" + bm.get_Id_b()+"'", null);
-             if (cursor != null && cursor.moveToFirst()) {
-                 try {
-                     if (StringUtils.isNotBlank(cursor.getString(0)))
+    private String insertBoxMoves(@NonNull BoxMoves bm) {
+        Cursor cursor = null;
+        try {
+            cursor = mDataBase.rawQuery("SELECT bm._id FROM BoxMoves bm Where bm.Id_o=" + bm.get_Id_o() + " and bm.Id_b='" + bm.get_Id_b() + "'", null);
+            if (cursor != null && cursor.moveToFirst()) {
+                try {
+                    if (StringUtils.isNotBlank(cursor.getString(0)))
                         return cursor.getString(0);
-                     return "";
-                 }catch (Exception e){
-                     return "";
-                 }
-             } else {
-                 ContentValues values = new ContentValues();
-                 values.clear();
-                 values.put(BoxMoves.COLUMN_ID, bm.get_id());
-                 values.put(BoxMoves.COLUMN_Id_b, bm.get_Id_b());
-                 values.put(BoxMoves.COLUMN_Id_o, bm.get_Id_o());
-                 values.put(BoxMoves.COLUMN_DT, sDateTimeToLong(bm.get_DT()));
-                 if (bm.get_sentToMasterDate() != null) values.put(BoxMoves.COLUMN_sentToMasterDate, sDateTimeToLong(bm.get_sentToMasterDate()));
+                    return "";
+                } catch (Exception e) {
+                    return "";
+                }
+            } else {
+                ContentValues values = new ContentValues();
+                values.clear();
+                values.put(BoxMoves.COLUMN_ID, bm.get_id());
+                values.put(BoxMoves.COLUMN_Id_b, bm.get_Id_b());
+                values.put(BoxMoves.COLUMN_Id_o, bm.get_Id_o());
+                values.put(BoxMoves.COLUMN_DT, sDateTimeToLong(bm.get_DT()));
+                if (bm.get_sentToMasterDate() != null)
+                    values.put(BoxMoves.COLUMN_sentToMasterDate, sDateTimeToLong(bm.get_sentToMasterDate()));
 
-                 long res = mDataBase.insertWithOnConflict(BoxMoves.TABLE_bm, null, values, 5);
-                 Log.d(TAG, "insertBoxMoves insertWithOnConflict result"+String.valueOf(res));
-                 return String.valueOf(res);
-             }
-         } catch (SQLException e) {
-             Log.e(TAG, e.getMessage());
-             return "";
-         } finally {
-             tryCloseCursor(cursor);
-         }
-     }
-     private boolean insertOneProd(@NonNull Prods prods) {
-         try {
-             ContentValues values = new ContentValues();
-             values.clear();
-             values.put(Prods.COLUMN_ID, prods.get_id());
-             values.put(Prods.COLUMN_Id_bm, prods.get_Id_bm());
-             values.put(Prods.COLUMN_Id_d, prods.get_Id_d());
-             values.put(Prods.COLUMN_Id_s, prods.get_Id_s());
-             values.put(Prods.COLUMN_RQ_box, prods.get_RQ_box());
-             values.put(Prods.COLUMN_P_date, sDateToLong(prods.get_P_date()));
-             values.put(Prods.COLUMN_idOutDocs, prods.get_idOutDocs());
-             if (prods.get_sentToMasterDate() != null) values.put(Prods.COLUMN_sentToMasterDate, sDateTimeToLong(prods.get_sentToMasterDate()));
+                long res = mDataBase.insertWithOnConflict(BoxMoves.TABLE_bm, null, values, 5);
+                Log.d(TAG, "insertBoxMoves insertWithOnConflict result" + String.valueOf(res));
+                return String.valueOf(res);
+            }
+        } catch (SQLException e) {
+            Log.e(TAG, e.getMessage());
+            return "";
+        } finally {
+            tryCloseCursor(cursor);
+        }
+    }
 
-             long res = mDataBase.insertWithOnConflict(Prods.TABLE_prods, null, values, 5) ;
-             Log.d(TAG, "insertOneProd insertWithOnConflict result"+String.valueOf(res));
-             return res > 0;
-         } catch (SQLException e) {
-             Log.e(TAG, "insertOneProd exception -> ".concat(e.getMessage()));
-             return false;
-         }
-     }
-     public boolean addProds(foundBox fb) {
+    private boolean insertOneProd(@NonNull Prods prods) {
+        try {
+            ContentValues values = new ContentValues();
+            values.clear();
+            values.put(Prods.COLUMN_ID, prods.get_id());
+            values.put(Prods.COLUMN_Id_bm, prods.get_Id_bm());
+            values.put(Prods.COLUMN_Id_d, prods.get_Id_d());
+            values.put(Prods.COLUMN_Id_s, prods.get_Id_s());
+            values.put(Prods.COLUMN_RQ_box, prods.get_RQ_box());
+            values.put(Prods.COLUMN_P_date, sDateToLong(prods.get_P_date()));
+            values.put(Prods.COLUMN_idOutDocs, prods.get_idOutDocs());
+            if (prods.get_sentToMasterDate() != null)
+                values.put(Prods.COLUMN_sentToMasterDate, sDateTimeToLong(prods.get_sentToMasterDate()));
+
+            long res = mDataBase.insertWithOnConflict(Prods.TABLE_prods, null, values, 5);
+            Log.d(TAG, "insertOneProd insertWithOnConflict result" + String.valueOf(res));
+            return res > 0;
+        } catch (SQLException e) {
+            Log.e(TAG, "insertOneProd exception -> ".concat(e.getMessage()));
+            return false;
+        }
+    }
+
+    public boolean addProds(foundBox fb) {
         boolean r;
         mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         boolean doAsTransaction = !mDataBase.inTransaction();
         try {
-             BoxMoves bm = new BoxMoves (getUUID(),fb.get_id(), AppController.getInstance().getDefs().get_Id_o(),lDateToString(new Date().getTime()),null);
-             if (doAsTransaction)
+            BoxMoves bm = new BoxMoves(getUUID(), fb.get_id(), AppController.getInstance().getDefs().get_Id_o(), lDateToString(new Date().getTime()), null);
+            if (doAsTransaction)
                 mDataBase.beginTransaction();
-             final String bmIdOrRowId = insertBoxMoves(bm);
-             if ((StringUtils.isNotBlank(bmIdOrRowId))) {
-                 if (isValidUUID(bmIdOrRowId)) bm.set_id(bmIdOrRowId);
-                 Prods prod ;
-                 if (AppUtils.isDepAndSotrOper(bm.get_Id_o())) {// it needs Dep and Sotr
-                     prod = new Prods(getUUID(),
-                             bm.get_id(),
-                             AppController.getInstance().getDefs().get_Id_d(),
-                             AppController.getInstance().getDefs().get_Id_s(),
-                             fb.getRQ(),
-                             DateTimeUtils.getStartOfDayString(new Date()),
-                             null,
-                             AppController.getInstance().getCurrentOutDoc().get_id());
-                 }
-                 else {
-                     prod = new Prods(getUUID(),
-                             bm.get_id(),
-                             0,
-                             0,
-                             fb.getRQ(),
-                             DateTimeUtils.getStartOfDayString(new Date()),
-                             null,
-                             AppController.getInstance().getCurrentOutDoc().get_id());
-                 }
-                 r = insertOneProd(prod);
-                 if (doAsTransaction)
-                     mDataBase.setTransactionSuccessful();
-                 return (r);
-             } else
-                 return false;
+            final String bmIdOrRowId = insertBoxMoves(bm);
+            if ((StringUtils.isNotBlank(bmIdOrRowId))) {
+                if (isValidUUID(bmIdOrRowId)) bm.set_id(bmIdOrRowId);
+                Prods prod;
+                if (AppUtils.isDepAndSotrOper(bm.get_Id_o())) {// it needs Dep and Sotr
+                    prod = new Prods(getUUID(),
+                            bm.get_id(),
+                            AppController.getInstance().getDefs().get_Id_d(),
+                            AppController.getInstance().getDefs().get_Id_s(),
+                            fb.getRQ(),
+                            DateTimeUtils.getStartOfDayString(new Date()),
+                            null,
+                            AppController.getInstance().getCurrentOutDoc().get_id());
+                } else {
+                    prod = new Prods(getUUID(),
+                            bm.get_id(),
+                            0,
+                            0,
+                            fb.getRQ(),
+                            DateTimeUtils.getStartOfDayString(new Date()),
+                            null,
+                            AppController.getInstance().getCurrentOutDoc().get_id());
+                }
+                r = insertOneProd(prod);
+                if (doAsTransaction)
+                    mDataBase.setTransactionSuccessful();
+                return (r);
+            } else
+                return false;
         } catch (Exception e) {
-             Log.e(TAG, "insertOneProd exception -> ".concat(e.getMessage()));
-             return false;
+            Log.e(TAG, "insertOneProd exception -> ".concat(e.getMessage()));
+            return false;
         } finally {
             if (doAsTransaction)
                 mDataBase.endTransaction();
             AppController.getInstance().getDbHelper().closeDataBase();
         }
-     }
-     private boolean insertOneBox(Boxes boxes) {
-         try {
-             ContentValues values = new ContentValues();
-             values.clear();
-             values.put(Boxes.COLUMN_ID, boxes.get_id());
-             values.put(Boxes.COLUMN_Id_m, boxes.get_Id_m());
-             values.put(Boxes.COLUMN_Q_box, boxes.get_Q_box());
-             values.put(Boxes.COLUMN_N_box, boxes.get_N_box());
-             values.put(Boxes.COLUMN_DT, sDateTimeToLong(boxes.get_DT()));
-             values.put(Boxes.COLUMN_archive, boxes.isArchive());
-             values.put(Boxes.COLUMN_OUTDOC_ID, boxes.getOutDocId());
-             if (boxes.get_sentToMasterDate() != null) values.put(Boxes.COLUMN_sentToMasterDate, sDateTimeToLong(boxes.get_sentToMasterDate()));
+    }
 
-             return mDataBase.insertWithOnConflict(Boxes.TABLE_boxes, null, values, 5) > 0;
-         } catch (SQLiteConstraintException e) {
-             Log.e(TAG, e.getMessage());
-             Cursor cursor = null;
-             try {
-                 cursor = mDataBase.rawQuery("SELECT ROWID FROM Boxes b Where b.Id_m='" + boxes.get_Id_m() +"'"+
-                         " b.Q_box=" + boxes.get_Q_box() + " and b.N_box=" + boxes.get_N_box(), null);
-                 if (cursor != null && cursor.moveToFirst()) {
-                     return (cursor.getLong(0)>0);
-                 }
-             }finally {
-                 tryCloseCursor(cursor);
-             }
-             return false;
-         }
-     }
+    private boolean insertOneBox(Boxes boxes) {
+        try {
+            ContentValues values = new ContentValues();
+            values.clear();
+            values.put(Boxes.COLUMN_ID, boxes.get_id());
+            values.put(Boxes.COLUMN_Id_m, boxes.get_Id_m());
+            values.put(Boxes.COLUMN_Q_box, boxes.get_Q_box());
+            values.put(Boxes.COLUMN_N_box, boxes.get_N_box());
+            values.put(Boxes.COLUMN_DT, sDateTimeToLong(boxes.get_DT()));
+            values.put(Boxes.COLUMN_archive, boxes.isArchive());
+            values.put(Boxes.COLUMN_OUTDOC_ID, boxes.getOutDocId());
+            if (boxes.get_sentToMasterDate() != null)
+                values.put(Boxes.COLUMN_sentToMasterDate, sDateTimeToLong(boxes.get_sentToMasterDate()));
+
+            return mDataBase.insertWithOnConflict(Boxes.TABLE_boxes, null, values, 5) > 0;
+        } catch (SQLiteConstraintException e) {
+            Log.e(TAG, e.getMessage());
+            Cursor cursor = null;
+            try {
+                cursor = mDataBase.rawQuery("SELECT ROWID FROM Boxes b Where b.Id_m='" + boxes.get_Id_m() + "'" +
+                        " b.Q_box=" + boxes.get_Q_box() + " and b.N_box=" + boxes.get_N_box(), null);
+                if (cursor != null && cursor.moveToFirst()) {
+                    return (cursor.getLong(0) > 0);
+                }
+            } finally {
+                tryCloseCursor(cursor);
+            }
+            return false;
+        }
+    }
+
     public boolean addBox(foundOrder fo, int iRQ) {
         boolean r;
         mDataBase = AppController.getInstance().getDbHelper().openDataBase();
@@ -843,8 +854,8 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 mDataBase.beginTransaction();
             if (insertOneBox(boxes)) {
                 foundBox fb = new foundBox();
-                fb.set_id( boxes.get_id() );
-                fb.setRQ( iRQ );
+                fb.set_id(boxes.get_id());
+                fb.setRQ(iRQ);
                 r = addProds(fb);
                 if (doAsTransaction)
                     mDataBase.setTransactionSuccessful();
@@ -854,8 +865,90 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         } catch (Exception ex) {
             Log.e(TAG, ex.getMessage());
             return false;
-        }finally {
+        } finally {
             if (doAsTransaction)
+                mDataBase.endTransaction();
+            AppController.getInstance().getDbHelper().closeDataBase();
+        }
+    }
+
+    private HashMap<HashMap<String, String>, Integer> getBoxMoveAndProdToDelete(@NonNull String orderText, @NonNull String outDocId) {
+        final String SQL_GET = "SELECT bm._id as bmId, p._id as pId " +
+                " FROM BOX_SIZING bs, MasterData m, Boxes b, BoxMoves bm, Prods p " +
+                " WHERE m._id=bs.order_id and m._id=b.Id_m and b._id=bm.Id_b and bm.Id_o=9999 and bm._id=p.Id_bm and p.idOutDocs='"+outDocId+"'"+
+                " and bs.order_id IN ";
+        final String SQL_ORDER_CLAUSE = " ORDER BY bm._id;";
+
+        HashMap<HashMap<String, String>, Integer> result = new HashMap<>();
+        Cursor cursor = null;
+        try {
+            cursor = mDataBase.rawQuery(Orders.SQL_MD_ID_SELECT_BOX_SIZING, new String[]{orderText});
+            String inClause = "";
+            while (cursor.moveToNext()) {
+                inClause = inClause.concat(cursor.getString(0)).concat(",");
+            }
+            inClause = StringUtils.substringBeforeLast(inClause, ",");
+            String sql = SQL_GET + " ( " + inClause + " )"+SQL_ORDER_CLAUSE;
+            Cursor bmAndProdCursor = mDataBase.rawQuery(sql, null);
+            if (bmAndProdCursor != null && bmAndProdCursor.moveToFirst()) {
+                HashMap<String, String> id = new HashMap<>();
+                id.put(bmAndProdCursor.getString(0), bmAndProdCursor.getString(1));
+                result.put(id, 1);
+                while (bmAndProdCursor.moveToNext()) {
+                    if (id.containsKey(bmAndProdCursor.getString(0))){
+                        if (result.containsKey(id))
+                            result.replace(id, result.get(id)+1);
+                        else
+                            result.put(id, 1);
+                    } else {
+                        id.put(bmAndProdCursor.getString(0), bmAndProdCursor.getString(1));
+                        result.put(id, 1);
+                    }
+                }
+            }
+            tryCloseCursor(bmAndProdCursor);
+            return result;
+        } catch (Exception e) {
+            Log.e(TAG, "getBoxMoveAndProdToDelete -> ".concat(e.getMessage()));
+            throw new RuntimeException("To catch into upper level.");
+        } finally {
+            tryCloseCursor(cursor);
+        }
+    }
+
+
+    public boolean deleteBoxAndBoxMoveAndProd(@NonNull String orderText, @NonNull String outDocId, @NonNull String bId) {
+        mDataBase = AppController.getInstance().getDbHelper().openDataBase();
+        boolean doAsTransaction = !mDataBase.inTransaction();
+        try {
+            HashMap<HashMap<String, String>, Integer> idToDelete = getBoxMoveAndProdToDelete(orderText, outDocId);
+            if (idToDelete.isEmpty()) return false;
+            if (doAsTransaction)
+                mDataBase.beginTransaction();
+
+            for ( Map.Entry<HashMap<String, String>, Integer> entry : idToDelete.entrySet() ) {
+                for ( Map.Entry<String, String> entryId : entry.getKey().entrySet() ) {
+                    if (deleteFromTable(Prods.TABLE_prods, Prods.COLUMN_ID, entryId.getValue())) {
+                        if (entry.getValue() == 1) {
+                            if ( !deleteFromTable(BoxMoves.TABLE_bm, BoxMoves.COLUMN_ID, entryId.getKey()))
+                                return false;
+                            if ( !deleteFromTable(Boxes.TABLE_boxes, Boxes.COLUMN_ID, bId)) {
+                                Log.d(TAG, "Коробка не может быть удалена из-за неразрешенных ссылок! Id= " + bId);
+                                return false;
+                            }
+                        }
+                    }else
+                        return false;
+                }
+            }
+            if (doAsTransaction)
+                mDataBase.setTransactionSuccessful();
+            return true;
+        }catch (Exception ex) {
+            Log.e(TAG, ex.getMessage());
+            return false;
+        }finally {
+            if (mDataBase.inTransaction() && doAsTransaction)
                 mDataBase.endTransaction();
             AppController.getInstance().getDbHelper().closeDataBase();
         }
@@ -912,7 +1005,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             HashMap<HashMap<String, Integer>, String> bmBoxToDoMap = new HashMap<>();
 
             for ( Map.Entry<String, Integer> entry : boxToDoMap.entrySet() ) {
-                String bmId = findOrNewBoxMove(entry.getKey());
+                String bmId = findOrBlancBoxMove(entry.getKey());
                 bmBoxToDoMap.put(new HashMap<String, Integer>(){{put(entry.getKey(), entry.getValue());}}, bmId);
             }
             if (doAsTransaction)
@@ -941,12 +1034,8 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
-    public HashMap<String, Integer> checkAvailability(@NonNull String orderText){
+    private HashMap<String, Integer> checkAvailability(@NonNull String orderText){
         final String PRODUCED_LESS = "Недостаточно произведенной подошвы чтобы отгрузить эту коробку!";
-        final String SQL_CHECK_AVAILABILITY = "SELECT b._id, sum(Prods.RQ_box) as quantity " +
-                " FROM Boxes b, BoxMoves bm, Prods " +
-                " Where b.archive=0 and b.id_m = ? and bm.Id_b=b._id and bm.Id_o=? and bm._id=Prods.Id_bm " +
-                " Group by b._id, Prods.Id_bm";
 
         HashMap<String, Integer> result = new HashMap<String, Integer>();
         Cursor cursor = null;
@@ -1050,7 +1139,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         return new HashMap<String, Integer>();
     }
 
-    public String findOrNewBoxMove (String boxId) {
+    public String findOrBlancBoxMove (String boxId) {
         final String SQL_CHECK_BOX_MOVE = "SELECT _id FROM BoxMoves " +
                 " Where Id_b = ? and Id_o = 9999 ";
         Cursor cursor = null;
@@ -1063,6 +1152,24 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
         } catch (Exception e) {
             Log.e(TAG, "getMaxDepsDate -> ".concat(e.getMessage()));
+            return "";
+        } finally {
+            tryCloseCursor(cursor);
+        }
+    }
+    public String findOrBlancProd (String bmId, String outDocId) {
+        final String SQL_CHECK_BOX_MOVE = "SELECT _id FROM Prod " +
+                " Where Id_bm = ? and idOutDocs = ? ";
+        Cursor cursor = null;
+        try {
+            cursor = mDataBase.rawQuery(SQL_CHECK_BOX_MOVE, new String[]{bmId, outDocId});
+            while (cursor.moveToNext()) {
+                return cursor.getString(0);
+            }
+            return "";
+
+        } catch (Exception e) {
+            Log.e(TAG, "findOrBlancProd -> ".concat(e.getMessage()));
             return "";
         } finally {
             tryCloseCursor(cursor);

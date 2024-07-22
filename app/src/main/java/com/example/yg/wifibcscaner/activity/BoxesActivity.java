@@ -26,6 +26,7 @@ import com.example.yg.wifibcscaner.service.MessageUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Date;
+import java.util.HashMap;
 
 import static com.example.yg.wifibcscaner.data.model.OutDocs.COLUMN_number;
 import static com.example.yg.wifibcscaner.data.model.Prods.COLUMN_Id_d;
@@ -79,8 +80,6 @@ public class BoxesActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_boxes);
 
-
-//Создаем адаптер
         adapter = new SimpleAdapter(this, boxRepo.listboxes(outDocId, depId, StringUtils.isBlank(outDocId)), R.layout.adapter_item, from, to);
         listView = (ListView) findViewById(R.id.listView);
         listView.setAdapter(adapter);
@@ -127,22 +126,29 @@ public class BoxesActivity extends AppCompatActivity {
                                                 MessageUtils.showToast(getApplicationContext(), "Нет возможности удалить!", false);
                                             }
                                             adapter = new SimpleAdapter(BoxesActivity.this, boxRepo.listboxes(outDocId, depId, StringUtils.isBlank(outDocId)), R.layout.adapter_item, from, to);
-
                                             listView.setAdapter(adapter);
                                             adapter.notifyDataSetChanged();
                                         } else {
                                             Log.e(TAG, "Ошибка при удалении Подошвы! Id= " + sPdId);
                                             MessageUtils.showToast(getApplicationContext(), "Нет возможности удалить!", false);
                                         }
-                                    } else { // should be boxSizing. TODO delete bm and prod which are related to this box
-                                        if (!AppController.getInstance().getDbHelper().deleteFromTable(Boxes.TABLE_boxes, Boxes.COLUMN_ID, sBId)) {
-                                            Log.d(TAG, "Коробка не может быть удалена из-за неразрешенных ссылок! Id= " + sBId);
-                                        }
-                                        MessageUtils.showToast(getApplicationContext(), "Ок! Успешно!", false);
-                                        adapter = new SimpleAdapter(BoxesActivity.this, boxRepo.listboxes(outDocId, depId, StringUtils.isBlank(outDocId)), R.layout.adapter_item, from, to);
+                                    } else { // should be boxSizing. outDocId is needed to certain delete from prod. TODO delete bm and prod which are related to this box
+                                        String orderText = sTmp.substring(sTmp.indexOf("Ord=") + 4, sTmp.indexOf("."));
+                                        /*if (StringUtils.isBlank(AppController.getInstance().getCurrentOutDoc().get_id())) {
+                                            MessageUtils.showToast(getApplicationContext(), "Нет возможности удалить! Выберите накладную на отгрузку.", false);
+                                        }*/
+                                        if ( StringUtils.isNotBlank(outDocId) && AppController.getInstance().getDbHelper()
+                                                .deleteBoxAndBoxMoveAndProd(orderText, outDocId, sBId) ) {
 
-                                        listView.setAdapter(adapter);
-                                        adapter.notifyDataSetChanged();
+                                            MessageUtils.showToast(getApplicationContext(), "Ок! Успешно!", false);
+                                            adapter = new SimpleAdapter(BoxesActivity.this,
+                                                    boxRepo.listboxes(outDocId, depId, StringUtils.isBlank(outDocId)), R.layout.adapter_item, from, to);
+                                            listView.setAdapter(adapter);
+                                            adapter.notifyDataSetChanged();
+                                        } else {
+                                            Log.e(TAG, "Ошибка при удалении коробки!");
+                                            MessageUtils.showToast(getApplicationContext(), "Нет возможности удалить!", false);
+                                        }
                                     }
                                 } catch (Exception e) {
                                     Log.e(TAG, "Исключительная ситуация при удалении Подошвы!");

@@ -242,7 +242,7 @@ public class OutDocRepo {
         return false;
     }
     public String selectCurrentOutDocDetails (String id){
-        if (StringUtils.isEmpty(id)) return "";
+        if (StringUtils.isBlank(id)) return "";
         mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         Cursor cursor = null;
         try {
