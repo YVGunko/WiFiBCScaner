@@ -1,17 +1,15 @@
 package com.example.yg.wifibcscaner.activity;
 
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.Spinner;
 
-import com.example.yg.wifibcscaner.DataBaseHelper;
 import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.controller.AppController;
-import com.example.yg.wifibcscaner.data.model.Defs;
 import com.example.yg.wifibcscaner.data.model.Sotr;
 import com.example.yg.wifibcscaner.data.repo.DefsRepo;
 import com.example.yg.wifibcscaner.data.repo.SotrRepo;

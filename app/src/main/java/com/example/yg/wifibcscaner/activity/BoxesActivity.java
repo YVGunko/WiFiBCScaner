@@ -26,7 +26,6 @@ import com.example.yg.wifibcscaner.service.MessageUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Date;
-import java.util.HashMap;
 
 import static com.example.yg.wifibcscaner.data.model.OutDocs.COLUMN_number;
 import static com.example.yg.wifibcscaner.data.model.Prods.COLUMN_Id_d;

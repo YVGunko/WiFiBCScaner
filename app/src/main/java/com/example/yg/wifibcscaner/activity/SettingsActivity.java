@@ -630,7 +630,7 @@ matcher.matches();*/
             }
         }
 
-        if ( !isDepAndSotrOper(AppController.getInstance().getDefs().get_Id_o()) ) {
+        if (!isDepAndSotrOper(AppController.getInstance().getDefs().get_Id_o())) {
             DataSyncTimerUtil.stopDataSyncTimer();
         }
 

@@ -7,7 +7,6 @@ package com.example.yg.wifibcscaner;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.CursorIndexOutOfBoundsException;
-import android.database.DatabaseUtils;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteConstraintException;
 import android.database.sqlite.SQLiteDatabase;
@@ -18,11 +17,11 @@ import android.util.Log;
 
 import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.BoxMoves;
+import com.example.yg.wifibcscaner.data.model.BoxSizing;
 import com.example.yg.wifibcscaner.data.model.Boxes;
 import com.example.yg.wifibcscaner.data.model.Orders;
 import com.example.yg.wifibcscaner.data.model.Prods;
 import com.example.yg.wifibcscaner.data.model.lastUpdate;
-import com.example.yg.wifibcscaner.data.model.BoxSizing;
 import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.service.SharedPrefs;
 import com.example.yg.wifibcscaner.service.foundBox;
@@ -45,10 +44,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static android.database.DatabaseUtils.dumpCursorToString;
 import static com.example.yg.wifibcscaner.utils.AppUtils.getFirstOperFor;
 import static com.example.yg.wifibcscaner.utils.AppUtils.isNotEmpty;
 import static com.example.yg.wifibcscaner.utils.AppUtils.isOneOfFirstOper;
@@ -1036,7 +1033,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
-    private HashMap<String, Integer> checkAvailability(@NonNull String orderText){
+    HashMap<String, Integer> checkAvailability(@NonNull String orderText){
         final String PRODUCED_LESS = "Недостаточно произведенной подошвы чтобы отгрузить эту коробку!";
 
         HashMap<String, Integer> result = new HashMap<String, Integer>();

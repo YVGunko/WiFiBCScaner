@@ -11,7 +11,6 @@ import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.service.foundBox;
 import com.example.yg.wifibcscaner.service.foundOrder;
 import com.example.yg.wifibcscaner.utils.AppUtils;
-import com.example.yg.wifibcscaner.utils.executors.DefaultExecutorSupplier;
 
 import org.apache.commons.lang3.StringUtils;
 

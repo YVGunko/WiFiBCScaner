@@ -2,21 +2,17 @@ package com.example.yg.wifibcscaner.activity;
 
 import android.content.Intent;
 import android.os.AsyncTask;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ListView;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.example.yg.wifibcscaner.DataBaseHelper;
 import com.example.yg.wifibcscaner.R;
-import com.example.yg.wifibcscaner.activity.lastUpdateActivity;
 import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.repo.ProdRepo;
-import com.example.yg.wifibcscaner.service.MessageUtils;
 
 import java.util.ArrayList;
 import java.util.List;

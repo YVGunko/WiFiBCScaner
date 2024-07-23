@@ -6,12 +6,9 @@ import android.database.sqlite.SQLiteStatement;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
-import com.example.yg.wifibcscaner.R;
 import com.example.yg.wifibcscaner.controller.AppController;
 import com.example.yg.wifibcscaner.data.model.Division;
 import com.example.yg.wifibcscaner.service.ApiUtils;
-import com.example.yg.wifibcscaner.service.MessageUtils;
-import com.example.yg.wifibcscaner.service.Result;
 import com.example.yg.wifibcscaner.utils.executors.DefaultExecutorSupplier;
 
 import java.util.ArrayList;
