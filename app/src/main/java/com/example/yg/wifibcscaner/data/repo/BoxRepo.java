@@ -82,7 +82,7 @@ public class BoxRepo {
             String addWhereSentToMasterDate = "";
             String addWhereDepartment = "";
 
-            if (StringUtils.isNotBlank(outDocId) && outDocRepo.checkIfSizingOutDoc(outDocId)) {
+            if (StringUtils.isNotBlank(outDocId) && outDocRepo.checkIfSizingOutDoc(outDocId)) { // here is BoxSizing path
                 addWhereOutDoc = addWhereOutDoc.concat(" and ").concat(TABLE_boxes).concat(".").concat(COLUMN_OUTDOC_ID).concat("='").concat(outDocId).concat("'");
                 if (sentToMasterDate)
                     addWhereSentToMasterDate = addWhereSentToMasterDate.concat(" and ")

@@ -40,6 +40,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -872,14 +873,14 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         }
     }
 
-    private HashMap<HashMap<String, String>, Integer> getBoxMoveAndProdToDelete(@NonNull String orderText, @NonNull String outDocId) {
+    private Map<Map<String, String>, Integer> getBoxMoveAndProdToDelete(@NonNull String orderText, @NonNull String outDocId) {
         final String SQL_GET = "SELECT bm._id as bmId, p._id as pId " +
                 " FROM BOX_SIZING bs, MasterData m, Boxes b, BoxMoves bm, Prods p " +
                 " WHERE m._id=bs.order_id and m._id=b.Id_m and b._id=bm.Id_b and bm.Id_o=9999 and bm._id=p.Id_bm and p.idOutDocs='"+outDocId+"'"+
                 " and bs.order_id IN ";
         final String SQL_ORDER_CLAUSE = " ORDER BY bm._id;";
 
-        HashMap<HashMap<String, String>, Integer> result = new HashMap<>();
+        Map<Map<String, String>, Integer> result = new HashMap<>();
         Cursor cursor = null;
         try {
             cursor = mDataBase.rawQuery(Orders.SQL_MD_ID_SELECT_BOX_SIZING, new String[]{orderText});
@@ -891,18 +892,19 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             String sql = SQL_GET + " ( " + inClause + " )"+SQL_ORDER_CLAUSE;
             Cursor bmAndProdCursor = mDataBase.rawQuery(sql, null);
             if (bmAndProdCursor != null && bmAndProdCursor.moveToFirst()) {
-                HashMap<String, String> id = new HashMap<>();
-                id.put(bmAndProdCursor.getString(0), bmAndProdCursor.getString(1));
-                result.put(id, 1);
+                String bmId = bmAndProdCursor.getString(0);
+                String pbId = bmAndProdCursor.getString(1);
+                Map<String, String> ids = Collections.singletonMap(bmId, pbId);
+                result.put(ids, 1);
                 while (bmAndProdCursor.moveToNext()) {
-                    if (id.containsKey(bmAndProdCursor.getString(0))){
-                        if (result.containsKey(id))
-                            result.replace(id, result.get(id)+1);
-                        else
-                            result.put(id, 1);
+                    if (result.keySet().stream().filter(e -> e.keySet().contains(bmAndProdCursor.getString(0))).count()>0) {
+                        result.replace(ids,
+                                result.get(ids) + 1);
                     } else {
-                        id.put(bmAndProdCursor.getString(0), bmAndProdCursor.getString(1));
-                        result.put(id, 1);
+                        bmId = bmAndProdCursor.getString(0);
+                        pbId = bmAndProdCursor.getString(1);
+                        ids = Collections.singletonMap(bmId, pbId);
+                        result.put(ids, 1);
                     }
                 }
             }
@@ -921,25 +923,25 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         boolean doAsTransaction = !mDataBase.inTransaction();
         try {
-            HashMap<HashMap<String, String>, Integer> idToDelete = getBoxMoveAndProdToDelete(orderText, outDocId);
+            Map<Map<String, String>, Integer> idToDelete = getBoxMoveAndProdToDelete(orderText, outDocId);
             if (idToDelete.isEmpty()) return false;
             if (doAsTransaction)
                 mDataBase.beginTransaction();
 
-            for ( Map.Entry<HashMap<String, String>, Integer> entry : idToDelete.entrySet() ) {
+            for ( Map.Entry<Map<String, String>, Integer> entry : idToDelete.entrySet() ) {
                 for ( Map.Entry<String, String> entryId : entry.getKey().entrySet() ) {
                     if (deleteFromTable(Prods.TABLE_prods, Prods.COLUMN_ID, entryId.getValue())) {
                         if (entry.getValue() == 1) {
                             if ( !deleteFromTable(BoxMoves.TABLE_bm, BoxMoves.COLUMN_ID, entryId.getKey()))
                                 return false;
-                            if ( !deleteFromTable(Boxes.TABLE_boxes, Boxes.COLUMN_ID, bId)) {
-                                Log.d(TAG, "Коробка не может быть удалена из-за неразрешенных ссылок! Id= " + bId);
-                                return false;
-                            }
                         }
                     }else
                         return false;
                 }
+            }
+            if ( !deleteFromTable(Boxes.TABLE_boxes, Boxes.COLUMN_ID, bId)) { // it is BoxSizing Box deletion
+                Log.d(TAG, "Коробка не может быть удалена из-за неразрешенных ссылок! Id= " + bId);
+                return false;
             }
             if (doAsTransaction)
                 mDataBase.setTransactionSuccessful();

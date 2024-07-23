@@ -47,6 +47,8 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -330,11 +332,15 @@ public class SettingsActivity extends AppCompatActivity implements
                 int length = getResources().getStringArray(R.array.options_db_need_replace).length;
                 if (selectedItems.size() == length) {
                     if (SharedPrefs.getInstance() != null) {
+                        MessageUtils.showToast(getApplicationContext(), "Операция выполняется...", false);
                         SharedPrefs.getInstance().setDbNeedReplace(true);
+                        new Timer().schedule(new TimerTask() {
+                            @Override
+                            public void run() {
+                                triggerRebirth(SettingsActivity.this);
+                            }
+                        }, 3000);
                     }
-                    //SharedPreferences prefs = getSharedPreferences(SharedPrefs.PREFS_NAME, MODE_PRIVATE);
-                    //prefs.edit().putBoolean(SharedPrefs.PREF_DB_NEED_REPLACE, true).apply();
-                    triggerRebirth(SettingsActivity.this);
                 } else {
                     MessageUtils.showToast(getApplicationContext(), "Операция не выполнена!", false);
                 }
