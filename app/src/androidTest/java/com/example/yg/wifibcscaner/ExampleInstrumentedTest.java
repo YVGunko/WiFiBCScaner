@@ -6,6 +6,7 @@ import android.support.test.runner.AndroidJUnit4;
 import android.util.Log;
 
 import com.example.yg.wifibcscaner.controller.AppController;
+import com.example.yg.wifibcscaner.data.model.Boxes;
 import com.example.yg.wifibcscaner.data.repo.BoxRepo;
 import com.example.yg.wifibcscaner.data.repo.OrderRepo;
 import com.example.yg.wifibcscaner.data.repo.OutDocRepo;
@@ -14,6 +15,8 @@ import com.example.yg.wifibcscaner.service.foundOrder;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import java.util.ArrayList;
 
 import static org.junit.Assert.*;
 
@@ -127,5 +130,17 @@ public class ExampleInstrumentedTest {
             assertEquals(true, mDBHelper.addBox(fo, fb));
         else
             Log.d("testCheckAvailability", "Skipped "+barcode+" bcs of archive");
+    }
+
+    @Test
+    public void testGetBoxes() throws Exception {
+        // Context of the app under test.
+        Context appContext = InstrumentationRegistry.getTargetContext();
+
+        AppController.getInstance().getDbHelper().openDataBase();
+        ArrayList<Boxes> readBoxes = AppController.getInstance().getDbHelper().getBoxes();
+        assertTrue(readBoxes.size() > 0);
+
+
     }
 }

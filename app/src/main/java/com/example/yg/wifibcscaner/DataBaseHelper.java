@@ -446,10 +446,16 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         Cursor cursor = null;
         try {
-            cursor = mDataBase.rawQuery("SELECT _id,Id_m,Q_box,N_box,DT FROM Boxes where (("
+            cursor = mDataBase.rawQuery("SELECT _id,Id_m,Q_box,N_box,DT,archive,outDocId FROM Boxes where (("
                     + Boxes.COLUMN_sentToMasterDate + " IS NULL) OR (" + Boxes.COLUMN_sentToMasterDate + " = ''))", null);
             while (cursor.moveToNext()) {
-                Boxes readBox = new Boxes(cursor.getString(0), cursor.getInt(1), cursor.getInt(2), cursor.getInt(3), lDateToString((cursor.getLong(4))), null, false);
+                Boxes readBox = new Boxes(cursor.getString(0),
+                        cursor.getInt(1),
+                        cursor.getInt(2),
+                        cursor.getInt(3),
+                        lDateToString((cursor.getLong(4))),
+                        cursor.getInt(5) == 1,
+                        cursor.getString(6));
                 if ((readBox.get_id() != "") & (readBox.get_Id_m() != 0))
                     readBoxes.add(readBox);
             }

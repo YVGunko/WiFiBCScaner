@@ -59,6 +59,17 @@ public class Boxes {
         this._archive = true;
         this.outDocId = outDocId;
     }
+    //for BoxSizing #1
+    public Boxes(String _id, int _Id_m, int _Q_box, int _N_box, String _DT, boolean _archive, String outDocId)  {
+        this._id = _id;
+        this._Id_m = _Id_m;
+        this._Q_box = _Q_box;
+        this._N_box = _N_box;
+        this._DT = _DT;
+        this._sentToMasterDate = null;
+        this._archive = _archive;
+        this.outDocId = outDocId;
+    }
     public int get_Id_m() {
         return _Id_m;
     }
