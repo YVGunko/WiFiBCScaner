@@ -603,10 +603,9 @@ private static String filter (String str){
         }
 
         if (!AppUtils.isIncomeOper(AppController.getInstance().getDefs().get_Id_o())) { //entered number should be checked
-            if (AppUtils.isReleaseOper(AppController.getInstance().getDefs().get_Id_o())) {
+            if (AppUtils.isReleaseOper(AppController.getInstance().getDefs().get_Id_o()) & StringUtils.countMatches(fb.getBarcode(),'.') == 4) {
                 if (enteredNumber != fb.getQB()) {
                     MessageUtils.showToast(this, "Ошибка! Количество должно быть равно оприходованному!", false);
-                    return;
                 } else {
                     // new box or archive status change
                     if (StringUtils.isNotBlank(fb.get_id())) { //setArchive
@@ -620,8 +619,8 @@ private static String filter (String str){
                     editTextRQ = findViewById(R.id.editTextRQ);
                     editTextRQ.setEnabled(false);
                     setTextViews();
-                    return;
                 }
+                return;
             } else {
                 if (AppUtils.isOutComeOper(AppController.getInstance().getDefs().get_Id_o())) {//entered number should be equal
                     if (enteredNumber != fb.getQB()) {

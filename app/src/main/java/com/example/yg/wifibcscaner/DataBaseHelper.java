@@ -492,7 +492,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     }
 
     //get all Boxes  records filtered by operation
-    public ArrayList<Prods> getProds() {
+    public @NonNull ArrayList<Prods> getProds() {
         ArrayList<Prods> readProds = new ArrayList<Prods>();
         mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         Cursor cursor = null;

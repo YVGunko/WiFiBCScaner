@@ -31,7 +31,7 @@ public interface OrderService {
                                                @Query("page") int pageNumber,
                                                @Query("pageSize") int pageSize);
 
-    @POST("/partBox")
+    @POST("/partBox/v2")
     Call<PartBoxRequest> partBox(@Body PartBoxRequest partBoxRequest, @Query("userId") int userId, @Query("deviceId") String deviceId);
 
     @GET("/division")

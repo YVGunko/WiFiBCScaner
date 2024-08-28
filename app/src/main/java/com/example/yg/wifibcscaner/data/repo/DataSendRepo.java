@@ -61,6 +61,7 @@ public class DataSendRepo {
                     values.put(Boxes.COLUMN_archive, b.isArchive());
                     mDataBase.update(Boxes.TABLE_boxes, values, Boxes.COLUMN_ID + "='" + b.get_id() + "'", null) ;
                 }
+                MessageUtils.showToast("Коробки успешно отправлены...", false);
             }catch (SQLiteException e) {
                 Log.e(TAG, "updateWithResponse -> Boxes sentToMasterDate update exception -> ".concat(e.getMessage()));
                 throw new RuntimeException("To catch into upper level.");
@@ -74,7 +75,7 @@ public class DataSendRepo {
                         if (!updateBoxesSetArchiveTrue(bm.get_Id_b()))
                             Log.d("getBoxesService", "Ошибка при установке признака архива Box.");
                 }
-                // TODO updateBoxesSetArchiveTrue
+                MessageUtils.showToast("Почти все отправлено...", false);
             }catch (SQLiteException e) {
                 Log.e(TAG, "updateWithResponse -> BoxMoves sentToMasterDate update exception -> ".concat(e.getMessage()));
                 throw new RuntimeException("To catch into upper level.");
@@ -85,6 +86,7 @@ public class DataSendRepo {
                     values.put(Prods.COLUMN_sentToMasterDate, sDateTimeToLong(pb.get_sentToMasterDate()));
                     mDataBase.update(Prods.TABLE_prods, values,Prods.COLUMN_ID +"='"+pb.get_id()+ "'",null);
                 }
+                MessageUtils.showToast("Подошва успешно отправлена...", false);
             }catch (SQLiteException e) {
                 Log.e(TAG, "updateWithResponse -> Prods sentToMasterDate update exception -> ".concat(e.getMessage()));
                 throw new RuntimeException("To catch into upper level.");
@@ -123,9 +125,9 @@ public class DataSendRepo {
             //AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
-    private ArrayList<OutDocs> getOutDocNotSent(){
+    private @NonNull ArrayList<OutDocs> getOutDocNotSent(){
         Cursor cursor = null;
-        ArrayList<OutDocs> readBoxMoves = new ArrayList<OutDocs>();
+        ArrayList<OutDocs> odlist = new ArrayList<OutDocs>();
         try {
             cursor = mDataBase.rawQuery("SELECT _id, Id_o, number, comment, DT, division_code, idUser, idSotr, idDeps" +
                     " FROM OutDocs where ((" + COLUMN_sentToMasterDate + " IS NULL) OR (" + COLUMN_sentToMasterDate + " = ''))", null);
@@ -140,29 +142,29 @@ public class DataSendRepo {
                         cursor.getInt(7),
                         cursor.getInt(8));
                 //Закидываем в список
-                readBoxMoves.add(readBoxMove);
+                odlist.add(readBoxMove);
             }
-            Log.d(TAG, "getOutDocNotSent -> ".concat(String.valueOf(readBoxMoves.size())) );
-            return readBoxMoves;
+            Log.d(TAG, "getOutDocNotSent -> ".concat(String.valueOf(odlist.size())) );
+            return odlist;
         }catch (Exception e) {
             Log.e(TAG, "getOutDocNotSent -> ".concat(e.getMessage()) );
-            return readBoxMoves;
+            return odlist;
         } finally {
             tryCloseCursor(cursor);
         }
     }
     private void uploadData() {
         try {
-            ArrayList<OutDocs> dataToSend = getOutDocNotSent();
-            ArrayList<Boxes> boxesList = AppController.getInstance().getDbHelper().getBoxes();
-            ArrayList<BoxMoves> boxMovesList = AppController.getInstance().getDbHelper().getBoxMoves();
-            ArrayList<Prods> prodsList = AppController.getInstance().getDbHelper().getProds();
-            if (boxesList.isEmpty() & boxMovesList.isEmpty() & prodsList.isEmpty()) {
-                if (BuildConfig.DEBUG) MessageUtils.showToast("uploadData -> Нечего отправлять", true);
+            ArrayList<OutDocs> odListToSend = getOutDocNotSent();
+            ArrayList<Boxes> bListToSend = AppController.getInstance().getDbHelper().getBoxes();
+            ArrayList<BoxMoves> bmsListToSend = AppController.getInstance().getDbHelper().getBoxMoves();
+            ArrayList<Prods> pListToSend = AppController.getInstance().getDbHelper().getProds();
+            if (odListToSend.isEmpty() & bListToSend.isEmpty() & bmsListToSend.isEmpty() & pListToSend.isEmpty()) {
+                MessageUtils.showToast("Нет информации для отправки!", true);
                 return;
             }
             ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).
-                    addOutDoc(getOutDocNotSent(),AppController.getInstance().getDefs().getDeviceId()).enqueue(new Callback<List<OutDocs>>() {
+                    addOutDoc(odListToSend, AppController.getInstance().getDefs().getDeviceId()).enqueue(new Callback<List<OutDocs>>() {
                 @Override
                 public void onResponse(Call<List<OutDocs>> call, Response<List<OutDocs>> response) {
                     if(response.isSuccessful()) {
@@ -172,10 +174,7 @@ public class DataSendRepo {
                             MessageUtils.showToast( "Ок! Накладные выгружены!", false);
                         }
                         try {
-                            ArrayList<Boxes> boxesList = AppController.getInstance().getDbHelper().getBoxes();
-                            ArrayList<BoxMoves> boxMovesList = AppController.getInstance().getDbHelper().getBoxMoves();
-                            ArrayList<Prods> prodsList = AppController.getInstance().getDbHelper().getProds();
-                            ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).partBox(new PartBoxRequest(boxesList, boxMovesList, prodsList),
+                            ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).partBox(new PartBoxRequest(bListToSend, bmsListToSend, pListToSend),
                                     AppController.getInstance().getDefs().get_idUser(),AppController.getInstance().getDefs().getDeviceId()).enqueue(new Callback<PartBoxRequest>() {
                                 @Override
                                 public void onResponse(Call<PartBoxRequest> call, Response<PartBoxRequest> response) {

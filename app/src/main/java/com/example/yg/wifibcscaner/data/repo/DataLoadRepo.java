@@ -22,6 +22,7 @@ import com.example.yg.wifibcscaner.service.ApiUtils;
 import com.example.yg.wifibcscaner.service.MessageUtils;
 import com.example.yg.wifibcscaner.utils.executors.DefaultExecutorSupplier;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Collections;
@@ -194,29 +195,23 @@ public class DataLoadRepo {
         try {
             mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             mDataBase.beginTransaction();
+
+            boolean outDocOk = false;
+            if (CollectionUtils.isNotEmpty(r.outDocReqList)) { outDocOk = insertOutDocInBulk(r.outDocReqList); }
+
             if (insertOrdersInBulk(r.orderReqList)) {
 
-                if (r.outDocReqList != null &&
-                        !r.outDocReqList.isEmpty() &&
-                        insertOutDocInBulk(r.outDocReqList)) {
-
-                    if (r.boxSizingReqList!= null &&
-                            !r.boxSizingReqList.isEmpty()) {
+                if (outDocOk) {
+                    if (!r.boxSizingReqList.isEmpty()) {
                         if (!insertBoxSizingInBulk(r.boxSizingReqList))
                             MessageUtils.showToast("Сервер не отвечает. Проверьте подключение WiFi.", true);
                     }
 
-                    if (r.boxReqList != null &&
-                            !r.boxReqList.isEmpty() &&
-                            insertBoxInBulk(r.boxReqList)) {
+                    if (!r.boxReqList.isEmpty() && insertBoxInBulk(r.boxReqList)) {
 
-                        if (r.movesReqList != null &&
-                                !r.movesReqList.isEmpty() &&
-                                insertBoxMoveInBulk(r.movesReqList)) {
+                        if (!r.movesReqList.isEmpty() && insertBoxMoveInBulk(r.movesReqList)) {
 
-                            if (r.partBoxReqList != null &&
-                                    !r.partBoxReqList.isEmpty() &&
-                                    insertProdInBulk(r.partBoxReqList)) {
+                            if (!r.partBoxReqList.isEmpty() && insertProdInBulk(r.partBoxReqList)) {
 
                                 mDataBase.setTransactionSuccessful();
                                 return Collections.max(r.orderReqList, Comparator.comparing(Orders::get_DT)).get_DT();
