@@ -50,7 +50,7 @@ public class SotrRepo {
         DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
         try {
             ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl())
-                    .getSotr(getUpdateDate())
+                    .getSotr()
                     .enqueue(new Callback<List<Sotr>>() {
                         @Override
                         public void onResponse(Call<List<Sotr>> call, Response<List<Sotr>> response) {
@@ -110,7 +110,7 @@ public class SotrRepo {
         try {
             mDataBase = AppController.getInstance().getDbHelper().openDataBase();
             cursor = mDataBase.rawQuery("SELECT _id, Sotr FROM Sotr " +
-                        "Where division_code=? and Id_o=? and Id_d=? Order by _id",
+                        "Where NOT expired and division_code=? and Id_o=? and Id_d=? Order by _id",
                 new String [] {String.valueOf(division_code), String.valueOf(operation_id), String.valueOf(department_id)});
             if ((cursor != null) && (cursor.getCount() > 0)) {
                 while (cursor.moveToNext()) {
@@ -202,21 +202,6 @@ public class SotrRepo {
             AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
-    public int getId_sByOutDocId(String idOutDocs){
-        int result = 0;
-
-        Cursor cursor = mDataBase.rawQuery("SELECT distinct(Id_s) FROM Prods Where idOutDocs='" + idOutDocs + "'", null);
-        if ((cursor != null) & (cursor.getCount() != 0)) {
-            cursor.moveToFirst();
-            while (!cursor.isAfterLast()) {
-                result = cursor.getInt(0);
-                cursor.moveToNext();
-            }
-        }
-        tryCloseCursor(cursor);
-        ////mDataBase.close();
-        return result;
-    }
     public String getNameById(int iD){
         Cursor cursor = null;
         try {
@@ -234,50 +219,7 @@ public class SotrRepo {
             AppController.getInstance().getDbHelper().closeDataBase();
         }
     }
-    public String getSotrUpdateDate(@NonNull String globalUpdateDate){
-        Cursor cursor = null;
-        try {
-            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
-            cursor = mDataBase.rawQuery("SELECT max(DT) FROM Sotr", null);
-            if (cursor != null && cursor.moveToFirst()) {
-                return lDateToString(cursor.getLong(0) > sDateTimeToLong(globalUpdateDate) ? cursor.getLong(0) : sDateTimeToLong(globalUpdateDate));
-            }
-            return globalUpdateDate;
-        }catch (Exception e) {
-            Log.e(TAG, "getMaxDepsDate -> ".concat(e.getMessage()));
-            return globalUpdateDate;
-        } finally {
-            tryCloseCursor(cursor);
-            AppController.getInstance().getDbHelper().closeDataBase();
-        }
-    }
-    public long insertSotr(List<Sotr> list) {
-        long counter = 0L;
-        try {
-            mDataBase = AppController.getInstance().getDbHelper().openDataBase();
 
-            ContentValues values = new ContentValues();
-            for (Sotr sotr: list) {
-                values.clear();
-                values.put(Sotr.COLUMN_id, sotr.get_id());
-                values.put(Sotr.COLUMN_Sotr, sotr.get_Sotr());
-                values.put(Sotr.COLUMN_tn_Sotr, sotr.get_tn_Sotr());
-                values.put(Sotr.COLUMN_DT, sDateTimeToLong(sotr.get_DT()));
-                values.put(Sotr.COLUMN_Division_code, sotr.getDivision_code());
-                values.put(Sotr.COLUMN_Id_d, sotr.get_Id_d());
-                values.put(Sotr.COLUMN_Id_o, sotr.get_Id_o());
-                values.put(Sotr.COLUMN_EXPIRED, sotr.isExpired());
-
-                counter += mDataBase.insertWithOnConflict(Sotr.TABLE, null, values, 5);
-            }
-            return counter;
-        } catch (SQLException e) {
-            Log.e(TAG, e.getMessage());
-            return 0;
-        } finally {
-            AppController.getInstance().getDbHelper().closeDataBase();
-        }
-    }
     @RequiresApi(api = Build.VERSION_CODES.O)
     private String getUpdateDate() {
         final String updateDate = StringUtils.isNotBlank(AppController.getInstance().getGlobalUpdateDate())

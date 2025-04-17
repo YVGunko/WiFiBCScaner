@@ -150,7 +150,7 @@ public class OutDocRepo {
         return createOutDocsForCurrentOperInBulk(listOutDocs);
     }
     public boolean createOutDocsForCurrentDep(int nextOutDocNumber) {
-        //for current Div and Oper and Dep select all Sotr.
+        //for current Div and Oper and Dep select all Sotr not Expired.
         List<OutDocs> listOutDocs = new ArrayList<>();
         final String dateToSet = getDayTimeString(new Date());
 

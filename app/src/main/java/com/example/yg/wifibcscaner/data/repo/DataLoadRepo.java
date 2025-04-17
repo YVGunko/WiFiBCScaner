@@ -152,9 +152,7 @@ public class DataLoadRepo {
                     }
                     if (response.code() != 200) return;
                     //save order, boxes, boxMoves, partBox
-                    if (response.body() != null &&
-                            response.body().orderReqList != null &&
-                            !response.body().orderReqList.isEmpty())
+                    if (response.body() != null && (!response.body().orderReqList.isEmpty() || !response.body().outDocReqList.isEmpty()))
                         try {
                             Log.d(TAG, "saveToDB here.");
                             String dt = saveToDB(response.body());
@@ -197,9 +195,11 @@ public class DataLoadRepo {
             mDataBase.beginTransaction();
 
             boolean outDocOk = false;
-            if (CollectionUtils.isNotEmpty(r.outDocReqList)) { outDocOk = insertOutDocInBulk(r.outDocReqList); }
+            if (CollectionUtils.isNotEmpty(r.outDocReqList)) {
+                outDocOk = insertOutDocInBulk(r.outDocReqList);
+            }
 
-            if (insertOrdersInBulk(r.orderReqList)) {
+            if (CollectionUtils.isNotEmpty(r.orderReqList) && insertOrdersInBulk(r.orderReqList)) {
 
                 if (outDocOk) {
                     if (!r.boxSizingReqList.isEmpty()) {
@@ -211,15 +211,14 @@ public class DataLoadRepo {
 
                         if (!r.movesReqList.isEmpty() && insertBoxMoveInBulk(r.movesReqList)) {
 
-                            if (!r.partBoxReqList.isEmpty() && insertProdInBulk(r.partBoxReqList)) {
-
-                                mDataBase.setTransactionSuccessful();
-                                return Collections.max(r.orderReqList, Comparator.comparing(Orders::get_DT)).get_DT();
-                            }
+                            if (!r.partBoxReqList.isEmpty()) insertProdInBulk(r.partBoxReqList);
                         }
                     }
                 }
+                if (mDataBase.inTransaction()) mDataBase.setTransactionSuccessful();
+                return Collections.max(r.orderReqList, Comparator.comparing(Orders::get_DT)).get_DT();
             }
+            if (mDataBase.inTransaction()) mDataBase.setTransactionSuccessful();
         } catch (RuntimeException re) {
             Log.w(TAG, re);
             throw new RuntimeException("To catch onto method level.");
@@ -259,7 +258,7 @@ public class DataLoadRepo {
                 else
                     statement.bindLong(11, (o.getArchive() ? 1 : 0));
                 statement.bindString(12, o.getDivision_code());
-                statement.executeInsert();
+                Log.d(TAG, String.valueOf(statement.executeInsert()));
             }
             return true;
         } catch (Exception e) {
@@ -294,7 +293,8 @@ public class DataLoadRepo {
 
                 statement.bindString(7, o.getDivision_code());
                 statement.bindLong(8, o.getIdUser());
-                statement.executeInsert();
+                final long id = statement.executeInsert();
+                if (id == -1L) Log.i(TAG, "insertOutDocInBulk insert error on: "+ o.get_id());
             }
             return true;
         } catch (Exception e) {

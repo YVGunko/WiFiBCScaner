@@ -38,7 +38,7 @@ public interface OrderService {
     Call<List<Division>> getDivision();
 
     @GET("/employee/v2")
-    Call<List<Sotr>> getSotr(@Query("date") String date);
+    Call<List<Sotr>> getSotr();
 
     @GET("/user/v2")
     Call<List<user>> getUser();
