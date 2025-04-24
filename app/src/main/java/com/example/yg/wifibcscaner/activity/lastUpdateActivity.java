@@ -65,26 +65,32 @@ public class lastUpdateActivity extends AppCompatActivity {
                     };
                     tvw.setText("Выбрана дата: "+ spDay+"."+ spMonth+"."+picker.getYear());
 
-                    AppController.getInstance().setGlobalUpdateDate(spDay+"."+ spMonth+"."+picker.getYear()+" 00:00:00");
-                    MessageUtils.showToast("Начата синхронизация данных с даты "+spDay+"."+ spMonth+"."+picker.getYear(), true);
+                    if (DataLoadRepo.isCurrentlyLoading()) {
+                        MessageUtils.showToast("Синхронизация уже запущена. Пожалуйста, подождите.", true);
+                    } else {
+                        AppController.getInstance().setGlobalUpdateDate(spDay+"."+ spMonth+"."+picker.getYear()+" 00:00:00");
+                        MessageUtils.showToast("Начата синхронизация данных с даты "+spDay+"."+ spMonth+"."+picker.getYear(), true);
 
-                    DataLoadRepo dataLoadRepo = new DataLoadRepo();
-                    dataLoadRepo.loadData();
+                        DataLoadRepo repo = new DataLoadRepo();
+                        repo.loadData(() -> {
+                            MessageUtils.showToast("Синхронизация завершена.", true);
+                        });
 
-                    UserRepo userRepo = new UserRepo();
-                    userRepo.downloadUser();
+                        UserRepo userRepo = new UserRepo();
+                        userRepo.downloadUser();
 
-                    final DivisionRepo divRepo = new DivisionRepo();
-                    divRepo.downloadDivision();
+                        final DivisionRepo divRepo = new DivisionRepo();
+                        divRepo.downloadDivision();
 
-                    final DepartmentRepo depRepo = new DepartmentRepo();
-                    depRepo.downloadDepartment();
+                        final DepartmentRepo depRepo = new DepartmentRepo();
+                        depRepo.downloadDepartment();
 
-                    final OperRepo operRepo = new OperRepo();
-                    operRepo.downloadOperation();
+                        final OperRepo operRepo = new OperRepo();
+                        operRepo.downloadOperation();
 
-                    final SotrRepo sotrRepo = new SotrRepo();
-                    sotrRepo.downloadSotr();
+                        final SotrRepo sotrRepo = new SotrRepo();
+                        sotrRepo.downloadSotr();
+                    }
                 } catch (Exception e) {
                     Log.e(TAG, "Ответ сервера на запрос новых заказов: " + e.getMessage());
                 } finally {

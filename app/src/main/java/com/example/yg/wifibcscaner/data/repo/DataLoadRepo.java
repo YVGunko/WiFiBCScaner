@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import retrofit2.Call;
@@ -45,12 +46,26 @@ import static com.example.yg.wifibcscaner.utils.DateTimeUtils.sDateTimeToLong;
 public class DataLoadRepo {
 
     private AtomicInteger nextPage = new AtomicInteger(0);
+    private static final AtomicBoolean isLoading = new AtomicBoolean(false);
     private static int pageSize = 200;
     private static final String TAG = "sProject -> OutDocBoxMovePartRepository.";
     SQLiteDatabase mDataBase = AppController.getInstance().getDbHelper().openDataBase();
 
-    /*
-    public void loadStuff() {
+    public static boolean isCurrentlyLoading() {
+        return isLoading.get();
+    }
+
+    public void loadData(Runnable onComplete) {
+        // Prevent overlapping executions
+        if (isLoading.get()) {
+            MessageUtils.showToast("Синхронизация уже запущена.", false);
+            Log.d(TAG, "Already loading. Skipping.");
+            if (onComplete != null) onComplete.run();
+            return;
+        }
+
+        isLoading.set(true); // Mark as running
+
         DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
             try {
                 //check if connection is available
@@ -58,34 +73,6 @@ public class DataLoadRepo {
                     @Override
                     public void onResponse(Call<Long> call, Response<Long> response) {
                         if (response.isSuccessful()) {
-                            //downloadDivision();
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(Call<Long> call, Throwable t) {
-                        Log.e(TAG, "onFailure при запросе времени обновления с сервера: " + t.getMessage());
-                        MessageUtils.showToast("Ошибка при синхронизации данных!", true);
-                    }
-                });
-            } catch (Exception e) {
-                Log.e(TAG, "Exception запроса времени обновления с сервера : " + e.getMessage());
-                MessageUtils.showToast("Исключительная ситуация при запросе времени обновления с сервера.", true);
-                return;
-            }
-        });
-        return;
-    }*/
-
-    public void loadData() {
-        DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(() -> {
-            try {
-                //check if connection is available
-                ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).getServerUpdateTime().enqueue(new Callback<Long>() {
-                    @Override
-                    public void onResponse(Call<Long> call, Response<Long> response) {
-                        if (response.isSuccessful()) {
-//                            loadStuff() ;
 
                             if (BuildConfig.DEBUG) {
                                 MessageUtils.showToast("Update date: "
@@ -96,6 +83,9 @@ public class DataLoadRepo {
                             downloadData(StringUtils.isNotBlank(AppController.getInstance().getGlobalUpdateDate())
                                     ? AppController.getInstance().getGlobalUpdateDate()
                                     : getOrderUpdateDate(getTodayMorning()));
+                        } else {
+                            isLoading.set(false); // Reset flag on unexpected failure
+                            if (onComplete != null) onComplete.run();
                         }
                     }
 
@@ -103,11 +93,15 @@ public class DataLoadRepo {
                     public void onFailure(Call<Long> call, Throwable t) {
                         Log.e(TAG, "onFailure при запросе времени обновления с сервера: " + t.getMessage());
                         MessageUtils.showToast("Ошибка при синхронизации данных!", true);
+                        isLoading.set(false); // Reset flag on error
+                        if (onComplete != null) onComplete.run();
                     }
                 });
             } catch (Exception e) {
                 Log.e(TAG, "Exception запроса времени обновления с сервера : " + e.getMessage());
                 MessageUtils.showToast("Исключительная ситуация при запросе времени обновления с сервера.", true);
+                isLoading.set(false); // Reset flag on error
+                if (onComplete != null) onComplete.run();
                 return;
             }
         });
@@ -141,48 +135,64 @@ public class DataLoadRepo {
             @RequiresApi(api = Build.VERSION_CODES.N)
             @Override
             public void onResponse(Call<OrderOutDocBoxMovePart> call, Response<OrderOutDocBoxMovePart> response) {
-                if (response.isSuccessful()) {
-                    Log.d(TAG, "Responce code: " + response.code());
-                    if (response.code() == 204) {
-                        //no content, so prepare environment to stop current request and prepare for next one
-                        nextPage.set(0);
-                        AppController.getInstance().setGlobalUpdateDate(getTodayMorning());
-                        MessageUtils.showToast("Синхронизация завершена успешно.", true);
-                        return;
-                    }
-                    if (response.code() != 200) return;
-                    //save order, boxes, boxMoves, partBox
-                    if (response.body() != null && (!response.body().orderReqList.isEmpty() || !response.body().outDocReqList.isEmpty()))
-                        try {
-                            Log.d(TAG, "saveToDB here.");
-                            String dt = saveToDB(response.body());
-                            if (StringUtils.isEmpty(dt)) return;
-
-                            Log.d(TAG, "downloadDataCallback -> pageNumber: " + nextPage.get());
-
-                            if (nextPage.get() != 0) {
-                                ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).getDataPageableV1(
-                                        updateDate,
-                                        AppController.getInstance().getDefs().getDivision_code(),
-                                        AppController.getInstance().getDefs().get_Id_o(),
-                                        nextPage.getAndIncrement(),
-                                        pageSize)
-                                        .enqueue(downloadDataCallback(updateDate));
-                                MessageUtils.showToast(AppController.getInstance().getString(R.string.data_load_in_progress), false);
-                                if (BuildConfig.DEBUG) MessageUtils.showToast("Page ".concat(nextPage.toString()).concat(" has been requested."), true);
-                            }
-                        } catch (RuntimeException re) {
-                            Log.w(TAG, re);
-                            nextPage.set(0);
-                        }
+                if (!response.isSuccessful()) {
+                    Log.w(TAG, "Unexpected response code: " + response.code());
+                    isLoading.set(false);
+                    return;
                 }
+
+                if (response.code() == 204) {
+                    //no content, so prepare environment to stop current request and prepare for next one
+                    nextPage.set(0);
+                    AppController.getInstance().setGlobalUpdateDate(getTodayMorning());
+                    MessageUtils.showToast("Синхронизация завершена успешно.", true);
+                    isLoading.set(false); // ✅ Mark task as done
+                    return;
+                }
+                if (response.code() == 200 && response.body() != null &&
+                        (!response.body().orderReqList.isEmpty() || !response.body().outDocReqList.isEmpty())) {
+                    try {
+                        Log.d(TAG, "saveToDB here.");
+                        String dt = saveToDB(response.body());
+                        if (StringUtils.isEmpty(dt)) {
+                            nextPage.set(0);
+                            AppController.getInstance().setGlobalUpdateDate(getTodayMorning());
+                            MessageUtils.showToast("Синхронизация завершена успешно.", true);
+                            isLoading.set(false);
+                            return;
+                        }
+
+                        Log.d(TAG, "downloadDataCallback -> pageNumber: " + nextPage.get());
+
+                        if (nextPage.get() != 0) {
+                            ApiUtils.getOrderService(AppController.getInstance().getDefs().getUrl()).getDataPageableV1(
+                                    updateDate,
+                                    AppController.getInstance().getDefs().getDivision_code(),
+                                    AppController.getInstance().getDefs().get_Id_o(),
+                                    nextPage.getAndIncrement(),
+                                    pageSize)
+                                    .enqueue(downloadDataCallback(updateDate));
+                            MessageUtils.showToast(AppController.getInstance().getString(R.string.data_load_in_progress), false);
+                            if (BuildConfig.DEBUG)
+                                MessageUtils.showToast("Page ".concat(nextPage.toString()).concat(" has been requested."), true);
+                            return; // ✅ Don't set isLoading=false yet, next page is being requested
+                        }
+                    } catch (Exception e) {
+                        nextPage.set(0);
+                        Log.w(TAG, e);
+                    }
+                }
+                // ✅ If we reach here, something went wrong or we're done
+                nextPage.set(0);
+                isLoading.set(false);
             }
 
             @Override
             public void onFailure(Call<OrderOutDocBoxMovePart> call, Throwable t) {
-                Log.w(TAG, "downloadDataCallback -> API Request failed: " + t.getMessage());
                 nextPage.set(0);
+                isLoading.set(false); // ✅ Mark task as done
                 MessageUtils.showToast("Сервер не отвечает. Проверьте подключение WiFi.", true);
+                Log.w(TAG, "downloadDataCallback -> API Request failed: " + t.getMessage());
             }
 
         };

@@ -259,7 +259,7 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
             actionBar.setSubtitle(Html.fromHtml("<font color='#FFBF00'>"+snum+"</font>"));
             actionBar.setTitle("Подразделение: "+AppController.getInstance().getDefs().getDescDivision());
 
-            setTextViews();
+            setСurrentDocDetails();
 
             currentUser  = (TextView) findViewById(R.id.currentUser);
             currentUser.setText("Пользователь: " +userRepo.getUserName(AppController.getInstance().getDefs().get_idUser()));
@@ -430,8 +430,15 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
                 setDate();
                 return true;
             case R.id.action_get_data:
-                DataLoadRepo dataLoadRepo = new DataLoadRepo();
-                dataLoadRepo.loadData();
+                if (DataLoadRepo.isCurrentlyLoading()) {
+                    MessageUtils.showToast("Синхронизация уже запущена. Пожалуйста, подождите.", true);
+                    return true;
+                }
+
+                DataLoadRepo repo = new DataLoadRepo();
+                repo.loadData(() -> {
+                    MessageUtils.showToast("Синхронизация завершена.", true);
+                });
                 userRepo.downloadUser();
                 divRepo.downloadDivision();
                 operRepo.downloadOperation();
@@ -496,7 +503,7 @@ private static String filter (String str){
                     //---Получаем строку данных о коробке для вывода в tVDBInfo и количество для редактирования
                     tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
                     if (StringUtils.isNotEmpty(fb.getBoxdef()))
-                        completeOrderDef(fb);
+                    fo.setOrderdef(fo.getOrderdef().concat(completeOrderDef(fb)));
                     tVDBInfo.setText(fo.getOrderdef());
                     if (!fb.is_archive()){
                         if (StringUtils.isNotEmpty(fb.get_id())) {                                  //Коробка есть
@@ -540,7 +547,7 @@ private static String filter (String str){
                             }
                         }
                     }else {
-                        MessageUtils.showToast(MainActivity.this, getString(R.string.box_already_released),true);
+                        MessageUtils.showToast(MainActivity.this, getString(R.string.box_already_released)+fb.getBoxdef(),true);
                     }
                 } else {
                     MessageUtils.showToast(MainActivity.this, getString(R.string.order_hasnt_loaded_yet),true);
@@ -680,6 +687,11 @@ private static String filter (String str){
         tVDBInfo = (TextView) findViewById(R.id.tVDBInfo);
         //if (tVDBInfo.getText().equals(getString(R.string.main_last_box_empty_message))) tVDBInfo.setText(mDBHelper.lastBox());
         tVDBInfo.setText(mDBHelper.lastBox());
+        currentDocDetails  = (TextView) findViewById(R.id.currentDocDetails);
+        currentDocDetails.setText("Накл.№".concat(AppController.getInstance().getCurrentOutDoc().getNumberString())
+                .concat(" ").concat(outDocRepo.selectCurrentOutDocDetails(AppController.getInstance().getCurrentOutDoc().get_id())));
+    }
+    private void setСurrentDocDetails (){
         currentDocDetails  = (TextView) findViewById(R.id.currentDocDetails);
         currentDocDetails.setText("Накл.№".concat(AppController.getInstance().getCurrentOutDoc().getNumberString())
                 .concat(" ").concat(outDocRepo.selectCurrentOutDocDetails(AppController.getInstance().getCurrentOutDoc().get_id())));

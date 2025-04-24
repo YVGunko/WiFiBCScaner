@@ -413,14 +413,16 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     }
 
     //last shift. changed. check for sentToMasterDate removed because it should show all items been commited by current operation for max(p.p_date)
-    public ArrayList<HashMap<String, String>> listprods() {
+    public ArrayList<HashMap<String, String>> lastShift() {
         ArrayList<HashMap<String, String>> readBoxes = new ArrayList<HashMap<String, String>>();
         mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         try {
             Cursor cursor = mDataBase.rawQuery("select d.Name_Deps, count(bm.Id_b), sum(RQ_box)" +
                     " from Prods p , BoxMoves bm, Deps d where bm.Id_o=" + AppController.getInstance().getDefs().get_Id_o() + " and bm._id=p.Id_bm and p.Id_d=d._id" +
+                    (AppController.getInstance().getDefs().get_Id_o() == AppController.getInstance().getDefs().get_idOperLast() ? " and (p.sentToMasterDate is null)" : "")+
                     " and p.p_date=(select max(p.p_date) from Prods p , BoxMoves bm where bm._id=p.Id_bm and bm.Id_o=" + AppController.getInstance().getDefs().get_Id_o() + ")" +
                     " group by d.Name_Deps", null);
+
             while (cursor.moveToNext()) {
                 HashMap readBox = new HashMap<String, String>();
                 readBox.put("Ord", !AppUtils.isDepAndSotrOper(AppController.getInstance().getDefs().get_Id_o()) ? AppController.getInstance().getDefs().getDescOper() : cursor.getString(0));
@@ -556,6 +558,21 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                             Log.d(TAG, "searchBox's RQ select record count = " + c.getCount() + ", _id =" + c.getString(0));
                             fb.setRQ(c.getInt(0));
                         }
+                        tryCloseCursor(c);
+                        query = "SELECT o.number,  strftime('%d-%m-%Y %H:%M:%S', o.DT/1000, 'unixepoch', 'localtime') as DT, Deps.Name_Deps, s.Sotr " +
+                                " FROM Prods, BoxMoves bm, outDocs o, Deps, Sotr s " +
+                                " Where bm.Id_b='" + fb.get_id() + "' and bm.Id_o=" + AppController.getInstance().getDefs().get_Id_o() +
+                                " and Prods.Id_bm=bm._id  and Prods.idOutDocs=o._id and Prods.Id_d=Deps._id and Prods.Id_s=s._id order by o._id desc";
+                        c = mDataBase.rawQuery(query, null);
+                        if ((c != null) & (c.getCount() != 0)) {            //есть записи в BoxMoves и Prods
+                            c.moveToFirst(); //есть boxes & prods
+                            Log.d(TAG, "Looking for outdocs record count = " + c.getCount() + ", _id =" + c.getString(0));
+                            fb.setOutDocs("Накл " + c.getString(0) + " от " + c.getString(1));
+                            fb.setDepSotr(isNotEmpty(c.getString(2)) ? c.getString(2) + ", " + c.getString(3) : "");
+                        }
+                    }
+                } else { // archived box. in case it's last oper, get the outdoc
+                    if (AppController.getInstance().getDefs().get_Id_o() == AppController.getInstance().getDefs().get_idOperLast()) {
                         tryCloseCursor(c);
                         query = "SELECT o.number,  strftime('%d-%m-%Y %H:%M:%S', o.DT/1000, 'unixepoch', 'localtime') as DT, Deps.Name_Deps, s.Sotr " +
                                 " FROM Prods, BoxMoves bm, outDocs o, Deps, Sotr s " +
