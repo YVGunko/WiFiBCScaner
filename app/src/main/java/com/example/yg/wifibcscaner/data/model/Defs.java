@@ -25,6 +25,7 @@ public class Defs {
     public static final String COLUMN_idOperFirst = "idOperFirst";
     public static final String COLUMN_idOperLast = "idOperLast";
     public static final String COLUMN_Division_code = "division_code";
+    public static final String COLUMN_SEND_DATA = "auto_data_send";
     private String descOper = "Производство";
     private String descDivision = "";
     private String descDep = "";
@@ -43,7 +44,12 @@ public class Defs {
     private int _idOperLast;
     private int _idUser;
 
-    public Defs(int _Id_d, int _Id_o, int _Id_s, String _Host_IP, String _Port, int _idOperFirst, int _idOperLast, String Division_code, int _idUser, String DeviceId) {
+
+
+    private boolean bSendData;
+
+    public Defs(int _Id_d, int _Id_o, int _Id_s, String _Host_IP, String _Port, int _idOperFirst,
+                int _idOperLast, String Division_code, int _idUser, String DeviceId, boolean bSendData) {
         this._Id_d = _Id_d;
         this._Id_o = _Id_o;
         this._Id_s = _Id_s;
@@ -54,8 +60,9 @@ public class Defs {
         this.division_code = Division_code;
         this.DeviceId = DeviceId;
         this._idUser = _idUser;
+        this.bSendData = bSendData;
     }
-    public Defs(int _Id_d, int _Id_o, int _Id_s, String _Host_IP, String _Port, String Division_code, int _idUser, String DeviceId) {
+    public Defs(int _Id_d, int _Id_o, int _Id_s, String _Host_IP, String _Port, String Division_code, int _idUser, String DeviceId, boolean bSendData) {
         this._Id_d = _Id_d;
         this._Id_o = _Id_o;
         this._Id_s = _Id_s;
@@ -64,8 +71,9 @@ public class Defs {
         this.division_code = Division_code;
         this.DeviceId = DeviceId;
         this._idUser = _idUser;
+        this.bSendData = bSendData;
     }
-    public Defs(int _Id_d, int _Id_o, int _Id_s, String _Host_IP, String _Port, String Division_code, String DeviceId) {
+    public Defs(int _Id_d, int _Id_o, int _Id_s, String _Host_IP, String _Port, String Division_code, String DeviceId, boolean bSendData) {
         this._Id_d = _Id_d;
         this._Id_o = _Id_o;
         this._Id_s = _Id_s;
@@ -73,6 +81,7 @@ public class Defs {
         this._Port = _Port;
         this.division_code = Division_code;
         this.DeviceId = DeviceId;
+        this.bSendData = bSendData;
     }
 
     public Defs() {
@@ -206,5 +215,13 @@ public class Defs {
 
     public void setDescFirstOperForCurrent(String descFirstOperForCurrent) {
         this.descFirstOperForCurrent = descFirstOperForCurrent;
+    }
+
+    public boolean isbSendData() {
+        return bSendData;
+    }
+
+    public void setbSendData(boolean bSendData) {
+        this.bSendData = bSendData;
     }
 }

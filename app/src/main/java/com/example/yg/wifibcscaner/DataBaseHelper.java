@@ -384,7 +384,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                         " N_box            INTEGER, " +
                         " DT               INTEGER, " +
                         " sentToMasterDate INTEGER, " +
-                        " archive          BOOLEAN       DEFAULT false, " +
+                        " archive          BOOLEAN       DEFAULT 0, " +
                         " outDocId         VARCHAR (36), " +
                         " FOREIGN KEY (Id_m) REFERENCES MasterData (_id) );");
 
@@ -410,18 +410,89 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 db.endTransaction();
                 db.execSQL("PRAGMA foreign_keys = 1;");
             }
+        if ((newVersion > oldVersion) & (newVersion == 28))
+            try {
+                Log.i(TAG, "Версия бд 28. Начало реструктуризации.");
+                db.execSQL("PRAGMA foreign_keys = 0;");
+                db.beginTransaction();
+
+                db.execSQL("CREATE TABLE sqlitestudio_temp_table AS SELECT * FROM Defs;");
+
+                db.execSQL("DROP TABLE Defs;");
+
+                db.execSQL("CREATE TABLE Defs (\n" +
+                        "    _id           INTEGER       PRIMARY KEY AUTOINCREMENT,\n" +
+                        "    Host_IP       TEXT,\n" +
+                        "    Port          TEXT,\n" +
+                        "    Id_d          INTEGER       NOT NULL\n" +
+                        "                                DEFAULT (0),\n" +
+                        "    Id_o          INTEGER       NOT NULL\n" +
+                        "                                DEFAULT (0),\n" +
+                        "    Id_s          INTEGER       NOT NULL\n" +
+                        "                                DEFAULT (0),\n" +
+                        "    idOperFirst   INTEGER,\n" +
+                        "    idOperLast    INTEGER,\n" +
+                        "    division_code VARCHAR (255) REFERENCES Division (code) \n" +
+                        "                                DEFAULT (0),\n" +
+                        "    idUser        INTEGER       NOT NULL\n" +
+                        "                                DEFAULT (0),\n" +
+                        "    DeviceId      VARCHAR (20)  NOT NULL\n" +
+                        "                                DEFAULT (0),\n" +
+                        "   auto_data_send       BOOLEAN       DEFAULT 0, \n" +
+                        "    FOREIGN KEY (\n" +
+                        "        idOperLast\n" +
+                        "    )\n" +
+                        "    REFERENCES Opers (_id),\n" +
+                        "    FOREIGN KEY (\n" +
+                        "        idOperFirst\n" +
+                        "    )\n" +
+                        "    REFERENCES Opers (_id),\n" +
+                        "    FOREIGN KEY (\n" +
+                        "        Id_o\n" +
+                        "    )\n" +
+                        "    REFERENCES Opers (_id),\n" +
+                        "    FOREIGN KEY (\n" +
+                        "        idUser\n" +
+                        "    )\n" +
+                        "    REFERENCES user (_id),\n" +
+                        "    FOREIGN KEY (\n" +
+                        "        Id_d\n" +
+                        "    )\n" +
+                        "    REFERENCES Deps (_id),\n" +
+                        "    FOREIGN KEY (\n" +
+                        "        Id_s\n" +
+                        "    )\n" +
+                        "    REFERENCES Sotr (_id) \n" +
+                        ");");
+
+                db.execSQL("INSERT INTO Defs (_id, Host_IP, Port, Id_d, Id_o, Id_s, idOperFirst, idOperLast, division_code, idUser, DeviceId, auto_data_send)" +
+                        " SELECT _id, Host_IP, Port, Id_d, Id_o, Id_s, idOperFirst, idOperLast, division_code, idUser, DeviceId, 0" +
+                        " FROM sqlitestudio_temp_table; ");
+
+                db.execSQL("DROP TABLE sqlitestudio_temp_table;");
+
+                db.setTransactionSuccessful();
+                Log.d(TAG, "Версия бд 27. Окончание реструктуризации.");
+            } catch (Exception e) {
+                Log.e(TAG, e.getMessage());
+            } finally {
+                db.endTransaction();
+                db.execSQL("PRAGMA foreign_keys = 1;");
+            }
     }
 
     //last shift. changed. check for sentToMasterDate removed because it should show all items been commited by current operation for max(p.p_date)
     public ArrayList<HashMap<String, String>> lastShift() {
+        final String strQuery = "select d.Name_Deps, count(bm.Id_b), sum(RQ_box)" +
+                " from Prods p , BoxMoves bm, Deps d where bm.Id_o=" + AppController.getInstance().getDefs().get_Id_o() +
+                " and bm._id=p.Id_bm and p.Id_d=d._id and (p.sentToMasterDate is null)" +
+                " and p.p_date=(select max(p.p_date) from Prods p , BoxMoves bm where bm._id=p.Id_bm and bm.Id_o=" + AppController.getInstance().getDefs().get_Id_o() + ")" +
+                " group by d.Name_Deps";
+
         ArrayList<HashMap<String, String>> readBoxes = new ArrayList<HashMap<String, String>>();
         mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         try {
-            Cursor cursor = mDataBase.rawQuery("select d.Name_Deps, count(bm.Id_b), sum(RQ_box)" +
-                    " from Prods p , BoxMoves bm, Deps d where bm.Id_o=" + AppController.getInstance().getDefs().get_Id_o() + " and bm._id=p.Id_bm and p.Id_d=d._id" +
-                    (AppController.getInstance().getDefs().get_Id_o() == AppController.getInstance().getDefs().get_idOperLast() ? " and (p.sentToMasterDate is null)" : "")+
-                    " and p.p_date=(select max(p.p_date) from Prods p , BoxMoves bm where bm._id=p.Id_bm and bm.Id_o=" + AppController.getInstance().getDefs().get_Id_o() + ")" +
-                    " group by d.Name_Deps", null);
+            Cursor cursor = mDataBase.rawQuery(strQuery, null);
 
             while (cursor.moveToNext()) {
                 HashMap readBox = new HashMap<String, String>();

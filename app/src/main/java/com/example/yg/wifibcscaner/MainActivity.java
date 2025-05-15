@@ -241,7 +241,7 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
     @Override
     public void onUserInteraction() {
         super.onUserInteraction();
-        if (AppController.getInstance().getDefs().get_Id_o() != 9999)
+        if (AppController.getInstance().getDefs().get_Id_o() != 9999 && AppController.getInstance().getDefs().isbSendData())
             DataSyncTimerUtil.startDataSyncTimer(this);
         Log.d(TAG, "User interacting with screen");
     }
@@ -460,7 +460,9 @@ public class MainActivity extends AppCompatActivity implements BarcodeReader.Bar
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
-
+        // Do not show last shift menu item in case data are being send by timer
+        boolean show = !AppController.getInstance().getDefs().isbSendData();
+        menu.findItem(R.id.action_prods).setVisible(show);
         return true;
     }
     @Override

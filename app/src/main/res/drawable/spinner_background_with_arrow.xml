@@ -1,0 +1,14 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Background with border -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#FFFFFF"/>
+            <stroke android:width="2dp" android:color="#FF0000"/>
+            <corners android:radius="6dp"/>
+        </shape>
+    </item>
+
+    <!-- Arrow icon on the right -->
+    <item android:drawable="@drawable/ic_baseline_arrow_drop_down_24" android:right="8dp" android:gravity="right|center_vertical"/>
+</layer-list>

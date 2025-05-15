@@ -33,6 +33,7 @@
 
     <Spinner
         android:id="@+id/spinnerDivision"
+        android:background="@drawable/spinner_background_with_arrow"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:prompt="@string/spDeps_title"
@@ -66,6 +67,7 @@
 
     <Spinner
         android:id="@+id/spinnerSotr"
+        android:background="@drawable/spinner_background_with_arrow"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:prompt="@string/spDeps_title"
@@ -99,6 +101,7 @@
 
     <Spinner
         android:id="@+id/spinner"
+        android:background="@drawable/spinner_background_with_arrow"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:prompt="@string/spDeps_title"
@@ -132,6 +135,7 @@
 
     <Spinner
         android:id="@+id/opers_spinner"
+        android:background="@drawable/spinner_background_with_arrow"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:prompt="@string/spDeps_title"
@@ -165,7 +169,8 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <Switch
-        android:id="@+id/switch1"
+        android:id="@+id/swSendData"
+        android:background="@drawable/spinner_border"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
@@ -186,7 +191,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/switch1" />
+        app:layout_constraintTop_toBottomOf="@+id/swSendData" />
 
 
 

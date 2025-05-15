@@ -21,6 +21,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.Spinner;
+import android.widget.Switch;
 import android.widget.TextView;
 
 import com.example.yg.wifibcscaner.BuildConfig;
@@ -77,6 +78,7 @@ public class SettingsActivity extends AppCompatActivity implements
 
     // Spinner element
     Spinner spinner, opers_spinner, spinnerSotr, spinnerDivision;
+    Switch swSendData;
 
     @Override
     protected void onResume() {
@@ -113,6 +115,7 @@ public class SettingsActivity extends AppCompatActivity implements
         opers_spinner = (Spinner) findViewById(R.id.opers_spinner);
         spinner = (Spinner) findViewById(R.id.spinner);
         spinnerSotr = (Spinner) findViewById(R.id.spinnerSotr);
+        swSendData = (Switch) findViewById(R.id.swSendData);
         // Spinner click listener
 
         spinnerDivision.setOnItemSelectedListener(this);
@@ -147,6 +150,7 @@ public class SettingsActivity extends AppCompatActivity implements
         select_label.setText(depRepo.getDepNameById(AppController.getInstance().getDefs().get_Id_d()));
         labelSotr = (TextView) findViewById(R.id.labelSotr);
         labelSotr.setText(sotrRepo.getNameById(AppController.getInstance().getDefs().get_Id_s()));
+        swSendData.setChecked(AppController.getInstance().getDefs().isbSendData());
 
         userRepo.setListenner(new UserRepo.UserDownLoadListenner() {
             @Override
@@ -630,14 +634,15 @@ matcher.matches();*/
             }
         }
 
-        if (!isDepAndSotrOper(AppController.getInstance().getDefs().get_Id_o())) {
+        if (!isDepAndSotrOper(AppController.getInstance().getDefs().get_Id_o()) || !swSendData.isChecked()) {
             DataSyncTimerUtil.stopDataSyncTimer();
         }
 
         String ip = host_v.getText().toString();
 
         if (defsRepo.updateDefsTable(new Defs(idd, ido, ids, ip, "4242", division_code,
-                StringUtils.isNotBlank(AppController.getInstance().getDefs().getDeviceId()) ? AppController.getInstance().getDefs().getDeviceId() : "")) != 0) {
+                StringUtils.isNotBlank(AppController.getInstance().getDefs().getDeviceId()) ? AppController.getInstance().getDefs().getDeviceId() : "",
+                swSendData.isChecked())) != 0) {
             defsRepo.selectDefsTable().ifPresent(d -> AppController.getInstance().setDefs(d));
             MessageUtils.showToast(getApplicationContext(), "Сохранено.", false);
         } else {

@@ -30,17 +30,20 @@ public class DefsRepo {
         SQLiteDatabase mDataBase = AppController.getInstance().getDbHelper().openDataBase();
         Cursor cursor = null;
         try {
-            cursor = mDataBase.rawQuery("SELECT Id_d,Id_o,Id_s,Host_IP,Port,idOperFirst,idOperLast,division_code,idUser,DeviceId  FROM Defs ", null);
+            cursor = mDataBase.rawQuery("SELECT Id_d,Id_o,Id_s,Host_IP,Port,idOperFirst,idOperLast,division_code,idUser,DeviceId,auto_data_send  FROM Defs ", null);
             if (cursor != null && cursor.moveToFirst()) {
                 Defs defs = new Defs(cursor.getInt(0),cursor.getInt(1),cursor.getInt(2),
                         cursor.getString(3),cursor.getString(4),cursor.getInt(5),
-                        cursor.getInt(6),cursor.getString(7),cursor.getInt(8),cursor.getString(9));
+                        cursor.getInt(6),cursor.getString(7),
+                        cursor.getInt(8),cursor.getString(9),
+                        cursor.getInt(10) == 1);
                 defs.setDescOper ( operRepo.getOperNameById(defs.get_Id_o()) );
                 defs.setDescDep ( depRepo.getDepNameById(defs.get_Id_d()) );
                 defs.setDescSotr ( sotrRepo.getNameById(defs.get_Id_s()) );
                 defs.setDescDivision ( divRepo.getDivisionNameByCode(defs.getDivision_code()) );
                 defs.setDescUser ( userRepo.getUserName(defs.get_idUser()) );
                 defs.setDescFirstOperForCurrent ( operRepo.getOperNameById(getFirstOperFor(defs.get_Id_o())) );
+
                 //AppController.getInstance().setDefs(defs);
                 return Optional.ofNullable(defs);
             }
@@ -66,6 +69,7 @@ public class DefsRepo {
             values.put(Defs.COLUMN_Port, defs.get_Port());
             values.put(Defs.COLUMN_Division_code, defs.getDivision_code());
             values.put(Defs.COLUMN_DeviceId, defs.getDeviceId());
+            values.put(Defs.COLUMN_SEND_DATA, defs.isbSendData());
             String strFilter = "_id=1" ;
             return mDataBase.update(Defs.table_Defs, values,strFilter, null);
         } catch (SQLException e) {

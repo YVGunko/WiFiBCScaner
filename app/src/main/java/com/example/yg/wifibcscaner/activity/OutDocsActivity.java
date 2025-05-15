@@ -180,7 +180,8 @@ public class OutDocsActivity extends AppCompatActivity implements LoaderManager.
                                 AppController.getInstance().getDefs().get_Host_IP(), AppController.getInstance().getDefs().get_Port(),
                                 AppController.getInstance().getDefs().getDivision_code(),
                                 AppController.getInstance().getDefs().get_idUser(),
-                                AppController.getInstance().getDefs().getDeviceId());
+                                AppController.getInstance().getDefs().getDeviceId(),
+                                AppController.getInstance().getDefs().isbSendData());
                         if (defsRepo.updateDefsTable(defs) != 0) {
                             AppController.getInstance().setDefs(defs);
                             MessageUtils.showToast(getApplicationContext(),"Сохранено."+AppController.getInstance().getDefs().getDescDep(), false);
